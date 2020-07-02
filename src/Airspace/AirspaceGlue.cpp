@@ -88,13 +88,20 @@ ReadAirspace(Airspaces &airspaces,
   AirspaceParser parser(airspaces);
 
   // Read the airspace filenames from the registry
-  auto path = Profile::GetPath(ProfileKeys::AirspaceFile);
-  if (!path.IsNull())
-    airspace_ok |= ParseAirspaceFile(parser, path, operation);
+  //auto path = Profile::GetPath(ProfileKeys::AirspaceFile);
+  //if (!path.IsNull())
+    //airspace_ok |= ParseAirspaceFile(parser, path, operation);
 
-  path = Profile::GetPath(ProfileKeys::AdditionalAirspaceFile);
-  if (!path.IsNull())
-    airspace_ok |= ParseAirspaceFile(parser, path, operation);
+  std::vector<AllocatedPath> paths = Profile::GetNPaths(ProfileKeys::AirspaceFile);
+
+  for (auto it = paths.begin(); it < paths.end(); it++){
+
+	  airspace_ok |= ParseAirspaceFile(parser, *it, operation);
+  }
+
+  //path = Profile::GetPath(ProfileKeys::AdditionalAirspaceFile);
+  //if (!path.IsNull())
+  //  airspace_ok |= ParseAirspaceFile(parser, path, operation);
 
   auto archive = OpenMapFile();
   if (archive)
