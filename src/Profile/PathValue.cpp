@@ -49,6 +49,28 @@ ProfileMap::GetPath(const char *key) const
   return ExpandLocalPath(Path(buffer));
 }
 
+std::vector<AllocatedPath>
+ProfileMap::GetMultiplePaths(const char *key) const
+{
+	std::vector<AllocatedPath> paths;
+	TCHAR buffer[MAX_PATH];
+
+	if(!Get(key, buffer, ARRAY_SIZE(buffer)))
+		return paths;
+	
+	if(StringIsEmpty(buffer))
+		return paths;
+
+	char *path = strtok(buffer, ",");
+	while (path != nullptr){
+		paths.push_back(ExpandLocalPath(Path(path)));
+
+		path = strtok(nullptr, ",");
+	}
+
+	return paths;
+}
+
 bool
 ProfileMap::GetPathIsEqual(const char *key, Path value) const
 {
