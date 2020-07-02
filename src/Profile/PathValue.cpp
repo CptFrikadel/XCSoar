@@ -29,6 +29,7 @@ Copyright_License {
 #include "Util/StringCompare.hxx"
 #include "Util/StringPointer.hxx"
 #include "Util/Macros.hpp"
+#include <iostream>
 
 #ifdef _UNICODE
 #include "Util/AllocatedString.hxx"
@@ -47,6 +48,32 @@ ProfileMap::GetPath(const char *key) const
     return nullptr;
 
   return ExpandLocalPath(Path(buffer));
+}
+
+std::vector<AllocatedPath>
+ProfileMap::GetNPaths(const char *key) const
+{
+	std::vector<AllocatedPath> paths;
+	TCHAR buffer[MAX_PATH];
+
+	if(!Get(key, buffer, ARRAY_SIZE(buffer)))
+		return paths;
+	
+	if(StringIsEmpty(buffer))
+		return paths;
+
+	std::cout << "I read this PATH: " << buffer << std::endl;
+
+	char *path = strtok(buffer, ",");
+	while (path != nullptr){
+		std::cout << path << std::endl;
+
+		paths.push_back(ExpandLocalPath(Path(path)));
+
+		path = strtok(nullptr, ",");
+	}
+
+	return paths;
 }
 
 bool
