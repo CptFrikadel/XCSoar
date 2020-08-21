@@ -17,6 +17,7 @@ DATA_FIELD_SOURCES = \
 	$(DATA_FIELD_SRC_DIR)/Integer.cpp \
 	$(DATA_FIELD_SRC_DIR)/String.cpp \
 	$(DATA_FIELD_SRC_DIR)/Prefix.cpp \
-	$(DATA_FIELD_SRC_DIR)/Password.cpp
+	$(DATA_FIELD_SRC_DIR)/Password.cpp \
+	$(DATA_FIELD_SRC_DIR)/NFiles.cpp
 
 $(eval $(call link-library,datafield,DATA_FIELD))
