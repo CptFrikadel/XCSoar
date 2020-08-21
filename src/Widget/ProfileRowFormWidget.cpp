@@ -24,6 +24,7 @@ Copyright_License {
 #include "RowFormWidget.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/File.hpp"
+#include "Form/DataField/Nfiles.hpp"
 #include "Profile/Profile.hpp"
 #include "LocalPath.hpp"
 #include "Util/ConvertString.hpp"
@@ -53,6 +54,38 @@ RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
   edit->RefreshDisplay();
 
   return edit;
+  
+}
+
+WndProperty *
+RowFormWidget::AddNFiles(const TCHAR *label, const TCHAR *help,
+                       const char *registry_key, const TCHAR *filters,
+                       FileType file_type,
+                       bool nullable)
+{
+	WndProperty *edit = Add(label, help);
+	auto *df = new NFileDataField();
+	df->SetFileType(file_type);
+	edit->SetDataField(df);
+
+	if (nullable)
+		df->AddNull();
+
+	df->ScanMultiplePatterns(filters);
+
+	if (registry_key != nullptr){
+		std::vector<AllocatedPath> paths = Profile::GetNPaths(registry_key);
+
+		if (!paths.empty()){
+			for (auto const& p : paths){
+				df->Lookup(p);
+			}
+		}
+	}
+
+	edit->RefreshDisplay();
+
+	return edit;
 }
 
 bool
