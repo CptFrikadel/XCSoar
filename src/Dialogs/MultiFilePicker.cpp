@@ -32,6 +32,8 @@ Copyright_License {
 #include "Form/DataField/Nfiles.hpp"
 #include "Renderer/TextRowRenderer.hpp"
 #include "Look/DialogLook.hpp"
+#include "Form/Form.hpp"
+#include "Language/Language.hpp"
 
 #include <iostream>
 
@@ -164,6 +166,10 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 						  support, dialog, caption, help_text);
 	
 	Widget * widget = file_widget;
+
+	dialog.AddButton(_("Help"), *file_widget, 100);
+
+	dialog.AddButton(_("Cancel"), mrCancel);
 
 	dialog.FinishPreliminary(widget);
 
