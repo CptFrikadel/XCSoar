@@ -108,7 +108,7 @@ public:
 	}
 
 	void OnCursorMoved(unsigned index) noexcept override {
-		UpdateHelp(index);
+		//UpdateHelp(index); // TODO
 	}
 
 	bool CanActivateItem(unsigned index) const noexcept override {
@@ -170,6 +170,8 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 	dialog.AddButton(_("Help"), *file_widget, 100);
 
 	dialog.AddButton(_("Cancel"), mrCancel);
+
+	dialog.EnableCursorSelection();
 
 	dialog.FinishPreliminary(widget);
 
