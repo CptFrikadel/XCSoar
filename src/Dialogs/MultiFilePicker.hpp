@@ -26,10 +26,10 @@ Copyright_License {
 
 #include <tchar.h>
 
-class FileDataField;
+class NFileDataField;
 
 bool
-MultiFilePicker (const TCHAR *caption, FileDataField &df, 
+MultiFilePicker (const TCHAR *caption, NFileDataField &df, 
 				 const TCHAR *help_text = nullptr);
 
 #endif
