@@ -133,7 +133,6 @@ public:
 	const TCHAR *GetAsString() const override;
 	const TCHAR *GetAsDisplayString() const override;
 	void SetAsInteger(int value) override;
-	ComboList CreateComboList(const TCHAR *reference) const override;
 
 	// "Overloaded" functions to deal with multiple files
 	std::vector<int> GetAsIntegers() const;

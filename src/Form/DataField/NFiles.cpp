@@ -162,26 +162,3 @@ void NFileDataField::Dec() {}
 const TCHAR * NFileDataField::GetAsString() const { return "Wololo";}
 const TCHAR * NFileDataField::GetAsDisplayString() const { return "WOLOLO";}
 
-ComboList NFileDataField::CreateComboList(const TCHAR *reference) const {
-
-	ComboList combo_list;
-
-	std::cout << "LOOOOOL" << std::endl;
-
-
-	for (unsigned i = 0; i < files.size(); i++){
-
-		const Path path = files[i].filename;
-		assert(path != nullptr);
-
-		// TODO check if file present in another directory
-
-		const TCHAR *display_string = path.c_str();
-
-		combo_list.Append(display_string);
-
-	}
-
-	combo_list.current_index = 0; // TODO set to selected files...
-	return combo_list;
-}
