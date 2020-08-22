@@ -30,6 +30,7 @@ Copyright_License {
 #include "Dialogs/TextEntry.hpp"
 #include "Dialogs/TimeEntry.hpp"
 #include "Dialogs/GeoPointEntry.hpp"
+#include "MultiFilePicker.hpp"
 
 bool
 EditDataFieldDialog(const TCHAR *caption, DataField &df,
@@ -37,6 +38,8 @@ EditDataFieldDialog(const TCHAR *caption, DataField &df,
 {
   if (df.GetType() == DataField::Type::FILE) {
     return FilePicker(caption, (FileDataField &)df, help_text);
+  } else if (df.GetType() == DataField::Type::NFILE) {
+	  return MultiFilePicker(caption,(FileDataField&) df, help_text);
   } else if (df.SupportsCombolist()) {
     return ComboPicker(caption, df, help_text);
   } else if (df.GetType() == DataField::Type::ROUGH_TIME) {
