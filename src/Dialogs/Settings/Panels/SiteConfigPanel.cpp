@@ -118,7 +118,7 @@ SiteConfigPanel::Save(bool &_changed)
   WaypointFileChanged |= SaveValueFileReader(AdditionalWaypointFile, ProfileKeys::AdditionalWaypointFile);
   WaypointFileChanged |= SaveValueFileReader(WatchedWaypointFile, ProfileKeys::WatchedWaypointFile);
 
-  AirspaceFileChanged = SaveValueFileReader(AirspaceFiles, ProfileKeys::AirspaceFile);
+  AirspaceFileChanged = SaveValueNFileReader(AirspaceFiles, ProfileKeys::AirspaceFile);
 
   FlarmFileChanged = SaveValueFileReader(FlarmFile, ProfileKeys::FlarmFile);
 

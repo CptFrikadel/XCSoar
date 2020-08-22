@@ -174,3 +174,11 @@ RowFormWidget::SaveValueFileReader(unsigned i, const char *registry_key)
   Profile::Set(registry_key, new_value2);
   return true;
 }
+
+bool 
+RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
+{
+	//TODO
+
+	return false;
+}
