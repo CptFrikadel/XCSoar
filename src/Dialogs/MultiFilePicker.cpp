@@ -29,6 +29,9 @@ Copyright_License {
 #include "Widget/TwoWidgets.hpp"
 #include "UIGlobals.hpp"
 #include "WidgetDialog.hpp"
+#include "Form/DataField/Nfiles.hpp"
+#include "Renderer/TextRowRenderer.hpp"
+#include "Look/DialogLook.hpp"
 
 #include <iostream>
 
@@ -121,11 +124,50 @@ public:
 
 };
 
+class MultiFilePickerSupport : public ListItemRenderer {
+
+	TextRowRenderer row_renderer;
+	//TODO add list that has to be rendered
+
+public:
+
+	unsigned CalculateLayout(const DialogLook &look) {
+		return row_renderer.CalculateLayout(*look.list.font);
+	}
+
+	virtual void OnPaintItem(Canvas &canvas, const PixelRect rc,
+							 unsigned i) noexcept override {
+
+		row_renderer.DrawTextRow(canvas, rc, "WOLOLO");
+	}
+
+
+};
+	
+
 bool MultiFilePicker(const TCHAR *caption, NFileDataField &df, 
 					 const TCHAR *help_text)
 {
 
 	std::cout << "WAAAAJOOOOW" << std::endl;
+
+	WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(), 
+					    UIGlobals::GetDialogLook(), caption);
+
+	MultiFilePickerSupport support;
+
+	//unsigned num_items = df.active_files.size();
+	
+
+	MultiFilePickerWidget * file_widget = new MultiFilePickerWidget(6, 0, 
+			support.CalculateLayout(UIGlobals::GetDialogLook()), 
+						  support, dialog, caption, help_text);
+	
+	Widget * widget = file_widget;
+
+	dialog.FinishPreliminary(widget);
+
+	dialog.ShowModal();
 
 	return false;
 }
