@@ -22,6 +22,7 @@ Copyright_License {
 */
 
 #include "MultiFilePicker.hpp"
+#include "Dialogs/FilePicker.hpp"
 #include "Widget/ListWidget.hpp"
 #include "HelpDialog.hpp"
 #include "Form/ActionListener.hpp"
@@ -147,6 +148,19 @@ public:
 };
 	
 
+class MultiFileAddListener : public ActionListener {
+
+	public:
+		void OnAction(int id) noexcept override {
+
+			std::cout << "HATSEFLATS" << std::endl;
+
+			FilePicker(_("TEST"), _T("*.txt\0*.air\0*.sua\0"));
+
+		}
+
+};
+
 bool MultiFilePicker(const TCHAR *caption, NFileDataField &df, 
 					 const TCHAR *help_text)
 {
@@ -166,8 +180,13 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 						  support, dialog, caption, help_text);
 	
 	Widget * widget = file_widget;
+	MultiFileAddListener add_listener;
 
 	dialog.AddButton(_("Help"), *file_widget, 100);
+
+	dialog.AddButton(_("Add"), add_listener, 0);
+
+	dialog.AddButton(_("Remove"), mrCancel);
 
 	dialog.AddButton(_("Cancel"), mrCancel);
 
