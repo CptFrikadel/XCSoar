@@ -87,7 +87,7 @@ NFileDataField::Item::Set(Path _path){
 }
 
 NFileDataField::NFileDataField(DataFieldListener *listener) :
-	DataField(Type::FILE, true, listener){
+	DataField(Type::NFILE, false, listener){
 	   	std::cout << "WOLOLO" << std::endl;
 	}
 
@@ -102,12 +102,49 @@ void NFileDataField::SetAsInteger(std::vector<int> values){
 	}
 }
 
-void NFileDataField::AddFile(Path path){}
-void NFileDataField::AddNull(){}
-unsigned NFileDataField::GetNumFiles() const{return 0;}
-int NFileDataField::Find(Path path) const {return 0;}
+void NFileDataField::AddFile(Path path){
+
+	if (files.full())
+		return;
+
+	Item &item = files.append();
+	item.Set(path);
+
+}
+
+
+void NFileDataField::AddNull(){
+
+	assert(!files.full());
+
+	Item &item = files.append();
+	item.filename = Path(_T(""));
+	item.path = Path(_T(""));
+}
+
+
+unsigned NFileDataField::GetNumFiles() const{return 0;} // TODO
+int NFileDataField::Find(Path path) const {return 0;} //TODO
 void NFileDataField::Lookup(Path text){}
-std::vector<Path> NFileDataField::GetPathFiles() const{ return std::vector<Path>{};}
+
+
+std::vector<Path> NFileDataField::GetPathFiles() const{ 
+
+	if (current_selection.empty())
+		return std::vector<Path>{Path(_T(""))};
+
+	std::vector<Path> paths;
+
+	for (auto index : current_selection){
+
+		paths.push_back(files[index].path);
+		assert(paths[index] != nullptr);
+	}
+	
+	return paths;
+}
+
+
 void NFileDataField::ScanMultiplePatterns(const TCHAR *reference){}
 void NFileDataField::Set(unsigned int new_value){}
 void NFileDataField::Set(std::vector<unsigned> new_values){}
@@ -122,12 +159,29 @@ void NFileDataField::Inc() {}
 void NFileDataField::Dec() {}
 
 
-const TCHAR * NFileDataField::GetAsString() const { return nullptr;}
-const TCHAR * NFileDataField::GetAsDisplayString() const { return nullptr;}
+const TCHAR * NFileDataField::GetAsString() const { return "Wololo";}
+const TCHAR * NFileDataField::GetAsDisplayString() const { return "WOLOLO";}
 
 ComboList NFileDataField::CreateComboList(const TCHAR *reference) const {
 
 	ComboList combo_list;
 
+	std::cout << "LOOOOOL" << std::endl;
+
+
+	for (unsigned i = 0; i < files.size(); i++){
+
+		const Path path = files[i].filename;
+		assert(path != nullptr);
+
+		// TODO check if file present in another directory
+
+		const TCHAR *display_string = path.c_str();
+
+		combo_list.Append(display_string);
+
+	}
+
+	combo_list.current_index = 0; // TODO set to selected files...
 	return combo_list;
 }
