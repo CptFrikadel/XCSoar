@@ -105,8 +105,6 @@ void NFileDataField::AddFile(Path path){
 	if (files.full())
 		return;
 
-	std::cout << path.c_str() << std::endl;
-
 	Item &item = files.append();
 	item.Set(path);
 
@@ -158,8 +156,6 @@ std::vector<Path> NFileDataField::GetPathFiles() const{
 	for (auto index : current_selection){
 
 		paths.push_back(files[index].path);
-		std::cout << files[index].path.c_str() << std::endl;
-		//assert(paths[index] != nullptr);
 	}
 	
 	return paths;

@@ -151,7 +151,6 @@ public:
 class MultiFilePickerSupport : public ListItemRenderer, public ActionListener {
 
 	TextRowRenderer row_renderer;
-	//TODO add list that has to be rendered
 	std::vector<Path>& active_files;
 
 public:
@@ -198,7 +197,6 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 					 const TCHAR *help_text)
 {
 
-	std::cout << "WAAAAJOOOOW" << std::endl;
 
 	WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(), 
 					    UIGlobals::GetDialogLook(), caption);
@@ -207,8 +205,6 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	MultiFilePickerSupport support(active_files);
 
-	//unsigned num_items = df.active_files.size();
-	
 
 	MultiFilePickerWidget * file_widget = new MultiFilePickerWidget(active_files.size(), 0, 
 			support.CalculateLayout(UIGlobals::GetDialogLook()), 
@@ -221,6 +217,8 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 	dialog.AddButton(_("Add"), *file_widget, 1);
 
 	dialog.AddButton(_("Remove"), *file_widget, 2);
+
+	dialog.AddButton(_("Ok"), mrOK);
 
 	dialog.AddButton(_("Cancel"), mrCancel);
 
