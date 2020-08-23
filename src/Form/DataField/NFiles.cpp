@@ -63,13 +63,13 @@ IsInternalFile(const TCHAR* str)
   return false;
 }
 
-class FileVisitor: public File::Visitor
+class NFileVisitor: public File::Visitor
 {
 private:
   NFileDataField &datafield;
 
 public:
-  FileVisitor(NFileDataField &_datafield) : datafield(_datafield) {}
+  NFileVisitor(NFileDataField &_datafield) : datafield(_datafield) {}
 
   void Visit(Path path, Path filename) override {
     if (!IsInternalFile(filename.c_str()))
@@ -87,9 +87,7 @@ NFileDataField::Item::Set(Path _path){
 }
 
 NFileDataField::NFileDataField(DataFieldListener *listener) :
-	DataField(Type::NFILE, false, listener){
-	   	std::cout << "WOLOLO" << std::endl;
-	}
+	DataField(Type::NFILE, false, listener){ }
 
 int NFileDataField::GetAsInteger() const {return 0;} 
 void NFileDataField::SetAsInteger(int new_value) {}
@@ -106,6 +104,8 @@ void NFileDataField::AddFile(Path path){
 
 	if (files.full())
 		return;
+
+	std::cout << path.c_str() << std::endl;
 
 	Item &item = files.append();
 	item.Set(path);
@@ -124,8 +124,28 @@ void NFileDataField::AddNull(){
 
 
 unsigned NFileDataField::GetNumFiles() const{return 0;} // TODO
-int NFileDataField::Find(Path path) const {return 0;} //TODO
-void NFileDataField::Lookup(Path text){}
+
+// Find the index of path in files
+int NFileDataField::Find(Path path) const {
+
+	for (unsigned int i = 0; i < files.size(); i++){
+		if (files[i].path == path)
+			return i;
+	}
+	
+	return -1;
+}
+
+
+void NFileDataField::Lookup(Path text){
+
+	auto i = Find(text);
+
+	if (i >= 0)
+		current_selection.insert(i);
+
+
+}
 
 
 std::vector<Path> NFileDataField::GetPathFiles() const{ 
@@ -138,14 +158,34 @@ std::vector<Path> NFileDataField::GetPathFiles() const{
 	for (auto index : current_selection){
 
 		paths.push_back(files[index].path);
-		assert(paths[index] != nullptr);
+		std::cout << files[index].path.c_str() << std::endl;
+		//assert(paths[index] != nullptr);
 	}
 	
 	return paths;
 }
 
 
-void NFileDataField::ScanMultiplePatterns(const TCHAR *reference){}
+void NFileDataField::ScanMultiplePatterns(const TCHAR *patterns){
+
+	size_t length;
+
+	while ((length = _tcsclen(patterns)) > 0){
+
+		ScanDirectoryTop(patterns);
+		patterns += length + 1;
+	}
+
+}
+
+
+void NFileDataField::ScanDirectoryTop(const TCHAR *filter){
+
+	NFileVisitor fv(*this);
+	VisitDataFiles(filter, fv);
+}
+
+
 void NFileDataField::Set(unsigned int new_value){}
 void NFileDataField::Set(std::vector<unsigned> new_values){}
 

@@ -75,6 +75,15 @@ public:
 		two_widgets->UpdateLayout();
 	}
 
+	// Get the list of picked files
+	void GetResult(){
+		// TODO
+	}
+
+	void AddFile(){
+
+	}
+
 	// Virtual methods from the Widget class
 	
 	virtual void Prepare(ContainerWindow &parent,
@@ -121,18 +130,34 @@ public:
 	}	
 
 	void OnAction(int id) noexcept override {
-		HelpDialog(caption, help_text);
+
+		switch (id){
+		case 100:
+			HelpDialog(caption, help_text);
+			break;
+		case 1:
+			std::cout << "ADD" << std::endl;
+			break;
+		case 2:
+			std::cout << "REMOVE" << std::endl;
+			break;
+		}
+
 	}
 
 
 };
 
-class MultiFilePickerSupport : public ListItemRenderer {
+class MultiFilePickerSupport : public ListItemRenderer, public ActionListener {
 
 	TextRowRenderer row_renderer;
 	//TODO add list that has to be rendered
+	std::vector<Path>& active_files;
 
 public:
+
+	MultiFilePickerSupport(std::vector<Path> &_active_files) :
+		active_files(_active_files) {}
 
 	unsigned CalculateLayout(const DialogLook &look) {
 		return row_renderer.CalculateLayout(*look.list.font);
@@ -141,26 +166,34 @@ public:
 	virtual void OnPaintItem(Canvas &canvas, const PixelRect rc,
 							 unsigned i) noexcept override {
 
-		row_renderer.DrawTextRow(canvas, rc, "WOLOLO");
+		row_renderer.DrawTextRow(canvas, rc, active_files[i].c_str());
+	}
+
+	virtual void OnAction(int id) noexcept override{
+
+		switch (id){
+		case 1:
+			std::cout << "Pressed ADD!" << std::endl;
+			break;
+		case 2:
+			std::cout << "Pressed REMOVE!" << std::endl;
+			break;
+		}
 	}
 
 
 };
 	
 
-class MultiFileAddListener : public ActionListener {
-
-	public:
-		void OnAction(int id) noexcept override {
-
-			std::cout << "HATSEFLATS" << std::endl;
-
-			FilePicker(_("TEST"), _T("*.txt\0*.air\0*.sua\0"));
-
-		}
-
-};
-
+/**
+ * Create the MultiPicker widget thingy
+ * Do the picking of files somehow
+ *
+ * Write the result back to the NFileDataField
+ *
+ * @return whether or not something was picked
+ *
+ */
 bool MultiFilePicker(const TCHAR *caption, NFileDataField &df, 
 					 const TCHAR *help_text)
 {
@@ -169,24 +202,25 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(), 
 					    UIGlobals::GetDialogLook(), caption);
+	
+	std::vector<Path> active_files = df.GetPathFiles();
 
-	MultiFilePickerSupport support;
+	MultiFilePickerSupport support(active_files);
 
 	//unsigned num_items = df.active_files.size();
 	
 
-	MultiFilePickerWidget * file_widget = new MultiFilePickerWidget(6, 0, 
+	MultiFilePickerWidget * file_widget = new MultiFilePickerWidget(active_files.size(), 0, 
 			support.CalculateLayout(UIGlobals::GetDialogLook()), 
 						  support, dialog, caption, help_text);
 	
 	Widget * widget = file_widget;
-	MultiFileAddListener add_listener;
 
 	dialog.AddButton(_("Help"), *file_widget, 100);
 
-	dialog.AddButton(_("Add"), add_listener, 0);
+	dialog.AddButton(_("Add"), *file_widget, 1);
 
-	dialog.AddButton(_("Remove"), mrCancel);
+	dialog.AddButton(_("Remove"), *file_widget, 2);
 
 	dialog.AddButton(_("Cancel"), mrCancel);
 

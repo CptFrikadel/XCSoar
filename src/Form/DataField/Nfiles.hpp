@@ -121,6 +121,7 @@ public:
 	 * null byte, and the list ends with an empty pattern.
 	 */
 	void ScanMultiplePatterns(const TCHAR *patterns);
+	void ScanDirectoryTop(const TCHAR *filter);
 
 	gcc_pure
 	Path GetItem(unsigned index) const;
