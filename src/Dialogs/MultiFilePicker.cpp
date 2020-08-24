@@ -228,5 +228,26 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	dialog.ShowModal();
 
+
+	/*
+	 * Loop:
+	 * Open a multipicker widget (now still MultiFilePickerWidget)
+	 * 	Get the modal result from said picker. 
+	 * 	if result is add button pressed:
+	 * 		open some form of file pick thing (probs have to build a custom ListPicker) 
+	 * 		to select a new file from a list of unselected files
+	 * 		Read the result from that. (ie the index of the selected file in the list)
+	 *
+	 * 		Then add that entry to the selected files in the DataField and reopen the multipicker
+	 *
+	 * 	if result is Remove button:
+	 * 		Remove the item from the datafield and reopen/redraw
+	 * 	
+	 * 	if result is Ok button:
+	 * 		Exit the loop and write result to the dataframe, then return with correct value
+	 *
+	 *
+	 */
+
 	return false;
 }
