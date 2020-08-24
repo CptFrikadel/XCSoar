@@ -131,24 +131,14 @@ public:
 
 	void OnAction(int id) noexcept override {
 
-		switch (id){
-		case 100:
-			HelpDialog(caption, help_text);
-			break;
-		case 1:
-			std::cout << "ADD" << std::endl;
-			break;
-		case 2:
-			std::cout << "REMOVE" << std::endl;
-			break;
-		}
+		HelpDialog(caption, help_text);
 
 	}
 
 
 };
 
-class MultiFilePickerSupport : public ListItemRenderer, public ActionListener {
+class MultiFilePickerSupport : public ListItemRenderer {
 
 	TextRowRenderer row_renderer;
 	std::vector<Path>& active_files;
@@ -166,18 +156,6 @@ public:
 							 unsigned i) noexcept override {
 
 		row_renderer.DrawTextRow(canvas, rc, active_files[i].c_str());
-	}
-
-	virtual void OnAction(int id) noexcept override{
-
-		switch (id){
-		case 1:
-			std::cout << "Pressed ADD!" << std::endl;
-			break;
-		case 2:
-			std::cout << "Pressed REMOVE!" << std::endl;
-			break;
-		}
 	}
 
 
@@ -214,9 +192,9 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	dialog.AddButton(_("Help"), *file_widget, 100);
 
-	dialog.AddButton(_("Add"), *file_widget, 1);
+	dialog.AddButton(_("Add"), 666 );
 
-	dialog.AddButton(_("Remove"), *file_widget, 2);
+	dialog.AddButton(_("Remove"), 667);
 
 	dialog.AddButton(_("Ok"), mrOK);
 
@@ -226,8 +204,17 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	dialog.FinishPreliminary(widget);
 
-	dialog.ShowModal();
+	int result = dialog.ShowModal();
 
+	switch (result){
+	case 666:
+		std::cout << "ADD button was pressed yo!" << std::endl;
+		break;
+	case 667:
+		std::cout << "REMOVE buttun was pressed yo" <<  std::endl;
+		break;
+
+	}
 
 	/*
 	 * Loop:
