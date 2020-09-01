@@ -91,7 +91,7 @@ SiteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 
   AddNFiles(_("Them Airspaces yo!"), _("Pick them airspaces n shit"),
           ProfileKeys::AirspaceFile, _T("*.txt\0*.air\0*.sua\0"),
-          FileType::AIRSPACE);
+          FileType::AIRSPACE, false);
 
   AddFile(_("Waypoint details"),
           _("The file may contain extracts from enroute supplements or other contributed "

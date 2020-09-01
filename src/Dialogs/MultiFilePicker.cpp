@@ -230,7 +230,8 @@ static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
 
 	if (result == mrRemove){
 
-		result = -1*(int)file_widget->GetList().GetCursorIndex();
+		int i = (int)file_widget->GetList().GetCursorIndex();
+		df.UnSet(i);
 
 	}
 
@@ -259,14 +260,12 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 			MultiPickerAdd("YOOO!", df, "Pick a file to add");
 
-		} else if (result < 0){
-			std::cout << "REMOVE buttun was pressed yo" <<  std::endl;
-
-			
-
-		}
+		} else if (result == mrCancel){
+			std::cout << "Canceling.." <<  std::endl;
+			break;
 
 		}
+
 	}
 
 	/*
