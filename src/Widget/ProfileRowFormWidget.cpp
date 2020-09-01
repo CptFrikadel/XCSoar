@@ -24,6 +24,7 @@ Copyright_License {
 #include "RowFormWidget.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/File.hpp"
+#include "Form/DataField/Nfiles.hpp"
 #include "Profile/Profile.hpp"
 #include "LocalPath.hpp"
 #include "Util/ConvertString.hpp"
@@ -53,6 +54,38 @@ RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
   edit->RefreshDisplay();
 
   return edit;
+  
+}
+
+WndProperty *
+RowFormWidget::AddNFiles(const TCHAR *label, const TCHAR *help,
+                       const char *registry_key, const TCHAR *filters,
+                       FileType file_type,
+                       bool nullable)
+{
+	WndProperty *edit = Add(label, help);
+	auto *df = new NFileDataField();
+	df->SetFileType(file_type);
+	edit->SetDataField(df);
+
+	if (nullable)
+		df->AddNull();
+
+	df->ScanMultiplePatterns(filters);
+
+	if (registry_key != nullptr){
+		std::vector<AllocatedPath> paths = Profile::GetNPaths(registry_key);
+
+		if (!paths.empty()){
+			for (auto const& p : paths){
+				df->Lookup(p);
+			}
+		}
+	}
+
+	edit->RefreshDisplay();
+
+	return edit;
 }
 
 bool
@@ -140,4 +173,39 @@ RowFormWidget::SaveValueFileReader(unsigned i, const char *registry_key)
 
   Profile::Set(registry_key, new_value2);
   return true;
+}
+
+bool 
+RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
+{
+	//TODO
+	
+	const auto *dfe = (const NFileDataField *)GetControl(i).GetDataField();
+
+	std::vector<Path> new_values = dfe->GetPathFiles();
+
+	char new_output[4096]; //TODO add the MAX PATH definition from somewhere
+	bool modified = false;
+
+	for (auto value : new_values){
+
+	
+		const auto contracted = ContractLocalPath(value);
+		if (contracted != nullptr)
+			value = contracted;
+
+		const WideToUTF8Converter value_to_add(value.c_str());
+		if (!value_to_add.IsValid())
+			continue;
+
+		strcat(new_output, value_to_add);
+		strcat(new_output, ",");
+		modified = true;
+
+	}
+
+	Profile::Set(registry_key, new_output);
+
+
+	return modified;
 }

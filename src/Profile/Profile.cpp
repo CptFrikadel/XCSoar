@@ -127,6 +127,12 @@ Profile::GetPath(const char *key)
   return map.GetPath(key);
 }
 
+std::vector<AllocatedPath>
+Profile::GetNPaths(const char *key)
+{
+	return map.GetNPaths(key);
+}
+
 bool
 Profile::GetPathIsEqual(const char *key, Path value)
 {
