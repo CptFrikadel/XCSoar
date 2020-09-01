@@ -192,6 +192,17 @@ void NFileDataField::Set(unsigned int new_value){
 
 }
 
+void NFileDataField::UnSet(Path path){
+
+	auto i = Find(path);
+	
+	if (i >= 0){
+
+		current_selection.erase(i);
+	}
+
+}
+
 
 void NFileDataField::Set(std::vector<unsigned> new_values){}
 

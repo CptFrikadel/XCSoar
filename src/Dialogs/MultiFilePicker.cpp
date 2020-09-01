@@ -231,7 +231,7 @@ static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
 	if (result == mrRemove){
 
 		int i = (int)file_widget->GetList().GetCursorIndex();
-		df.UnSet(i);
+		df.UnSet(active_files[i]);
 
 	}
 

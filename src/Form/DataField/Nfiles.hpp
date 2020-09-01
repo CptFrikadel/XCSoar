@@ -142,7 +142,7 @@ public:
 	// "Overloaded" functions to deal with multiple files
 	std::vector<int> GetAsIntegers() const;
 	void SetAsInteger(std::vector<int> values);
-	void UnSet(unsigned int value);
+	void UnSet(Path path);
 
 
 };
