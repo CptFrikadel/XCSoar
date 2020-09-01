@@ -179,6 +179,33 @@ bool
 RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
 {
 	//TODO
+	
+	const auto *dfe = (const NFileDataField *)GetControl(i).GetDataField();
 
-	return false;
+	std::vector<Path> new_values = dfe->GetPathFiles();
+
+	char new_output[4096]; //TODO add the MAX PATH definition from somewhere
+	bool modified = false;
+
+	for (auto value : new_values){
+
+	
+		const auto contracted = ContractLocalPath(value);
+		if (contracted != nullptr)
+			value = contracted;
+
+		const WideToUTF8Converter value_to_add(value.c_str());
+		if (!value_to_add.IsValid())
+			continue;
+
+		strcat(new_output, value_to_add);
+		strcat(new_output, ",");
+		modified = true;
+
+	}
+
+	Profile::Set(registry_key, new_output);
+
+
+	return modified;
 }
