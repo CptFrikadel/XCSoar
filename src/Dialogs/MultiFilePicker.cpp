@@ -35,6 +35,8 @@ Copyright_License {
 #include "Look/DialogLook.hpp"
 #include "Form/Form.hpp"
 #include "Language/Language.hpp"
+#include "Form/DataField/ComboList.hpp"
+#include "ComboPicker.hpp"
 
 #include <iostream>
 
@@ -161,20 +163,27 @@ public:
 
 };
 	
+static bool MultiPickerAdd(const TCHAR * caption, NFileDataField &df, 
+			 	 const TCHAR * help_text){
 
-/**
- * Create the MultiPicker widget thingy
- * Do the picking of files somehow
- *
- * Write the result back to the NFileDataField
- *
- * @return whether or not something was picked
- *
- */
-bool MultiFilePicker(const TCHAR *caption, NFileDataField &df, 
-					 const TCHAR *help_text)
-{
+	ComboList combo_list = df.CreateComboList(nullptr);
 
+	if (combo_list.size() == 0)
+		return false;
+
+	int i = ComboPicker(caption, combo_list, help_text, false, nullptr);
+
+	if (i < 0)
+		return false;
+
+	const ComboList::Item &item = combo_list[i];
+
+	df.SetFromCombo(item.int_value, item.string_value.c_str());
+	return true;
+}
+
+static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
+					const TCHAR * help_text){
 
 	WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(), 
 					    UIGlobals::GetDialogLook(), caption);
@@ -204,16 +213,39 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	dialog.FinishPreliminary(widget);
 
-	int result = dialog.ShowModal();
+	return dialog.ShowModal();
 
+}
+
+/**
+ * Create the MultiPicker widget thingy
+ * Do the picking of files somehow
+ *
+ * Write the result back to the NFileDataField
+ *
+ * @return whether or not something was picked
+ *
+ */
+bool MultiFilePicker(const TCHAR *caption, NFileDataField &df, 
+					 const TCHAR *help_text)
+{
+
+	int result;
+
+	while ((result = MultiPickerMain(caption, df, help_text)) != mrOK){
 	switch (result){
 	case 666:
 		std::cout << "ADD button was pressed yo!" << std::endl;
+
+		MultiPickerAdd("YOOO!", df, "Pick a file to add");
+
 		break;
+
 	case 667:
 		std::cout << "REMOVE buttun was pressed yo" <<  std::endl;
 		break;
 
+	}
 	}
 
 	/*
