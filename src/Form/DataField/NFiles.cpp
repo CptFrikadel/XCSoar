@@ -190,6 +190,67 @@ Path NFileDataField::GetItem(unsigned index) const {
 	return files[index].path;
 }
 
+ComboList NFileDataField::CreateComboList(const TCHAR *reference) const {
+
+	ComboList combo_list;
+	TCHAR buffer[MAX_PATH];
+
+	for (unsigned i = 0; i < files.size(); i++){
+
+		const Path path = files[i].filename;
+		assert(path != nullptr);
+
+		bool found = false;
+		for (unsigned j = 1; j < files.size(); j++) {
+		  if (j != i && files[j].filename == path) {
+			found = true;
+			break;
+		  }
+		}
+		
+		const TCHAR *display_string = path.c_str();
+		if (found) {
+			/* yes - append the absolute path to allow the user to see the
+			   difference */
+			_tcscpy(buffer, path.c_str());
+			_tcscat(buffer, _T(" ("));
+			_tcscat(buffer, files[i].path.c_str());
+			_tcscat(buffer, _T(")"));
+			display_string = buffer;
+		}
+
+		combo_list.Append(display_string);
+
+	}
+
+	combo_list.current_index = 0;
+
+	return combo_list;
+}
+
+void NFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value){
+
+	current_selection.insert(datafield_index);
+	
+}
+
+void NFileDataField::ForceModify(Path path){
+
+	auto i = Find(path);
+	if (i >= 0){
+		if (current_selection.find(i) != current_selection.end())
+			return;
+	} else {
+
+		auto &item = files.full() ? files.back() : files.append();
+		item.Set(path);
+		i = files.size() - 1;
+		current_selection.insert(i);
+	}
+
+	// TODO: modified() callback
+}
+
 
 void NFileDataField::Inc() {}
 void NFileDataField::Dec() {}

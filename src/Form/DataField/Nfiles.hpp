@@ -37,7 +37,7 @@ Copyright_License {
  * files matching a suffix. Allows for selection of more than one file.
  *
  */
-class NFileDataField final : public DataField {
+class NFileDataField final : public FileDataField {
 
 public:
 
@@ -115,6 +115,7 @@ public:
 	//Set selection to the given index(es)
 	void Set(unsigned new_value);
 	void Set(std::vector<unsigned> new_values);
+	void ForceModify(Path path);
 
 	/**
 	 * Scan multiple shell patterns.  Each pattern is terminated by a
@@ -134,6 +135,9 @@ public:
 	const TCHAR *GetAsString() const override;
 	const TCHAR *GetAsDisplayString() const override;
 	void SetAsInteger(int value) override;
+
+	ComboList CreateComboList(const TCHAR *reference) const override;
+	void SetFromCombo(int datafield_index, const TCHAR *string_value) override; 
 
 	// "Overloaded" functions to deal with multiple files
 	std::vector<int> GetAsIntegers() const;
