@@ -182,7 +182,17 @@ void NFileDataField::ScanDirectoryTop(const TCHAR *filter){
 }
 
 
-void NFileDataField::Set(unsigned int new_value){}
+void NFileDataField::Set(unsigned int new_value){
+
+	if (current_selection.find(new_value) != current_selection.end()){
+		current_selection.erase(new_value);
+	} else {
+		current_selection.insert(new_value);
+	}
+
+}
+
+
 void NFileDataField::Set(std::vector<unsigned> new_values){}
 
 Path NFileDataField::GetItem(unsigned index) const {
