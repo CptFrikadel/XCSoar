@@ -40,6 +40,10 @@ Copyright_License {
 
 #include <iostream>
 
+
+static constexpr int mrRemove = 667;
+static constexpr int mrAdd = 666;
+
 class MultiFilePickerWidget : public ListWidget, public ActionListener {
 
 	unsigned num_items;
@@ -69,6 +73,7 @@ public:
 		action_listener(_action_listener),
 		caption(_caption), help_text(_help_text) { }
 
+	using ListWidget::GetList;
 	void UpdateHelp(unsigned index){
 		if (!visible)
 			return;
@@ -182,6 +187,14 @@ static bool MultiPickerAdd(const TCHAR * caption, NFileDataField &df,
 	return true;
 }
 
+
+/*
+ * Opens the main window of the multipicker, and displays the currently active values
+ * 
+ * @return the index of the value to be Removed, or the modal result of the dialog
+ * 
+ */
+
 static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
 					const TCHAR * help_text){
 
@@ -213,7 +226,15 @@ static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
 
 	dialog.FinishPreliminary(widget);
 
-	return dialog.ShowModal();
+	int result = dialog.ShowModal();
+
+	if (result == mrRemove){
+
+		result = -1*(int)file_widget->GetList().GetCursorIndex();
+
+	}
+
+	return result;
 
 }
 
@@ -233,19 +254,19 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 	int result;
 
 	while ((result = MultiPickerMain(caption, df, help_text)) != mrOK){
-	switch (result){
-	case 666:
-		std::cout << "ADD button was pressed yo!" << std::endl;
+		if (result == mrAdd){
+			std::cout << "ADD button was pressed yo!" << std::endl;
 
-		MultiPickerAdd("YOOO!", df, "Pick a file to add");
+			MultiPickerAdd("YOOO!", df, "Pick a file to add");
 
-		break;
+		} else if (result < 0){
+			std::cout << "REMOVE buttun was pressed yo" <<  std::endl;
 
-	case 667:
-		std::cout << "REMOVE buttun was pressed yo" <<  std::endl;
-		break;
+			
 
-	}
+		}
+
+		}
 	}
 
 	/*
