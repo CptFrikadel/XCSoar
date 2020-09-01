@@ -61,11 +61,11 @@ ProfileMap::GetNPaths(const char *key) const
 	if(StringIsEmpty(buffer))
 		return paths;
 
-	char *path = strtok(buffer, ",");
+	char *path = StringToken(buffer, ",");
 	while (path != nullptr){
 		paths.push_back(ExpandLocalPath(Path(path)));
 
-		path = strtok(nullptr, ",");
+		path = StringToken(nullptr, ",");
 	}
 
 	return paths;
