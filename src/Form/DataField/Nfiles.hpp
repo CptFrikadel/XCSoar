@@ -37,7 +37,7 @@ Copyright_License {
  * files matching a suffix. Allows for selection of more than one file.
  *
  */
-class NFileDataField final : public FileDataField {
+class NFileDataField final : public DataField {
 
 public:
 
