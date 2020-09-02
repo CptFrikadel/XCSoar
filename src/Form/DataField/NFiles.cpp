@@ -35,56 +35,7 @@ Copyright_License {
 
 #include <iostream>
 
-/**
- * Checks whether the given string str equals a xcsoar internal file's filename
- * @param str The string to check
- * @return True if string equals a xcsoar internal file's filename
- */
-gcc_pure
-static bool
-IsInternalFile(const TCHAR* str)
-{
-  static const TCHAR *const ifiles[] = {
-    _T("xcsoar-checklist.txt"),
-    _T("xcsoar-flarm.txt"),
-    _T("xcsoar-marks.txt"),
-    _T("xcsoar-persist.log"),
-    _T("xcsoar-startup.log"),
-    _T("xcsoar.log"),
-    _T("xcsoar-rasp.dat"),
-    _T("user.cup"),
-    nullptr
-  };
 
-  for (unsigned i = 0; ifiles[i] != nullptr; i++)
-    if (StringIsEqual(str, ifiles[i]))
-      return true;
-
-  return false;
-}
-
-class NFileVisitor: public File::Visitor
-{
-private:
-  NFileDataField &datafield;
-
-public:
-  NFileVisitor(NFileDataField &_datafield) : datafield(_datafield) {}
-
-  void Visit(Path path, Path filename) override {
-    if (!IsInternalFile(filename.c_str()))
-      datafield.AddFile(path);
-  }
-};
-
-inline void
-NFileDataField::Item::Set(Path _path){
-
-	path = _path;
-	filename = path.GetBase();
-	if (filename == nullptr)
-		filename = path;
-}
 
 NFileDataField::NFileDataField(DataFieldListener *listener) :
 	DataField(Type::NFILE, false, listener){ }
@@ -100,44 +51,23 @@ void NFileDataField::SetAsInteger(std::vector<int> values){
 	}
 }
 
-void NFileDataField::AddFile(Path path){
-
-	if (files.full())
-		return;
-
-	Item &item = files.append();
-	item.Set(path);
-
-}
-
-
-void NFileDataField::AddNull(){
-
-	assert(!files.full());
-
-	Item &item = files.append();
-	item.filename = Path(_T(""));
-	item.path = Path(_T(""));
-}
-
 
 unsigned NFileDataField::GetNumFiles() const{return 0;} // TODO
 
 // Find the index of path in files
 int NFileDataField::Find(Path path) const {
 
-	for (unsigned int i = 0; i < files.size(); i++){
-		if (files[i].path == path)
-			return i;
-	}
-	
-	return -1;
+	return file_datafield.Find(path);
+
 }
 
 
 void NFileDataField::Lookup(Path text){
 
+	file_datafield.EnsureLoaded();
 	auto i = Find(text);
+	
+	std::cout << "Looking up: " << text.c_str() << " " << i << std::endl;
 
 	if (i >= 0)
 		current_selection.insert(i);
@@ -155,7 +85,8 @@ std::vector<Path> NFileDataField::GetPathFiles() const{
 
 	for (auto index : current_selection){
 
-		paths.push_back(files[index].path);
+		paths.push_back(file_datafield.files[index].path);
+		std::cout << index << std::endl;
 	}
 	
 	return paths;
@@ -164,21 +95,13 @@ std::vector<Path> NFileDataField::GetPathFiles() const{
 
 void NFileDataField::ScanMultiplePatterns(const TCHAR *patterns){
 
-	size_t length;
-
-	while ((length = _tcsclen(patterns)) > 0){
-
-		ScanDirectoryTop(patterns);
-		patterns += length + 1;
-	}
+	file_datafield.ScanMultiplePatterns(patterns);
 
 }
 
 
 void NFileDataField::ScanDirectoryTop(const TCHAR *filter){
 
-	NFileVisitor fv(*this);
-	VisitDataFiles(filter, fv);
 }
 
 
@@ -208,45 +131,13 @@ void NFileDataField::Set(std::vector<unsigned> new_values){}
 
 Path NFileDataField::GetItem(unsigned index) const {
 
-	return files[index].path;
+	return file_datafield.files[index].path;
 }
 
 ComboList NFileDataField::CreateComboList(const TCHAR *reference) const {
 
-	ComboList combo_list;
-	TCHAR buffer[MAX_PATH];
+	return file_datafield.CreateComboList(reference);
 
-	for (unsigned i = 0; i < files.size(); i++){
-
-		const Path path = files[i].filename;
-		assert(path != nullptr);
-
-		bool found = false;
-		for (unsigned j = 1; j < files.size(); j++) {
-		  if (j != i && files[j].filename == path) {
-			found = true;
-			break;
-		  }
-		}
-		
-		const TCHAR *display_string = path.c_str();
-		if (found) {
-			/* yes - append the absolute path to allow the user to see the
-			   difference */
-			_tcscpy(buffer, path.c_str());
-			_tcscat(buffer, _T(" ("));
-			_tcscat(buffer, files[i].path.c_str());
-			_tcscat(buffer, _T(")"));
-			display_string = buffer;
-		}
-
-		combo_list.Append(display_string);
-
-	}
-
-	combo_list.current_index = 0;
-
-	return combo_list;
 }
 
 void NFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value){
@@ -257,19 +148,9 @@ void NFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value
 
 void NFileDataField::ForceModify(Path path){
 
-	auto i = Find(path);
-	if (i >= 0){
-		if (current_selection.find(i) != current_selection.end())
-			return;
-	} else {
+	file_datafield.ForceModify(path);
 
-		auto &item = files.full() ? files.back() : files.append();
-		item.Set(path);
-		i = files.size() - 1;
-		current_selection.insert(i);
-	}
-
-	// TODO: modified() callback
+	current_selection.insert(file_datafield.files.size() -1);
 }
 
 

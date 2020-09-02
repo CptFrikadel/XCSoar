@@ -25,6 +25,7 @@ Copyright_License {
 #define XCSOAR_NFILE_DATA_FIELD_HPP
 
 #include "Base.hpp"
+#include "File.hpp"
 #include "Repository/FileType.hpp"
 #include "OS/Path.hpp"
 #include "Util/StaticArray.hxx"
@@ -33,47 +34,18 @@ Copyright_License {
 #include <vector>
 
 /**
- * #DataField specialisation that supplies options as a list of
- * files matching a suffix. Allows for selection of more than one file.
+ * FileDataField wrapper that allows for selection of multiple files at once
  *
  */
 class NFileDataField final : public DataField {
+	
+	FileDataField file_datafield;
 
-public:
-
-	// FileList Item
-	struct Item { //TODO: this is the same as in FileDataField
-		/** Filename */
-		Path filename;
-		/** Path including Filename */
-		AllocatedPath path;
-
-		Item():filename(nullptr), path(nullptr) {}
-
-		Item(Item &&src):filename(src.filename), path(std::move(src.path)) {
-		  src.filename = nullptr;
-		  src.path = nullptr;
-		}
-
-		Item(const Item &) = delete;
-
-		Item &operator=(Item &&src) {
-		  std::swap(filename, src.filename);
-		  std::swap(path, src.path);
-		  return *this;
-		}
-
-		void Set(Path _path);
-	};
 
 private:
-	static constexpr unsigned MAX_FILES = 512;
 
 	// Currently selected files
 	std::set<unsigned int> current_selection;
-
-	// FileList item array
-	StaticArray<Item, MAX_FILES> files;
 
 	FileType file_type;
 
@@ -89,11 +61,6 @@ public:
 		file_type = _file_type;
 	}
 
-	// Add a filename/path to the filelist
-	void AddFile(Path path);
-
-	// Add an empty row to filelist
-	void AddNull();
 
 	// Returns the number of files in the list
 	gcc_pure 
