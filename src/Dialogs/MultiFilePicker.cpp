@@ -44,7 +44,7 @@ Copyright_License {
 static constexpr int mrRemove = 667;
 static constexpr int mrAdd = 666;
 
-class MultiFilePickerWidget : public ListWidget, public ActionListener {
+class MultiPickerWidget : public ListWidget, public ActionListener {
 
 	unsigned num_items;
 	unsigned initial_value;
@@ -62,7 +62,7 @@ class MultiFilePickerWidget : public ListWidget, public ActionListener {
 
 public:
 	
-	MultiFilePickerWidget(unsigned _num_items, unsigned _initial_value,
+	MultiPickerWidget(unsigned _num_items, unsigned _initial_value,
 						  unsigned _row_height, 
 						  ListItemRenderer &_item_renderer,
 						  ActionListener &_action_listener,
@@ -82,14 +82,6 @@ public:
 		two_widgets->UpdateLayout();
 	}
 
-	// Get the list of picked files
-	void GetResult(){
-		// TODO
-	}
-
-	void AddFile(){
-
-	}
 
 	// Virtual methods from the Widget class
 	
@@ -168,23 +160,15 @@ public:
 
 };
 	
-static bool MultiPickerAdd(const TCHAR * caption, NFileDataField &df, 
+static bool MultiFilePickerAdd(const TCHAR * caption, NFileDataField &df, 
 			 	 const TCHAR * help_text){
 
-	ComboList combo_list = df.CreateComboList(nullptr);
+	FilePicker(caption, *df.GetFileDataField(), help_text);
 
-	if (combo_list.size() == 0)
-		return false;
 
-	int i = ComboPicker(caption, combo_list, help_text, false, nullptr);
-
-	if (i < 0)
-		return false;
-
-	const ComboList::Item &item = combo_list[i];
-
-	df.SetFromCombo(item.int_value, item.string_value.c_str());
+	df.SetAsInteger(df.GetFileDataField()->GetAsInteger());
 	return true;
+
 }
 
 
@@ -194,8 +178,7 @@ static bool MultiPickerAdd(const TCHAR * caption, NFileDataField &df,
  * @return the index of the value to be Removed, or the modal result of the dialog
  * 
  */
-
-static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
+static int MultiFilePickerMain(const TCHAR *caption, NFileDataField &df,
 					const TCHAR * help_text){
 
 	WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(), 
@@ -206,7 +189,7 @@ static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
 	MultiFilePickerSupport support(active_files);
 
 
-	MultiFilePickerWidget * file_widget = new MultiFilePickerWidget(active_files.size(), 0, 
+	MultiPickerWidget * file_widget = new MultiPickerWidget(active_files.size(), 0, 
 			support.CalculateLayout(UIGlobals::GetDialogLook()), 
 						  support, dialog, caption, help_text);
 	
@@ -214,9 +197,9 @@ static int MultiPickerMain(const TCHAR *caption, NFileDataField &df,
 
 	dialog.AddButton(_("Help"), *file_widget, 100);
 
-	dialog.AddButton(_("Add"), 666 );
+	dialog.AddButton(_("Add"), mrAdd );
 
-	dialog.AddButton(_("Remove"), 667);
+	dialog.AddButton(_("Remove"), mrRemove);
 
 	dialog.AddButton(_("Ok"), mrOK);
 
@@ -253,10 +236,10 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	int result;
 
-	while ((result = MultiPickerMain(caption, df, help_text)) != mrOK){
+	while ((result = MultiFilePickerMain(caption, df, help_text)) != mrOK){
 		if (result == mrAdd){
 
-			MultiPickerAdd("YOOO!", df, "Pick a file to add");
+			MultiFilePickerAdd("YOOO!", df, "Pick a file to add");
 
 		} else if (result == mrCancel){
 

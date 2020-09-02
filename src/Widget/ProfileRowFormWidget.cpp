@@ -31,6 +31,7 @@ Copyright_License {
 #include "LocalPath.hpp"
 #include "Util/ConvertString.hpp"
 #include "Util/StringAPI.hxx"
+#include "windef.h"
 
 WndProperty *
 RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
@@ -179,14 +180,12 @@ RowFormWidget::SaveValueFileReader(unsigned i, const char *registry_key)
 bool 
 RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
 {
-	//TODO
-	
 	const auto *dfe = (const NFileDataField *)GetControl(i).GetDataField();
 
 	std::vector<Path> new_values = dfe->GetPathFiles();
 
 
-	char new_output[4096]; //TODO add the MAX PATH definition from somewhere
+	char new_output[MAX_PATH]; 
 
 	for (auto value : new_values){
 

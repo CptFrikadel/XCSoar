@@ -63,6 +63,11 @@ public:
 		file_type = _file_type;
 	}
 
+	/*
+	 * Return a reference to the FileDataField
+	 */
+	FileDataField * GetFileDataField(){ return &file_datafield;}
+
 
 	gcc_pure
 	int Find(Path path) const;
