@@ -163,21 +163,15 @@ public:
 static bool MultiFilePickerAdd(const TCHAR * caption, NFileDataField &df, 
 			 	 const TCHAR * help_text){
 
-	FilePicker(caption, *df.GetFileDataField(), help_text);
+	if(FilePicker(caption, *df.GetFileDataField(), help_text)){
+			df.SetAsInteger(df.GetFileDataField()->GetAsInteger());
+		   	return true;
+	}
 
-
-	df.SetAsInteger(df.GetFileDataField()->GetAsInteger());
-	return true;
-
+	return false;
 }
 
 
-/*
- * Opens the main window of the multipicker, and displays the currently active values
- * 
- * @return the index of the value to be Removed, or the modal result of the dialog
- * 
- */
 static int MultiFilePickerMain(const TCHAR *caption, NFileDataField &df,
 					const TCHAR * help_text){
 

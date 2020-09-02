@@ -61,6 +61,7 @@ public:
 
 	void SetFileType(FileType _file_type){
 		file_type = _file_type;
+		file_datafield.SetFileType(_file_type);
 	}
 
 	/*
