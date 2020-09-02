@@ -255,17 +255,20 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 
 	while ((result = MultiPickerMain(caption, df, help_text)) != mrOK){
 		if (result == mrAdd){
+
 			std::cout << "ADD button was pressed yo!" << std::endl;
 
 			MultiPickerAdd("YOOO!", df, "Pick a file to add");
 
 		} else if (result == mrCancel){
+
 			std::cout << "Canceling.." <<  std::endl;
-			break;
+			df.Restore();
+			return false;
 
 		}
 
 	}
 
-	return false;
+	return true;
 }

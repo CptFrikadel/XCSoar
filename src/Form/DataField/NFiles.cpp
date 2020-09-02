@@ -69,12 +69,20 @@ void NFileDataField::Lookup(Path text){
 	
 	std::cout << "Looking up: " << text.c_str() << " " << i << std::endl;
 
-	if (i >= 0)
+	if (i >= 0){
 		current_selection.insert(i);
-
+		original_selection.insert(i);
+	}
 
 }
 
+void NFileDataField::Restore(){
+
+	current_selection.clear();
+
+	current_selection = original_selection;
+
+}
 
 std::vector<Path> NFileDataField::GetPathFiles() const{ 
 
