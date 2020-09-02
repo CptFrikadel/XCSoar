@@ -162,7 +162,7 @@ public:
 	virtual void OnPaintItem(Canvas &canvas, const PixelRect rc,
 							 unsigned i) noexcept override {
 
-		row_renderer.DrawTextRow(canvas, rc, active_files[i].c_str());
+		row_renderer.DrawTextRow(canvas, rc, active_files[i].GetBase().c_str());
 	}
 
 
@@ -256,13 +256,10 @@ bool MultiFilePicker(const TCHAR *caption, NFileDataField &df,
 	while ((result = MultiPickerMain(caption, df, help_text)) != mrOK){
 		if (result == mrAdd){
 
-			std::cout << "ADD button was pressed yo!" << std::endl;
-
 			MultiPickerAdd("YOOO!", df, "Pick a file to add");
 
 		} else if (result == mrCancel){
 
-			std::cout << "Canceling.." <<  std::endl;
 			df.Restore();
 			return false;
 
