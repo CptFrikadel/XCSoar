@@ -216,14 +216,6 @@ static int MultiFilePickerMain(const TCHAR *caption, NFileDataField &df,
 
 }
 
-/**
- * Create the MultiPicker widget thingy
- *
- * Write the result back to the NFileDataField
- *
- * @return whether or not something was picked
- *
- */
 bool MultiFilePicker(const TCHAR *caption, NFileDataField &df, 
 					 const TCHAR *help_text)
 {
