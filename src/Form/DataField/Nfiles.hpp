@@ -47,6 +47,9 @@ private:
 	// Currently selected files
 	std::set<unsigned int> current_selection;
 
+	// Copy of the original files after Lookup()
+	std::set<unsigned int> original_selection;
+
 	FileType file_type;
 
 public:
@@ -84,12 +87,14 @@ public:
 	void Set(std::vector<unsigned> new_values);
 	void ForceModify(Path path);
 
+	// Restore the original_selection 
+	void Restore();
+
 	/**
 	 * Scan multiple shell patterns.  Each pattern is terminated by a
 	 * null byte, and the list ends with an empty pattern.
 	 */
 	void ScanMultiplePatterns(const TCHAR *patterns);
-	void ScanDirectoryTop(const TCHAR *filter);
 
 	gcc_pure
 	Path GetItem(unsigned index) const;
@@ -110,6 +115,8 @@ public:
 	std::vector<int> GetAsIntegers() const;
 	void SetAsInteger(std::vector<int> values);
 	void UnSet(Path path);
+
+
 
 
 };
