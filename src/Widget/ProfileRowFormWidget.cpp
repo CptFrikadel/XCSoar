@@ -208,8 +208,6 @@ RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
 	if (StringIsEqual(old_value, new_output))
 		return false;
 
-	std::cout << "Saving: " << new_output << std::endl;
-
 	Profile::Set(registry_key, new_output);
 	return true;
 }

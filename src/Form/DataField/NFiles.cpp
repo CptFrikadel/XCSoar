@@ -66,8 +66,6 @@ void NFileDataField::Lookup(Path text){
 
 	file_datafield.EnsureLoaded();
 	auto i = Find(text);
-	
-	std::cout << "Looking up: " << text.c_str() << " " << i << std::endl;
 
 	if (i >= 0){
 		current_selection.insert(i);
@@ -79,7 +77,6 @@ void NFileDataField::Lookup(Path text){
 void NFileDataField::Restore(){
 
 	current_selection.clear();
-
 	current_selection = original_selection;
 
 }
@@ -94,7 +91,6 @@ std::vector<Path> NFileDataField::GetPathFiles() const{
 	for (auto index : current_selection){
 
 		paths.push_back(file_datafield.files[index].path);
-		std::cout << index << std::endl;
 	}
 	
 	return paths;
