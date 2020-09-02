@@ -108,11 +108,6 @@ void NFileDataField::ScanMultiplePatterns(const TCHAR *patterns){
 }
 
 
-void NFileDataField::ScanDirectoryTop(const TCHAR *filter){
-
-}
-
-
 void NFileDataField::Set(unsigned int new_value){
 
 	if (current_selection.find(new_value) != current_selection.end()){

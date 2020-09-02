@@ -21,6 +21,8 @@ Copyright_License {
 }
 */
 
+#include <iostream>
+
 #include "RowFormWidget.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/File.hpp"
@@ -28,6 +30,7 @@ Copyright_License {
 #include "Profile/Profile.hpp"
 #include "LocalPath.hpp"
 #include "Util/ConvertString.hpp"
+#include "Util/StringAPI.hxx"
 
 WndProperty *
 RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
@@ -68,8 +71,6 @@ RowFormWidget::AddNFiles(const TCHAR *label, const TCHAR *help,
 	df->SetFileType(file_type);
 	edit->SetDataField(df);
 
-	if (nullable)
-		df->AddNull();
 
 	df->ScanMultiplePatterns(filters);
 
@@ -184,8 +185,8 @@ RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
 
 	std::vector<Path> new_values = dfe->GetPathFiles();
 
+
 	char new_output[4096]; //TODO add the MAX PATH definition from somewhere
-	bool modified = false;
 
 	for (auto value : new_values){
 
