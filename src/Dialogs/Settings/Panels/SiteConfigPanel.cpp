@@ -89,7 +89,9 @@ SiteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
           FileType::WAYPOINT);
   SetExpertRow(WatchedWaypointFile);
 
-  AddNFiles(_("Them Airspaces yo!"), _("Pick them airspaces n shit"),
+  AddNFiles(_("Airspace files"), 
+		  	_("List of active airspace files. Use the Add and Remove buttons to activate or deactivate "
+			  " airspace files respectively. Supported file types are: Openair (.txt /.air), and Tim Newport-Pearce (.sua). "),
           ProfileKeys::AirspaceFile, _T("*.txt\0*.air\0*.sua\0"),
           FileType::AIRSPACE, false);
 

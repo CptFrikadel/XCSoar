@@ -160,7 +160,7 @@ void NFileDataField::UpdateDisplayString() {
 	for (auto i : current_selection){
 
 		_tcscat(display_string, file_datafield.files[i].filename.GetBase().c_str());
-		_tcscat(display_string, " ");
+		_tcscat(display_string, "  ");
 
 	}
 
