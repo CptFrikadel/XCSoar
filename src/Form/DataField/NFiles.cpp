@@ -40,19 +40,14 @@ Copyright_License {
 NFileDataField::NFileDataField(DataFieldListener *listener) :
 	DataField(Type::NFILE, false, listener){ }
 
-int NFileDataField::GetAsInteger() const {return 0;} 
-void NFileDataField::SetAsInteger(int new_value) {}
 
-void NFileDataField::SetAsInteger(std::vector<int> values){
 
-	for (auto value : values){
+void NFileDataField::SetAsInteger(int new_value) {
 
-		Set(value);
-	}
+	Set(new_value);
+
 }
 
-
-unsigned NFileDataField::GetNumFiles() const{return 0;} // TODO
 
 // Find the index of path in files
 int NFileDataField::Find(Path path) const {
@@ -131,8 +126,6 @@ void NFileDataField::UnSet(Path path){
 }
 
 
-void NFileDataField::Set(std::vector<unsigned> new_values){}
-
 Path NFileDataField::GetItem(unsigned index) const {
 
 	return file_datafield.files[index].path;
@@ -156,10 +149,6 @@ void NFileDataField::ForceModify(Path path){
 
 	current_selection.insert(file_datafield.files.size() -1);
 }
-
-
-void NFileDataField::Inc() { std::cout << "DIKKE INC YO!" << std::endl;}
-void NFileDataField::Dec() { std::cout << "DIKKE DEC YO!" << std::endl;}
 
 
 const TCHAR * NFileDataField::GetAsString() const { return "Wololo";}

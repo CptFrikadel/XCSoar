@@ -64,16 +64,12 @@ public:
 	}
 
 
-	// Returns the number of files in the list
-	gcc_pure 
-	unsigned GetNumFiles() const;
-
 	gcc_pure
 	int Find(Path path) const;
 
 	/**
 	 * Iterate through the list and find the item where path matches
-	 * text. If found, the item is set as selected.
+	 * text. If found, the item is set as selected and added to the original_selection
 	 */
 	void Lookup(Path text);
 
@@ -83,8 +79,8 @@ public:
 
 	//Set selection to the given index(es)
 	void Set(unsigned new_value);
-	void Set(std::vector<unsigned> new_values);
 	void ForceModify(Path path);
+	void UnSet(Path path);
 
 	// Restore the original_selection 
 	void Restore();
@@ -100,11 +96,9 @@ public:
 	gcc_pure
 	Path GetItem(unsigned index) const;
 
-
-	// Virtual methods from DataField Class
-	void Inc() override;
-	void Dec() override;
-	int GetAsInteger() const override;
+	/**
+	 * Virtual methods from the DataField class
+	 */
 	const TCHAR *GetAsString() const override;
 	const TCHAR *GetAsDisplayString() const override;
 	void SetAsInteger(int value) override;
@@ -112,10 +106,14 @@ public:
 	ComboList CreateComboList(const TCHAR *reference) const override;
 	void SetFromCombo(int datafield_index, const TCHAR *string_value) override; 
 
-	// "Overloaded" functions to deal with multiple files
-	std::vector<int> GetAsIntegers() const;
-	void SetAsInteger(std::vector<int> values);
-	void UnSet(Path path);
+	/*
+	 * Stub implementations for virtual methods from DataField class, because
+	 * they don't make sense in the MultiFile scenario
+	 */
+
+	void Inc() override {}
+	void Dec() override {}
+	int GetAsInteger() const override {return 0;}
 
 
 
