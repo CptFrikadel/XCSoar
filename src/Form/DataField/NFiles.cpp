@@ -72,6 +72,8 @@ void NFileDataField::Lookup(Path text){
 		original_selection.insert(i);
 	}
 
+	UpdateDisplayString();
+
 }
 
 void NFileDataField::Restore(){
@@ -112,6 +114,8 @@ void NFileDataField::Set(unsigned int new_value){
 		current_selection.insert(new_value);
 	}
 
+	UpdateDisplayString();
+
 }
 
 void NFileDataField::UnSet(Path path){
@@ -123,6 +127,7 @@ void NFileDataField::UnSet(Path path){
 		current_selection.erase(i);
 	}
 
+	UpdateDisplayString();
 }
 
 
@@ -153,10 +158,27 @@ void NFileDataField::ForceModify(Path path){
 }
 
 
-void NFileDataField::Inc() {}
-void NFileDataField::Dec() {}
+void NFileDataField::Inc() { std::cout << "DIKKE INC YO!" << std::endl;}
+void NFileDataField::Dec() { std::cout << "DIKKE DEC YO!" << std::endl;}
 
 
 const TCHAR * NFileDataField::GetAsString() const { return "Wololo";}
-const TCHAR * NFileDataField::GetAsDisplayString() const { return "WOLOLO";}
+
+void NFileDataField::UpdateDisplayString() {
+
+	UnsafeCopyString(display_string, "");
+
+	for (auto i : current_selection){
+
+		_tcscat(display_string, file_datafield.files[i].filename.GetBase().c_str());
+		_tcscat(display_string, " ");
+
+	}
+
+}
+
+const TCHAR * NFileDataField::GetAsDisplayString() const { 
+	
+	return display_string;
+}
 

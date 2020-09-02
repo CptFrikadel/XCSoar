@@ -41,9 +41,6 @@ class NFileDataField final : public DataField {
 	
 	FileDataField file_datafield;
 
-
-private:
-
 	// Currently selected files
 	std::set<unsigned int> current_selection;
 
@@ -51,6 +48,8 @@ private:
 	std::set<unsigned int> original_selection;
 
 	FileType file_type;
+
+	TCHAR display_string[256]; //TODO magic number...
 
 public:
 
@@ -89,6 +88,8 @@ public:
 
 	// Restore the original_selection 
 	void Restore();
+
+	void UpdateDisplayString();
 
 	/**
 	 * Scan multiple shell patterns.  Each pattern is terminated by a
