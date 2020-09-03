@@ -37,12 +37,12 @@ Copyright_License {
 
 
 
-NFileDataField::NFileDataField(DataFieldListener *listener) :
+MultiFileDataField::MultiFileDataField(DataFieldListener *listener) :
 	DataField(Type::MULTI_FILE, false, listener){ }
 
 
 
-void NFileDataField::SetAsInteger(int new_value) {
+void MultiFileDataField::SetAsInteger(int new_value) {
 
 	Set(new_value);
 
@@ -50,14 +50,14 @@ void NFileDataField::SetAsInteger(int new_value) {
 
 
 // Find the index of path in files
-int NFileDataField::Find(Path path) const {
+int MultiFileDataField::Find(Path path) const {
 
 	return file_datafield.Find(path);
 
 }
 
 
-void NFileDataField::Lookup(Path text){
+void MultiFileDataField::Lookup(Path text){
 
 	file_datafield.EnsureLoaded();
 	auto i = Find(text);
@@ -71,14 +71,14 @@ void NFileDataField::Lookup(Path text){
 
 }
 
-void NFileDataField::Restore(){
+void MultiFileDataField::Restore(){
 
 	current_selection.clear();
 	current_selection = original_selection;
 
 }
 
-std::vector<Path> NFileDataField::GetPathFiles() const{ 
+std::vector<Path> MultiFileDataField::GetPathFiles() const{ 
 
 	if (current_selection.empty())
 		return std::vector<Path>{Path(_T(""))};
@@ -94,14 +94,14 @@ std::vector<Path> NFileDataField::GetPathFiles() const{
 }
 
 
-void NFileDataField::ScanMultiplePatterns(const TCHAR *patterns){
+void MultiFileDataField::ScanMultiplePatterns(const TCHAR *patterns){
 
 	file_datafield.ScanMultiplePatterns(patterns);
 
 }
 
 
-void NFileDataField::Set(unsigned int new_value){
+void MultiFileDataField::Set(unsigned int new_value){
 
 	if (current_selection.find(new_value) != current_selection.end()){
 		current_selection.erase(new_value);
@@ -113,7 +113,7 @@ void NFileDataField::Set(unsigned int new_value){
 
 }
 
-void NFileDataField::UnSet(Path path){
+void MultiFileDataField::UnSet(Path path){
 
 	auto i = Find(path);
 	
@@ -126,24 +126,24 @@ void NFileDataField::UnSet(Path path){
 }
 
 
-Path NFileDataField::GetItem(unsigned index) const {
+Path MultiFileDataField::GetItem(unsigned index) const {
 
 	return file_datafield.files[index].path;
 }
 
-ComboList NFileDataField::CreateComboList(const TCHAR *reference) const {
+ComboList MultiFileDataField::CreateComboList(const TCHAR *reference) const {
 
 	return file_datafield.CreateComboList(reference);
 
 }
 
-void NFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value){
+void MultiFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value){
 
 	current_selection.insert(datafield_index);
 	
 }
 
-void NFileDataField::ForceModify(Path path){
+void MultiFileDataField::ForceModify(Path path){
 
 	file_datafield.ForceModify(path);
 
@@ -151,9 +151,9 @@ void NFileDataField::ForceModify(Path path){
 }
 
 
-const TCHAR * NFileDataField::GetAsString() const { return "Wololo";}
+const TCHAR * MultiFileDataField::GetAsString() const { return "Wololo";}
 
-void NFileDataField::UpdateDisplayString() {
+void MultiFileDataField::UpdateDisplayString() {
 
 	UnsafeCopyString(display_string, "");
 
@@ -166,7 +166,7 @@ void NFileDataField::UpdateDisplayString() {
 
 }
 
-const TCHAR * NFileDataField::GetAsDisplayString() const { 
+const TCHAR * MultiFileDataField::GetAsDisplayString() const { 
 	
 	return display_string;
 }

@@ -37,7 +37,7 @@ Copyright_License {
  * FileDataField wrapper that allows for selection of multiple files at once
  *
  */
-class NFileDataField final : public DataField {
+class MultiFileDataField final : public DataField {
 	
 	FileDataField file_datafield;
 
@@ -53,7 +53,7 @@ class NFileDataField final : public DataField {
 
 public:
 
-	NFileDataField(DataFieldListener *listener=nullptr);
+	MultiFileDataField(DataFieldListener *listener=nullptr);
 
 	FileType GetFileType() const {
 		return file_type;

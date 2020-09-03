@@ -66,7 +66,7 @@ RowFormWidget::AddMultipleFiles(const TCHAR *label, const TCHAR *help,
                        bool nullable)
 {
 	WndProperty *edit = Add(label, help);
-	auto *df = new NFileDataField();
+	auto *df = new MultiFileDataField();
 	df->SetFileType(file_type);
 	edit->SetDataField(df);
 
@@ -178,7 +178,7 @@ RowFormWidget::SaveValueFileReader(unsigned i, const char *registry_key)
 bool 
 RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 {
-	const auto *dfe = (const NFileDataField *)GetControl(i).GetDataField();
+	const auto *dfe = (const MultiFileDataField *)GetControl(i).GetDataField();
 
 	std::vector<Path> new_values = dfe->GetPathFiles();
 
