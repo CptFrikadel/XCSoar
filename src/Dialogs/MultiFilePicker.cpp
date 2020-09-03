@@ -23,9 +23,6 @@ Copyright_License {
 
 #include "MultiFilePicker.hpp"
 #include "Dialogs/FilePicker.hpp"
-#include "Widget/ListWidget.hpp"
-#include "HelpDialog.hpp"
-#include "Form/ActionListener.hpp"
 #include "Widget/TextWidget.hpp"
 #include "Widget/TwoWidgets.hpp"
 #include "UIGlobals.hpp"
@@ -33,14 +30,7 @@ Copyright_License {
 #include "Form/DataField/MultiFile.hpp"
 #include "Renderer/TextRowRenderer.hpp"
 #include "Look/DialogLook.hpp"
-#include "Form/Form.hpp"
-#include "Language/Language.hpp"
-#include "Form/DataField/ComboList.hpp"
-#include "ComboPicker.hpp"
-
 #include "ListPicker.hpp"
-
-#include <iostream>
 
 
 static constexpr int mrRemove = 667;
