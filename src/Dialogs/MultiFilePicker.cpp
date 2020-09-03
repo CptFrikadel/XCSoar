@@ -154,6 +154,10 @@ public:
 	virtual void OnPaintItem(Canvas &canvas, const PixelRect rc,
 							 unsigned i) noexcept override {
 
+		if (active_files[i].GetBase().c_str() == nullptr){
+			row_renderer.DrawTextRow(canvas, rc, "");
+			return;
+		}
 		row_renderer.DrawTextRow(canvas, rc, active_files[i].GetBase().c_str());
 	}
 
