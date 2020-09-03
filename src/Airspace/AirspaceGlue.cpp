@@ -88,7 +88,7 @@ ReadAirspace(Airspaces &airspaces,
   AirspaceParser parser(airspaces);
 
   // Read the airspace filenames from the registry
-  std::vector<AllocatedPath> paths = Profile::GetNPaths(ProfileKeys::AirspaceFile);
+  std::vector<AllocatedPath> paths = Profile::GetMultiplePaths(ProfileKeys::AirspaceFile);
 
   for (auto it = paths.begin(); it < paths.end(); it++){
 

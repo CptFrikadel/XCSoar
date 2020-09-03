@@ -80,7 +80,7 @@ namespace Profile
   gcc_pure
   AllocatedPath GetPath(const char *key);
 
-  std::vector<AllocatedPath> GetNPaths(const char *key);
+  std::vector<AllocatedPath> GetMultiplePaths(const char *key);
 
   void SetPath(const char *key, Path value);
 

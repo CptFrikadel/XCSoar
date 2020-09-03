@@ -50,7 +50,7 @@ ProfileMap::GetPath(const char *key) const
 }
 
 std::vector<AllocatedPath>
-ProfileMap::GetNPaths(const char *key) const
+ProfileMap::GetMultiplePaths(const char *key) const
 {
 	std::vector<AllocatedPath> paths;
 	TCHAR buffer[MAX_PATH];

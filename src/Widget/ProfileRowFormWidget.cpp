@@ -76,7 +76,7 @@ RowFormWidget::AddNFiles(const TCHAR *label, const TCHAR *help,
 	df->ScanMultiplePatterns(filters);
 
 	if (registry_key != nullptr){
-		std::vector<AllocatedPath> paths = Profile::GetNPaths(registry_key);
+		std::vector<AllocatedPath> paths = Profile::GetMultiplePaths(registry_key);
 
 		if (!paths.empty()){
 			for (auto const& p : paths){

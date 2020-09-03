@@ -128,9 +128,9 @@ Profile::GetPath(const char *key)
 }
 
 std::vector<AllocatedPath>
-Profile::GetNPaths(const char *key)
+Profile::GetMultiplePaths(const char *key)
 {
-	return map.GetNPaths(key);
+	return map.GetMultiplePaths(key);
 }
 
 bool
