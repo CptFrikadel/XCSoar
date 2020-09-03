@@ -80,10 +80,12 @@ void MultiFileDataField::Restore(){
 
 std::vector<Path> MultiFileDataField::GetPathFiles() const{ 
 
-	if (current_selection.empty())
-		return std::vector<Path>{Path(_T(""))};
-
 	std::vector<Path> paths;
+
+	if (current_selection.empty()){
+		paths.clear();
+		return paths;
+	}
 
 	for (auto index : current_selection){
 

@@ -185,6 +185,9 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 
 	char new_output[MAX_PATH]; 
 
+	if (new_values.empty())
+		UnsafeCopyString(new_output, "");
+
 	for (auto value : new_values){
 
 	
