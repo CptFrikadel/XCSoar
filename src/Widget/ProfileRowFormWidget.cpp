@@ -62,7 +62,7 @@ RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
 }
 
 WndProperty *
-RowFormWidget::AddNFiles(const TCHAR *label, const TCHAR *help,
+RowFormWidget::AddMultipleFiles(const TCHAR *label, const TCHAR *help,
                        const char *registry_key, const TCHAR *filters,
                        FileType file_type,
                        bool nullable)

@@ -431,7 +431,7 @@ public:
                    nullable);
   }
 
-  WndProperty *AddNFiles(const TCHAR *label, const TCHAR *help,
+  WndProperty *AddMultipleFiles(const TCHAR *label, const TCHAR *help,
 		  				 const char *profile_key, const TCHAR *filters,
 						 FileType file_type,
 						 bool nullable = true);
