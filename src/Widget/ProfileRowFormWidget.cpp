@@ -21,8 +21,6 @@ Copyright_License {
 }
 */
 
-#include <iostream>
-
 #include "RowFormWidget.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/File.hpp"
