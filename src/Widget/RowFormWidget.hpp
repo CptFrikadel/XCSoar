@@ -657,7 +657,7 @@ public:
   }
 
   bool SaveValueFileReader(unsigned i, const char *profile_key);
-  bool SaveValueNFileReader(unsigned i, const char *profile_key);
+  bool SaveValueMultiFileReader(unsigned i, const char *profile_key);
 
 protected:
   gcc_pure

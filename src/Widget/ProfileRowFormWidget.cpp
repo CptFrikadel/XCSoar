@@ -178,7 +178,7 @@ RowFormWidget::SaveValueFileReader(unsigned i, const char *registry_key)
 }
 
 bool 
-RowFormWidget::SaveValueNFileReader(unsigned i, const char *registry_key)
+RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 {
 	const auto *dfe = (const NFileDataField *)GetControl(i).GetDataField();
 
