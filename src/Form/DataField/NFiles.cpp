@@ -38,7 +38,7 @@ Copyright_License {
 
 
 NFileDataField::NFileDataField(DataFieldListener *listener) :
-	DataField(Type::NFILE, false, listener){ }
+	DataField(Type::MULTI_FILE, false, listener){ }
 
 
 

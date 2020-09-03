@@ -46,7 +46,7 @@ public:
     ANGLE,
     ENUM,
     FILE,
-	NFILE,
+	MULTI_FILE,
     ROUGH_TIME,
     TIME,
     PREFIX,
