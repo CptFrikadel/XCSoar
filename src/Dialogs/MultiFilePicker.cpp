@@ -38,104 +38,14 @@ Copyright_License {
 #include "Form/DataField/ComboList.hpp"
 #include "ComboPicker.hpp"
 
+#include "ListPicker.hpp"
+
 #include <iostream>
 
 
 static constexpr int mrRemove = 667;
 static constexpr int mrAdd = 666;
 
-class MultiPickerWidget : public ListWidget, public ActionListener {
-
-	unsigned num_items;
-	unsigned initial_value;
-	unsigned row_height;
-
-	bool visible;
-
-	ListItemRenderer &item_renderer;
-	ActionListener &action_listener;
-
-	const TCHAR *const caption, *const help_text;
-
-	TextWidget *help_widget;
-	TwoWidgets *two_widgets;
-
-public:
-	
-	MultiPickerWidget(unsigned _num_items, unsigned _initial_value,
-						  unsigned _row_height, 
-						  ListItemRenderer &_item_renderer,
-						  ActionListener &_action_listener,
-						  const TCHAR *_caption, const TCHAR *_help_text) :
-		num_items(_num_items), initial_value(_initial_value),
-		row_height(_row_height), 
-		item_renderer(_item_renderer),
-		action_listener(_action_listener),
-		caption(_caption), help_text(_help_text) { }
-
-	using ListWidget::GetList;
-	void UpdateHelp(unsigned index){
-		if (!visible)
-			return;
-
-		help_widget->SetText("Some help text");
-		two_widgets->UpdateLayout();
-	}
-
-
-	// Virtual methods from the Widget class
-	
-	virtual void Prepare(ContainerWindow &parent,
-						 const PixelRect &rc) override {
-
-		ListControl &list = CreateList(parent, UIGlobals::GetDialogLook(), rc, 
-										row_height);
-
-		list.SetLength(num_items);
-		list.SetCursorIndex(initial_value);
-
-	}
-
-	virtual void Unprepare() override {
-		DeleteWindow();
-	}
-
-	virtual void Show(const PixelRect &rc) override {
-		ListWidget::Show(rc);
-
-		visible = true;
-	}
-
-	virtual void Hide() override {
-		visible = false;
-		ListWidget::Hide();
-	}
-
-	void OnPaintItem(Canvas &canvas, const PixelRect rc,
-					 unsigned idx) noexcept override {
-		item_renderer.OnPaintItem(canvas, rc, idx);
-	}
-
-	void OnCursorMoved(unsigned index) noexcept override {
-		//UpdateHelp(index); // TODO
-	}
-
-	bool CanActivateItem(unsigned index) const noexcept override {
-		return true;
-	}
-
-	void OnActivateItem(unsigned index) noexcept override {
-		action_listener.OnAction(mrOK);
-	}	
-
-	void OnAction(int id) noexcept override {
-
-		HelpDialog(caption, help_text);
-
-	}
-
-
-};
 
 class MultiFilePickerSupport : public ListItemRenderer {
 
@@ -187,20 +97,16 @@ static int MultiFilePickerMain(const TCHAR *caption, NFileDataField &df,
 	MultiFilePickerSupport support(active_files);
 
 
-	MultiPickerWidget * file_widget = new MultiPickerWidget(active_files.size(), 0, 
+	ListPickerWidget * file_widget = new ListPickerWidget(active_files.size(), 0, 
 			support.CalculateLayout(UIGlobals::GetDialogLook()), 
 						  support, dialog, caption, help_text);
 	
 	Widget * widget = file_widget;
 
 	dialog.AddButton(_("Help"), *file_widget, 100);
-
 	dialog.AddButton(_("Add"), mrAdd );
-
 	dialog.AddButton(_("Remove"), mrRemove);
-
 	dialog.AddButton(_("Ok"), mrOK);
-
 	dialog.AddButton(_("Cancel"), mrCancel);
 
 	dialog.EnableCursorSelection();
