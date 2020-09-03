@@ -61,7 +61,6 @@ public:
 		row_renderer.DrawTextRow(canvas, rc, active_files[i].GetBase().c_str());
 	}
 
-
 };
 	
 static bool MultiFilePickerAdd(const TCHAR * caption, MultiFileDataField &df, 
@@ -113,13 +112,11 @@ static int MultiFilePickerMain(const TCHAR *caption, MultiFileDataField &df,
 	}
 
 	return result;
-
 }
 
 bool MultiFilePicker(const TCHAR *caption, MultiFileDataField &df, 
 					 const TCHAR *help_text)
 {
-
 	int result;
 
 	while ((result = MultiFilePickerMain(caption, df, help_text)) != mrOK){
@@ -131,9 +128,7 @@ bool MultiFilePicker(const TCHAR *caption, MultiFileDataField &df,
 
 			df.Restore();
 			return false;
-
 		}
-
 	}
 
 	return true;

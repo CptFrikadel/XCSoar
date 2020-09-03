@@ -121,9 +121,6 @@ public:
 	void Dec() override {}
 	int GetAsInteger() const override {return 0;}
 
-
-
-
 };
 
 #endif

@@ -182,14 +182,12 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 
 	std::vector<Path> new_values = dfe->GetPathFiles();
 
-
 	char new_output[MAX_PATH]; 
 
 	if (new_values.empty())
 		UnsafeCopyString(new_output, "");
 
 	for (auto value : new_values){
-
 	
 		const auto contracted = ContractLocalPath(value);
 		if (contracted != nullptr)

@@ -68,7 +68,6 @@ void MultiFileDataField::Lookup(Path text){
 	}
 
 	UpdateDisplayString();
-
 }
 
 void MultiFileDataField::Restore(){
@@ -112,8 +111,8 @@ void MultiFileDataField::Set(unsigned int new_value){
 	}
 
 	UpdateDisplayString();
-
 }
+
 
 void MultiFileDataField::UnSet(Path path){
 
@@ -133,17 +132,20 @@ Path MultiFileDataField::GetItem(unsigned index) const {
 	return file_datafield.files[index].path;
 }
 
+
 ComboList MultiFileDataField::CreateComboList(const TCHAR *reference) const {
 
 	return file_datafield.CreateComboList(reference);
 
 }
 
+
 void MultiFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value){
 
 	current_selection.insert(datafield_index);
 	
 }
+
 
 void MultiFileDataField::ForceModify(Path path){
 
@@ -153,7 +155,7 @@ void MultiFileDataField::ForceModify(Path path){
 }
 
 
-const TCHAR * MultiFileDataField::GetAsString() const { return "Wololo";}
+const TCHAR * MultiFileDataField::GetAsString() const { return "Wololo";} //TODO
 
 void MultiFileDataField::UpdateDisplayString() {
 
@@ -165,7 +167,6 @@ void MultiFileDataField::UpdateDisplayString() {
 		_tcscat(display_string, "  ");
 
 	}
-
 }
 
 const TCHAR * MultiFileDataField::GetAsDisplayString() const { 
