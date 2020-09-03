@@ -21,7 +21,7 @@ Copyright_License {
 }
 */
 
-#include "Nfiles.hpp"
+#include "MultiFile.hpp"
 #include "ComboList.hpp"
 #include "LocalPath.hpp"
 #include "Util/StringAPI.hxx"

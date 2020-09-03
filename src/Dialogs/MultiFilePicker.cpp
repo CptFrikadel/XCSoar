@@ -30,7 +30,7 @@ Copyright_License {
 #include "Widget/TwoWidgets.hpp"
 #include "UIGlobals.hpp"
 #include "WidgetDialog.hpp"
-#include "Form/DataField/Nfiles.hpp"
+#include "Form/DataField/MultiFile.hpp"
 #include "Renderer/TextRowRenderer.hpp"
 #include "Look/DialogLook.hpp"
 #include "Form/Form.hpp"

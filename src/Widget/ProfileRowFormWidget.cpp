@@ -26,7 +26,7 @@ Copyright_License {
 #include "RowFormWidget.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/File.hpp"
-#include "Form/DataField/Nfiles.hpp"
+#include "Form/DataField/MultiFile.hpp"
 #include "Profile/Profile.hpp"
 #include "LocalPath.hpp"
 #include "Util/ConvertString.hpp"
