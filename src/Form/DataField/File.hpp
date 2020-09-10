@@ -40,6 +40,8 @@ Copyright_License {
 class FileDataField final : public DataField {
   typedef StaticArray<StaticString<32>, 8> PatternList;
 
+  friend class MultiFileDataField;
+
 public:
   /** FileList item */
   struct Item {
