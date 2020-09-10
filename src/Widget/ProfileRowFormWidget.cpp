@@ -24,9 +24,12 @@ Copyright_License {
 #include "RowFormWidget.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/File.hpp"
+#include "Form/DataField/MultiFile.hpp"
 #include "Profile/Profile.hpp"
 #include "LocalPath.hpp"
 #include "Util/ConvertString.hpp"
+#include "Util/StringAPI.hxx"
+#include "windef.h"
 
 WndProperty *
 RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
@@ -53,6 +56,35 @@ RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
   edit->RefreshDisplay();
 
   return edit;
+}
+
+WndProperty *
+RowFormWidget::AddMultipleFiles(const TCHAR *label, const TCHAR *help,
+                       const char *registry_key, const TCHAR *filters,
+                       FileType file_type,
+                       bool nullable)
+{
+	WndProperty *edit = Add(label, help);
+	auto *df = new MultiFileDataField();
+	df->SetFileType(file_type);
+	edit->SetDataField(df);
+
+
+	df->ScanMultiplePatterns(filters);
+
+	if (registry_key != nullptr){
+		std::vector<AllocatedPath> paths = Profile::GetMultiplePaths(registry_key);
+
+		if (!paths.empty()){
+			for (auto const& p : paths){
+				df->Lookup(p);
+			}
+		}
+	}
+
+	edit->RefreshDisplay();
+
+	return edit;
 }
 
 bool
@@ -140,4 +172,40 @@ RowFormWidget::SaveValueFileReader(unsigned i, const char *registry_key)
 
   Profile::Set(registry_key, new_value2);
   return true;
+}
+
+
+bool 
+RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
+{
+	const auto *dfe = (const MultiFileDataField *)GetControl(i).GetDataField();
+
+	std::vector<Path> new_values = dfe->GetPathFiles();
+
+	char new_output[MAX_PATH]; 
+
+	if (new_values.empty())
+		UnsafeCopyString(new_output, "");
+
+	for (auto value : new_values){
+
+		const auto contracted = ContractLocalPath(value);
+		if (contracted != nullptr)
+			value = contracted;
+
+		const WideToUTF8Converter value_to_add(value.c_str());
+		if (!value_to_add.IsValid())
+			continue;
+
+		strcat(new_output, value_to_add);
+		strcat(new_output, ",");
+
+	}
+
+	const char * old_value = Profile::Get(registry_key, "");
+	if (StringIsEqual(old_value, new_output))
+		return false;
+
+	Profile::Set(registry_key, new_output);
+	return true;
 }
