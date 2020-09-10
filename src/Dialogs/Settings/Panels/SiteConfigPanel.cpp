@@ -38,8 +38,7 @@ enum ControlIndex {
   WaypointFile,
   AdditionalWaypointFile,
   WatchedWaypointFile,
-  AirspaceFile,
-  AdditionalAirspaceFile,
+  AirspaceFiles,
   AirfieldFile,
   FlarmFile
 };
@@ -90,14 +89,11 @@ SiteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
           FileType::WAYPOINT);
   SetExpertRow(WatchedWaypointFile);
 
-  AddFile(_("Airspaces"), _("The file name of the primary airspace file."),
+  AddMultipleFiles(_("Airspace files"), 
+		  _("List of active airspace files. Use the Add and Remove buttons to activate or deactivate "
+			  " airspace files respectively. Supported file types are: Openair (.txt /.air), and Tim Newport-Pearce (.sua). "),
           ProfileKeys::AirspaceFile, _T("*.txt\0*.air\0*.sua\0"),
-          FileType::AIRSPACE);
-
-  AddFile(_("More airspaces"), _("The file name of the secondary airspace file."),
-          ProfileKeys::AdditionalAirspaceFile, _T("*.txt\0*.air\0*.sua\0"),
-          FileType::AIRSPACE);
-  SetExpertRow(AdditionalAirspaceFile);
+          FileType::AIRSPACE, false);
 
   AddFile(_("Waypoint details"),
           _("The file may contain extracts from enroute supplements or other contributed "
@@ -124,8 +120,7 @@ SiteConfigPanel::Save(bool &_changed)
   WaypointFileChanged |= SaveValueFileReader(AdditionalWaypointFile, ProfileKeys::AdditionalWaypointFile);
   WaypointFileChanged |= SaveValueFileReader(WatchedWaypointFile, ProfileKeys::WatchedWaypointFile);
 
-  AirspaceFileChanged = SaveValueFileReader(AirspaceFile, ProfileKeys::AirspaceFile);
-  AirspaceFileChanged |= SaveValueFileReader(AdditionalAirspaceFile, ProfileKeys::AdditionalAirspaceFile);
+  AirspaceFileChanged = SaveValueMultiFileReader(AirspaceFiles, ProfileKeys::AirspaceFile);
 
   FlarmFileChanged = SaveValueFileReader(FlarmFile, ProfileKeys::FlarmFile);
 
