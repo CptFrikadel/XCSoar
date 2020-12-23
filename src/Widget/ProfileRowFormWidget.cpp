@@ -182,10 +182,7 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 
 	std::vector<Path> new_values = dfe->GetPathFiles();
 
-	char new_output[MAX_PATH]; 
-
-	if (new_values.empty())
-		UnsafeCopyString(new_output, "");
+	std::string new_output = "";
 
 	for (auto value : new_values){
 
@@ -196,16 +193,17 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 		const WideToUTF8Converter value_to_add(value.c_str());
 		if (!value_to_add.IsValid())
 			continue;
-
-		strcat(new_output, value_to_add);
-		strcat(new_output, ",");
+		
+		new_output += value_to_add;
+		new_output += ":";
 
 	}
 
-	const char * old_value = Profile::Get(registry_key, "");
-	if (StringIsEqual(old_value, new_output))
+
+	std::string old_value = Profile::Get(registry_key, "");
+	if (old_value == new_output)
 		return false;
 
-	Profile::Set(registry_key, new_output);
+	Profile::Set(registry_key, new_output.c_str());
 	return true;
 }
