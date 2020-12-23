@@ -29,6 +29,10 @@ Copyright_License {
 #include "Util/StringCompare.hxx"
 #include "Util/StringPointer.hxx"
 #include "Util/Macros.hpp"
+#include "Util/StringView.hxx"
+#include "Util/IterableSplitString.hxx"
+
+#include <iostream>
 
 #ifdef _UNICODE
 #include "Util/AllocatedString.hxx"
@@ -61,11 +65,16 @@ ProfileMap::GetMultiplePaths(const char *key) const
 	if(StringIsEmpty(buffer))
 		return paths;
 
-	char *path = strtok(buffer, ",");
-	while (path != nullptr){
-		paths.push_back(ExpandLocalPath(Path(path)));
+	StringView string_view(buffer);
 
-		path = strtok(nullptr, ",");
+	std::cout << "Path string_view: " << string_view.data << std::endl;
+
+	IterableSplitString splittert(string_view, ',');
+
+	for (auto i = splittert.begin(); i != splittert.end(); ++i){
+
+		std::cout << "PATH: " << std::string(*i) << std::endl;
+		paths.push_back(ExpandLocalPath(Path(std::string(*i).c_str())));
 	}
 
 	return paths;
