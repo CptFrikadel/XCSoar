@@ -31,7 +31,6 @@ Copyright_License {
 #include "Util/StringAPI.hxx"
 #include "windef.h"
 
-#include <iostream>
 
 WndProperty *
 RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
@@ -186,7 +185,7 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 
 	char new_output[MAX_PATH]; 
 
-		UnsafeCopyString(new_output, "");
+	UnsafeCopyString(new_output, "");
 	
 
 	for (auto value : new_values){
@@ -199,14 +198,12 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key)
 		if (!value_to_add.IsValid())
 			continue;
 
-		std::cout << "Value to add: " << value_to_add << std::endl;
 
 		strcat(new_output, value_to_add);
 		strcat(new_output, ":");
 
 	}
 
-	std::cout << "New path value: " << new_output << std::endl;
 
 	const char * old_value = Profile::Get(registry_key, "");
 	if (StringIsEqual(old_value, new_output))
