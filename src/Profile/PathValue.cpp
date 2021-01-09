@@ -40,7 +40,6 @@ Copyright_License {
 
 #include <windef.h> /* for MAX_PATH */
 
-static constexpr char path_separator = ':';
 
 AllocatedPath
 ProfileMap::GetPath(const char *key) const
@@ -71,15 +70,14 @@ ProfileMap::GetMultiplePaths(const char *key) const
 
 	std::cout << "Path string_view: " << string_view.data << std::endl;
 
-	IterableSplitString splittert(string_view, path_separator);
+	IterableSplitString path_splitstring(string_view, ':');
 
-	for (auto i = splittert.begin(); i != splittert.end(); ++i){
+	for (auto i = path_splitstring.begin(); i != path_splitstring.end(); ++i) {
 
-		
-		if (!(*i).empty()){
-			std::cout << "PATH: " << std::string(*i) << std::endl;
-			paths.push_back(ExpandLocalPath(Path(std::string(*i).c_str())));
-		}
+	  if (!(*i).empty()) {
+		std::cout << "PATH: " << std::string(*i) << std::endl;
+		paths.push_back(ExpandLocalPath(Path(std::string(*i).c_str())));
+	  }
 	}
 
 	return paths;
