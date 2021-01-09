@@ -40,7 +40,6 @@ Copyright_License {
 
 #include <windef.h> /* for MAX_PATH */
 
-
 AllocatedPath
 ProfileMap::GetPath(const char *key) const
 {
