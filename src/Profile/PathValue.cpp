@@ -67,24 +67,18 @@ ProfileMap::GetMultiplePaths(const char *key) const
 
 	StringView string_view(buffer);
 
-	std::cout << "Path string_view: " << string_view.data << std::endl;
-
 	IterableSplitString path_splitstring(string_view, ':');
 
 	for (auto i = path_splitstring.begin(); i != path_splitstring.end(); ++i) {
 
 	  if (!(*i).empty()) {
-		std::cout << "PATH: " << std::string(*i) << std::endl;
 
 		AllocatedPath path(Path(std::string(*i).c_str()));
 
 		// Ceck if path is valid
-		if (!path.MatchesExtension("txt") && !path.MatchesExtension("air")){
-
-			std::cout << "Incorrect Extension: PANIC!!!" << std::endl;
+		if (!path.MatchesExtension("txt") && !path.MatchesExtension("air"))
 			continue;
 
-		}
 
 		paths.push_back(ExpandLocalPath(path));
 	  }
