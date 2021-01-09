@@ -102,8 +102,9 @@ static int MultiFilePickerMain(const TCHAR *caption, MultiFileDataField &df,
 
 	if (result == mrRemove){
 
-		int i = (int)file_widget->GetList().GetCursorIndex();
-		df.UnSet(active_files[i]);
+		unsigned int i = (int)file_widget->GetList().GetCursorIndex();
+		if (!active_files.empty() && i < active_files.size())
+			df.UnSet(active_files[i]);
 
 	}
 
