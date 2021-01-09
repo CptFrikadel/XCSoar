@@ -155,8 +155,8 @@ const TCHAR * MultiFileDataField::GetAsString() const { return "Wololo";} //TODO
 
 void MultiFileDataField::UpdateDisplayString() {
 
-	UnsafeCopyString(display_string, "");
-
+	UnsafeCopyString(display_string, _T(""));
+ 
 	for (auto i : current_selection){
 
 		_tcscat(display_string, file_datafield.files[i].filename.GetBase().c_str());

@@ -45,7 +45,7 @@ class MultiFileDataField final : public DataField {
 
 	FileType file_type;
 
-	TCHAR display_string[256]; //TODO magic number...
+	TCHAR display_string[256] = ""; //TODO magic number...
 
 public:
 
