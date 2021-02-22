@@ -151,7 +151,7 @@ void MultiFileDataField::ForceModify(Path path){
 }
 
 
-const TCHAR * MultiFileDataField::GetAsString() const { return "Wololo";} //TODO
+const TCHAR * MultiFileDataField::GetAsString() const { return "";} 
 
 void MultiFileDataField::UpdateDisplayString() {
 

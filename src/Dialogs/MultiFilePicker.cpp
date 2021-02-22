@@ -119,7 +119,7 @@ bool MultiFilePicker(const TCHAR *caption, MultiFileDataField &df,
 	while ((result = MultiFilePickerMain(caption, df, help_text)) != mrOK){
 		if (result == mrAdd){
 
-			MultiFilePickerAdd("Add File", df, "Select a file to add or download a new one.");
+			MultiFilePickerAdd("Add File", df, "Use the 'Select' button to select a file to add to the active files list. Use the 'Download' button to download a new one.");
 
 		} else if (result == mrCancel){
 
