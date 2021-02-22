@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@ Copyright_License {
 
 #include "Map.hpp"
 #include "LocalPath.hpp"
-#include "OS/Path.hpp"
+#include "system/Path.hpp"
 #include "Compatibility/path.h"
 #include "Util/StringAPI.hxx"
 #include "Util/StringCompare.hxx"
@@ -34,7 +34,7 @@ Copyright_License {
 
 
 #ifdef _UNICODE
-#include "Util/AllocatedString.hxx"
+#include "util/AllocatedString.hxx"
 #endif
 
 #include <windef.h> /* for MAX_PATH */
@@ -111,7 +111,7 @@ BackslashBaseName(const TCHAR *p)
 
 #ifdef _UNICODE
 
-AllocatedString<TCHAR>
+BasicAllocatedString<TCHAR>
 ProfileMap::GetPathBase(const char *key) const
 {
   TCHAR buffer[MAX_PATH];
@@ -122,7 +122,7 @@ ProfileMap::GetPathBase(const char *key) const
   if (base == nullptr)
     return nullptr;
 
-  return AllocatedString<TCHAR>::Duplicate(base);
+  return BasicAllocatedString<TCHAR>(base);
 }
 
 #else
