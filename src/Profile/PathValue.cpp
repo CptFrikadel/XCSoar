@@ -8,6 +8,11 @@
 #include "util/StringAPI.hxx"
 #include "util/StringCompare.hxx"
 #include "util/StringPointer.hxx"
+#include "util/Macros.hpp"
+#include "util/StringView.hxx"
+#include "util/IterableSplitString.hxx"
+#include "Language/Language.hpp"
+#include <string_view>
 
 #ifdef _UNICODE
 #include "util/AllocatedString.hxx"
@@ -26,6 +31,41 @@ ProfileMap::GetPath(std::string_view key) const noexcept
     return nullptr;
 
   return ExpandLocalPath(Path(buffer));
+}
+
+std::vector<AllocatedPath>
+ProfileMap::GetMultiplePaths(std::string_view key) const noexcept
+{
+  std::vector<AllocatedPath> paths;
+
+  auto paths_string = Get(key);
+
+  if(paths_string == nullptr)
+    return paths;
+
+
+  for (auto i : TIterableSplitString(paths_string, _('|'))){
+
+    if (i.empty())
+      continue;
+
+#ifdef _UNICODE
+    std::wstring file_string(i);
+#else
+    std::string file_string(i);
+#endif
+
+    AllocatedPath path(Path(file_string.c_str()));
+
+    if (!path.MatchesExtension(_("txt")) && !path.MatchesExtension(_("air")))
+      continue;
+
+    paths.push_back(ExpandLocalPath(path));
+
+  }
+
+
+  return paths;
 }
 
 bool

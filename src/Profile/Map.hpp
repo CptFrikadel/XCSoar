@@ -11,7 +11,9 @@
 #include <string>
 
 #include <cstdint>
+#include <string_view>
 #include <tchar.h>
+#include <vector>
 
 struct GeoPoint;
 class RGB8Color;
@@ -173,6 +175,9 @@ public:
 
   [[gnu::pure]]
   bool GetPathIsEqual(std::string_view key, Path value) const noexcept;
+
+  std::vector<AllocatedPath> GetMultiplePaths(std::string_view key) const noexcept;
+
 
   /**
    * Gets a path from the profile and return its base name only.

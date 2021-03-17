@@ -10,6 +10,8 @@
 
 #include <string_view>
 
+#include <vector>
+
 class Path;
 class AllocatedPath;
 
@@ -47,6 +49,10 @@ Save() noexcept;
  */
 void
 SaveFile(Path path);
+
+std::vector<AllocatedPath> 
+GetMultiplePaths(std::string_view key) noexcept;
+
 
 /**
  * Sets the profile files to load when calling Load()

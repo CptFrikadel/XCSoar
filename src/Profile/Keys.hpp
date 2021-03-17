@@ -71,6 +71,7 @@ constexpr std::string_view RepetitiveSound = "RepetitiveSound";
 constexpr std::string_view AcknowledgementTime = "AcknowledgementTime";
 constexpr std::string_view AirfieldFile = "AirfieldFile"; // pL
 constexpr std::string_view AirspaceFile = "AirspaceFile"; // pL
+constexpr std::string_view AirspaceFileList = "AirspaceFileList";
 constexpr std::string_view AdditionalAirspaceFile = "AdditionalAirspaceFile"; // pL
 constexpr std::string_view FlarmFile = "FlarmFile";
 constexpr std::string_view PolarFile = "PolarFile"; // pL
