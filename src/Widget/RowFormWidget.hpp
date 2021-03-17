@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <type_traits>
 
 struct DialogLook;
@@ -439,6 +440,11 @@ public:
                    nullable);
   }
 
+  WndProperty *AddMultipleFiles(const TCHAR *label, const TCHAR *help,
+		  				const char *profile_key, const TCHAR *filters,
+						FileType file_type,
+						bool nullable = true);
+
   /**
    * Add a read-only multi-line control.  You can use
    * SetMultiLineText() to update its text.
@@ -750,6 +756,7 @@ public:
   }
 
   bool SaveValueFileReader(unsigned i, std::string_view profile_key) noexcept;
+  bool SaveValueMultiFileReader(unsigned int i, std::string_view profile_key) noexcept;
 
 private:
   static void SetProfile(std::string_view profile_key, unsigned value) noexcept;
