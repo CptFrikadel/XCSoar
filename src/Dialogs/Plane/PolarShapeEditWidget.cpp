@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,9 +27,9 @@
 #include "Form/DataField/Float.hpp"
 #include "Look/DialogLook.hpp"
 #include "Screen/Layout.hpp"
-#include "Screen/Font.hpp"
+#include "ui/canvas/Font.hpp"
 #include "UIGlobals.hpp"
-#include "Util/Macros.hpp"
+#include "util/Macros.hpp"
 #include "Language/Language.hpp"
 #include "Units/Units.hpp"
 #include "Units/Descriptor.hpp"
@@ -39,11 +39,13 @@
 #include <cassert>
 
 PolarShapeEditWidget::PolarShapeEditWidget(const PolarShape &_shape,
-                                           DataFieldListener *_listener)
+                                           DataFieldListener *_listener) noexcept
   :shape(_shape), listener(_listener) {}
 
+PolarShapeEditWidget::~PolarShapeEditWidget() noexcept = default;
+
 static void
-LoadValue(WndProperty &e, double value, UnitGroup unit_group)
+LoadValue(WndProperty &e, double value, UnitGroup unit_group) noexcept
 {
   const Unit unit = Units::GetUserUnitByGroup(unit_group);
 
@@ -56,20 +58,21 @@ LoadValue(WndProperty &e, double value, UnitGroup unit_group)
 }
 
 static void
-LoadPoint(PolarShapeEditWidget::PointEditor &pe, const PolarPoint &point)
+LoadPoint(PolarShapeEditWidget::PointEditor &pe,
+          const PolarPoint &point) noexcept
 {
   LoadValue(*pe.v, point.v, UnitGroup::HORIZONTAL_SPEED);
   LoadValue(*pe.w, point.w, UnitGroup::VERTICAL_SPEED);
 }
 
 static double
-GetValue(WndProperty &e)
+GetValue(WndProperty &e) noexcept
 {
   return ((DataFieldFloat *)e.GetDataField())->GetAsFixed();
 }
 
 static bool
-SaveValue(WndProperty &e, double &value_r, UnitGroup unit_group)
+SaveValue(WndProperty &e, double &value_r, UnitGroup unit_group) noexcept
 {
   const Unit unit = Units::GetUserUnitByGroup(unit_group);
 
@@ -82,7 +85,8 @@ SaveValue(WndProperty &e, double &value_r, UnitGroup unit_group)
 }
 
 static bool
-SavePoint(const PolarShapeEditWidget::PointEditor &pe, PolarPoint &point)
+SavePoint(const PolarShapeEditWidget::PointEditor &pe,
+          PolarPoint &point) noexcept
 {
   bool changed = false;
   changed |= SaveValue(*pe.v, point.v, UnitGroup::HORIZONTAL_SPEED);
@@ -91,7 +95,7 @@ SavePoint(const PolarShapeEditWidget::PointEditor &pe, PolarPoint &point)
 }
 
 void
-PolarShapeEditWidget::SetPolarShape(const PolarShape &_shape)
+PolarShapeEditWidget::SetPolarShape(const PolarShape &_shape) noexcept
 {
   shape = _shape;
 
@@ -100,21 +104,22 @@ PolarShapeEditWidget::SetPolarShape(const PolarShape &_shape)
 }
 
 PixelSize
-PolarShapeEditWidget::GetMinimumSize() const
+PolarShapeEditWidget::GetMinimumSize() const noexcept
 {
   return { Layout::Scale(200u),
       2 * Layout::GetMinimumControlHeight() };
 }
 
 PixelSize
-PolarShapeEditWidget::GetMaximumSize() const
+PolarShapeEditWidget::GetMaximumSize() const noexcept
 {
   return { Layout::Scale(400u),
       2 * Layout::GetMaximumControlHeight() };
 }
 
 void
-PolarShapeEditWidget::Prepare(ContainerWindow &parent, const PixelRect &_rc)
+PolarShapeEditWidget::Prepare(ContainerWindow &parent,
+                              const PixelRect &_rc) noexcept
 {
   PanelWidget::Prepare(parent, _rc);
   const DialogLook &look = UIGlobals::GetDialogLook();
@@ -127,15 +132,15 @@ PolarShapeEditWidget::Prepare(ContainerWindow &parent, const PixelRect &_rc)
 
   const unsigned row_height = height / 2;
   const unsigned label_width = 2 * Layout::GetTextPadding() +
-    std::max(look.text_font.TextSize(v_text).cx,
-             look.text_font.TextSize(w_text).cx);
+    std::max(look.text_font.TextSize(v_text).width,
+             look.text_font.TextSize(w_text).width);
   const unsigned edit_width = (width - label_width) / ARRAY_SIZE(points);
 
   WindowStyle style;
   style.TabStop();
 
   PixelRect label_rc(0, 0, label_width, row_height);
-  v_label = new WndFrame(panel, look, label_rc);
+  v_label = std::make_unique<WndFrame>(panel, look, label_rc);
   v_label->SetText(v_text);
 
   PixelRect rc;
@@ -145,8 +150,8 @@ PolarShapeEditWidget::Prepare(ContainerWindow &parent, const PixelRect &_rc)
   rc.bottom = row_height;
   for (unsigned i = 0; i < ARRAY_SIZE(points);
        ++i, rc.left += edit_width, rc.right += edit_width) {
-    points[i].v = new WndProperty(panel, look, _T(""),
-                                  rc, 0, style);
+    points[i].v = std::make_unique<WndProperty>(panel, look, _T(""),
+                                                rc, 0, style);
     DataFieldFloat *df = new DataFieldFloat(_T("%.0f"), _T("%.0f %s"),
                                             0, 300, 0, 1, false,
                                             listener);
@@ -155,7 +160,7 @@ PolarShapeEditWidget::Prepare(ContainerWindow &parent, const PixelRect &_rc)
 
   label_rc.top += row_height;
   label_rc.bottom += row_height;
-  w_label = new WndFrame(panel, look, label_rc);
+  w_label = std::make_unique<WndFrame>(panel, look, label_rc);
   w_label->SetText(w_text);
 
   rc.left = label_width;
@@ -181,8 +186,8 @@ PolarShapeEditWidget::Prepare(ContainerWindow &parent, const PixelRect &_rc)
 
   for (unsigned i = 0; i < ARRAY_SIZE(points);
        ++i, rc.left += edit_width, rc.right += edit_width) {
-    points[i].w = new WndProperty(panel, look, _T(""),
-                                  rc, 0, style);
+    points[i].w = std::make_unique<WndProperty>(panel, look, _T(""),
+                                                rc, 0, style);
     DataFieldFloat *df = new DataFieldFloat(_T("%.2f"), _T("%.2f %s"),
                                             min, 0, 0, step, false,
                                             listener);
@@ -194,19 +199,8 @@ PolarShapeEditWidget::Prepare(ContainerWindow &parent, const PixelRect &_rc)
     LoadPoint(points[i], shape[i]);
 }
 
-void
-PolarShapeEditWidget::Unprepare()
-{
-  for (auto &i : points) {
-    delete i.v;
-    delete i.w;
-  }
-
-  PanelWidget::Unprepare();
-}
-
 bool
-PolarShapeEditWidget::Save(bool &_changed)
+PolarShapeEditWidget::Save(bool &_changed) noexcept
 {
   bool changed = false;
 

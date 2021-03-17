@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -40,11 +40,12 @@ public:
     :RowFormWidget(look), device(_device), info(info) {}
 
   /* virtual methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc);
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept;
 };
 
 void
-ManageLX16xxWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+ManageLX16xxWidget::Prepare(ContainerWindow &parent,
+                            const PixelRect &rc) noexcept
 {
   StaticString<64> buffer;
 

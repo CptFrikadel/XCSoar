@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,9 +22,17 @@ Copyright_License {
 */
 
 #include "TextButtonRenderer.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
 #include "Look/ButtonLook.hpp"
+
+unsigned
+TextButtonRenderer::GetMinimumButtonWidth(const ButtonLook &look,
+                                          const TCHAR *caption) noexcept
+{
+  return 2 * (ButtonFrameRenderer::GetMargin() + Layout::GetTextPadding())
+    + look.font->TextSize(caption).width;
+}
 
 inline void
 TextButtonRenderer::DrawCaption(Canvas &canvas, const PixelRect &rc,
@@ -49,7 +57,7 @@ unsigned
 TextButtonRenderer::GetMinimumButtonWidth() const
 {
   return 2 * (frame_renderer.GetMargin() + Layout::GetTextPadding())
-    + GetLook().font->TextSize(caption.c_str()).cx;
+    + GetLook().font->TextSize(caption.c_str()).width;
 }
 
 void

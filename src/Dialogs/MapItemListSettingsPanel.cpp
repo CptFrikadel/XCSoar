@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,11 +27,12 @@ Copyright_License {
 #include "Language/Language.hpp"
 #include "UIGlobals.hpp"
 
-MapItemListSettingsPanel::MapItemListSettingsPanel()
+MapItemListSettingsPanel::MapItemListSettingsPanel() noexcept
   :RowFormWidget(UIGlobals::GetDialogLook()) {}
 
 void
-MapItemListSettingsPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+MapItemListSettingsPanel::Prepare(ContainerWindow &parent,
+                                  const PixelRect &rc) noexcept
 {
   RowFormWidget::Prepare(parent, rc);
 
@@ -49,7 +50,7 @@ MapItemListSettingsPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-MapItemListSettingsPanel::Save(bool &changed)
+MapItemListSettingsPanel::Save(bool &changed) noexcept
 {
   MapSettings &settings = CommonInterface::SetMapSettings();
 

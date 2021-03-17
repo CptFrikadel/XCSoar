@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -38,9 +38,9 @@ Copyright_License {
 #include "Engine/Task/ObservationZones/CylinderZone.hpp"
 
 #ifdef ENABLE_OPENGL
-#include "Screen/OpenGL/Scissor.hpp"
+#include "ui/canvas/opengl/Scissor.hpp"
 #else
-#include "Screen/WindowCanvas.hpp"
+#include "ui/canvas/WindowCanvas.hpp"
 #endif
 
 static const ComputerSettings &
@@ -147,7 +147,7 @@ TargetMapWindow::DrawTask(Canvas &canvas)
 
   ProtectedTaskManager::Lease task_manager(*task);
   const AbstractTask *task = task_manager->GetActiveTask();
-  if (task && task->CheckTask()) {
+  if (task && !IsError(task->CheckTask())) {
     OZRenderer ozv(task_look, airspace_renderer.GetLook(),
                    GetMapSettings().airspace);
     TaskPointRenderer tpv(canvas, projection, task_look,
@@ -335,7 +335,7 @@ TargetMapWindow::OnResize(PixelSize new_size)
 #endif
 
   projection.SetScreenSize(new_size);
-  projection.SetScreenOrigin(new_size.cx / 2, new_size.cy / 2);
+  projection.SetScreenOrigin(new_size.width / 2, new_size.height / 2);
   projection.UpdateScreenBounds();
 }
 

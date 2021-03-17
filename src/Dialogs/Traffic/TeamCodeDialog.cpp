@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -39,20 +39,14 @@
 #include "Blackboard/BlackboardListener.hpp"
 #include "Language/Language.hpp"
 #include "TeamActions.hpp"
-#include "Util/StringCompare.hxx"
-#include "Util/StringStrip.hxx"
-#include "Util/TruncateString.hpp"
-#include "Util/Macros.hpp"
+#include "util/StringCompare.hxx"
+#include "util/StringStrip.hxx"
+#include "util/TruncateString.hpp"
+#include "util/Macros.hpp"
 
 class TeamCodeWidget final
-  : public RowFormWidget, NullBlackboardListener, ActionListener {
+  : public RowFormWidget, NullBlackboardListener {
   enum Controls {
-    SET_CODE,
-    SET_WAYPOINT,
-    SET_FLARM_LOCK,
-  };
-
-  enum Buttons {
     OWN_CODE,
     MATE_CODE,
     RANGE,
@@ -74,13 +68,10 @@ private:
   void OnFlarmLockClicked();
 
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override;
-  virtual void Show(const PixelRect &rc) override;
-  virtual void Hide() override;
-
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
 
   /* virtual methods from class BlackboardListener */
   virtual void OnCalculatedUpdate(const MoreData &basic,
@@ -90,14 +81,14 @@ private:
 inline void
 TeamCodeWidget::CreateButtons(WidgetDialog &buttons)
 {
-  buttons.AddButton(_("Set code"), *this, SET_CODE);
-  buttons.AddButton(_("Set WP"), *this, SET_WAYPOINT);
-  buttons.AddButton(_("Flarm Lock"), *this, SET_FLARM_LOCK);
+  buttons.AddButton(_("Set code"), [this](){ OnCodeClicked(); });
+  buttons.AddButton(_("Set WP"), [this](){ OnSetWaypointClicked(); });
+  buttons.AddButton(_("Flarm Lock"), [this](){ OnFlarmLockClicked(); });
 }
 
 void
 TeamCodeWidget::Prepare(ContainerWindow &parent,
-                        const PixelRect &rc)
+                        const PixelRect &rc) noexcept
 {
   AddReadOnly(_("Own code"));
   AddReadOnly(_("Mate code"));
@@ -108,7 +99,7 @@ TeamCodeWidget::Prepare(ContainerWindow &parent,
 }
 
 void
-TeamCodeWidget::Show(const PixelRect &rc)
+TeamCodeWidget::Show(const PixelRect &rc) noexcept
 {
   Update(CommonInterface::Basic(), CommonInterface::Calculated());
   CommonInterface::GetLiveBlackboard().AddListener(*this);
@@ -116,7 +107,7 @@ TeamCodeWidget::Show(const PixelRect &rc)
 }
 
 void
-TeamCodeWidget::Hide()
+TeamCodeWidget::Hide() noexcept
 {
   RowFormWidget::Hide();
   CommonInterface::GetLiveBlackboard().RemoveListener(*this);
@@ -225,32 +216,14 @@ TeamCodeWidget::OnFlarmLockClicked()
 }
 
 void
-TeamCodeWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case SET_CODE:
-    OnCodeClicked();
-    break;
-
-  case SET_WAYPOINT:
-    OnSetWaypointClicked();
-    break;
-
-  case SET_FLARM_LOCK:
-    OnFlarmLockClicked();
-    break;
-  }
-}
-
-void
 dlgTeamCodeShowModal()
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
-  TeamCodeWidget widget(look);
-  WidgetDialog dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
-                      look, _("Team Code"), &widget);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<TeamCodeWidget>
+    dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
+           look, _("Team Code"));
   dialog.AddButton(_("Close"), mrOK);
+  dialog.SetWidget(look);
+  dialog.GetWidget().CreateButtons(dialog);
   dialog.ShowModal();
-  dialog.StealWidget();
 }

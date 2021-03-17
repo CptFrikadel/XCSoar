@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -24,12 +24,12 @@ Copyright_License {
 
 #include "Gauge/GaugeThermalAssistant.hpp"
 #include "Gauge/ThermalAssistantWindow.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Blackboard/LiveBlackboard.hpp"
 #include "Input/InputEvents.hpp"
 
 #ifdef ENABLE_OPENGL
-#include "Screen/OpenGL/Scope.hpp"
+#include "ui/canvas/opengl/Scope.hpp"
 #endif
 
 class GaugeThermalAssistantWindow : public ThermalAssistantWindow {
@@ -39,7 +39,7 @@ public:
   GaugeThermalAssistantWindow(ContainerWindow &parent,
                               PixelRect rc,
                               const ThermalAssistantLook &look,
-                              WindowStyle style=WindowStyle())
+                              WindowStyle style=WindowStyle()) noexcept
     :ThermalAssistantWindow(look, 5, true, true),
      dragging(false), pressed(false)
   {
@@ -47,7 +47,7 @@ public:
   }
 
 private:
-  void SetPressed(bool _pressed) {
+  void SetPressed(bool _pressed) noexcept {
     if (_pressed == pressed)
       return;
 
@@ -142,25 +142,18 @@ GaugeThermalAssistantWindow::OnPaint(Canvas &canvas)
 }
 
 void
-GaugeThermalAssistant::Prepare(ContainerWindow &parent, const PixelRect &rc)
+GaugeThermalAssistant::Prepare(ContainerWindow &parent,
+                               const PixelRect &rc) noexcept
 {
   WindowStyle style;
   style.Hide();
 
-  GaugeThermalAssistantWindow *window =
-    new GaugeThermalAssistantWindow(parent, rc, look, style);
-  SetWindow(window);
+  SetWindow(std::make_unique<GaugeThermalAssistantWindow>(parent, rc,
+                                                          look, style));
 }
 
 void
-GaugeThermalAssistant::Unprepare()
-{
-  DeleteWindow();
-  OverlappedWidget::Unprepare();
-}
-
-void
-GaugeThermalAssistant::Show(const PixelRect &rc)
+GaugeThermalAssistant::Show(const PixelRect &rc) noexcept
 {
   Update(blackboard.Basic().attitude, blackboard.Calculated());
 
@@ -170,14 +163,14 @@ GaugeThermalAssistant::Show(const PixelRect &rc)
 }
 
 void
-GaugeThermalAssistant::Hide()
+GaugeThermalAssistant::Hide() noexcept
 {
   blackboard.RemoveListener(*this);
   OverlappedWidget::Hide();
 }
 
 bool
-GaugeThermalAssistant::SetFocus()
+GaugeThermalAssistant::SetFocus() noexcept
 {
   return false;
 }
@@ -191,7 +184,7 @@ GaugeThermalAssistant::OnCalculatedUpdate(const MoreData &basic,
 
 void
 GaugeThermalAssistant::Update(const AttitudeState &attitude,
-                              const DerivedInfo &calculated)
+                              const DerivedInfo &calculated) noexcept
 {
   ThermalAssistantWindow &window = (ThermalAssistantWindow &)GetWindow();
   window.Update(attitude, calculated);

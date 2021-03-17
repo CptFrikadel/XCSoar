@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -30,18 +30,19 @@ Copyright_License {
 
 class RadioOffsetButtons final : public OffsetButtonsWidget {
 public:
-  RadioOffsetButtons(bool active_freq):OffsetButtonsWidget(UIGlobals::GetDialogLook().button, _T("%.0f KHz"), 5, 1000),set_active_freq(active_freq) {}
+  RadioOffsetButtons(bool active_freq) noexcept
+    :OffsetButtonsWidget(UIGlobals::GetDialogLook().button, _T("%.0f KHz"), 5, 1000),set_active_freq(active_freq) {}
 
 protected:
   /* virtual methods from OffsetButtonsWidget */
-  virtual void OnOffset(double offset) override;
+  void OnOffset(double offset) noexcept override;
 
 private:
   bool set_active_freq;
 };
 
 void
-RadioOffsetButtons::OnOffset(double offset)
+RadioOffsetButtons::OnOffset(double offset) noexcept
 {
   if(set_active_freq) {
     ActionInterface::OffsetActiveFrequency(offset, true);
@@ -51,15 +52,14 @@ RadioOffsetButtons::OnOffset(double offset)
 
 }
 
-Widget *
+std::unique_ptr<Widget>
 LoadActiveRadioFrequencyEditPanel(unsigned id)
 {
-  return new RadioOffsetButtons(true);
+  return std::make_unique<RadioOffsetButtons>(true);
 }
 
-Widget *
+std::unique_ptr<Widget>
 LoadStandbyRadioFrequencyEditPanel(unsigned id)
 {
-  return new RadioOffsetButtons(false);
+  return std::make_unique<RadioOffsetButtons>(false);
 }
-

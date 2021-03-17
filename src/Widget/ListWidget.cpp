@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,11 +22,11 @@ Copyright_License {
 */
 
 #include "ListWidget.hpp"
-#include "Screen/Window.hpp"
+#include "ui/window/Window.hpp"
 #include "Screen/Layout.hpp"
 
 PixelSize
-ListWidget::GetMinimumSize() const
+ListWidget::GetMinimumSize() const noexcept
 {
   return { unsigned(Layout::Scale(200u)),
       /* a list makes only sense when the user sees more than one row
@@ -35,24 +35,24 @@ ListWidget::GetMinimumSize() const
 }
 
 PixelSize
-ListWidget::GetMaximumSize() const
+ListWidget::GetMaximumSize() const noexcept
 {
   return PixelSize { 4096, 4096 };
 }
 
 ListControl &
 ListWidget::CreateList(ContainerWindow &parent, const DialogLook &look,
-                       const PixelRect &rc, unsigned row_height)
+                       const PixelRect &rc, unsigned row_height) noexcept
 {
   WindowStyle list_style;
   list_style.Hide();
   list_style.TabStop();
   list_style.Border();
 
-  ListControl *list =
-    new ListControl(parent, look, rc, list_style, row_height);
+  auto list = std::make_unique<ListControl>(parent, look, rc,
+                                            list_style, row_height);
   list->SetItemRenderer(this);
   list->SetCursorHandler(this);
-  SetWindow(list);
-  return *list;
+  SetWindow(std::move(list));
+  return GetList();
 }

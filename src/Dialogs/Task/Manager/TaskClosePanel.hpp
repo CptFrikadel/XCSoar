@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,11 +27,10 @@ Copyright_License {
 #include "Widget/Widget.hpp"
 #include "Form/Frame.hpp"
 #include "Form/Button.hpp"
-#include "Form/ActionListener.hpp"
 
 class TaskManagerDialog;
 
-class TaskClosePanel final : public NullWidget, ActionListener {
+class TaskClosePanel final : public NullWidget {
   enum Buttons {
     CLOSE,
     REVERT,
@@ -40,7 +39,7 @@ class TaskClosePanel final : public NullWidget, ActionListener {
   struct Layout {
     PixelRect close_button, message, revert_button;
 
-    Layout(PixelRect rc, const DialogLook &look);
+    Layout(PixelRect rc, const DialogLook &look) noexcept;
   };
 
 public:
@@ -57,22 +56,18 @@ private:
 
 public:
   TaskClosePanel(TaskManagerDialog &_dialog, bool *_task_modified,
-                 const DialogLook &_look);
+                 const DialogLook &_look) noexcept;
 
-  void CommitAndClose();
-  void RefreshStatus();
+  void CommitAndClose() noexcept;
+  void RefreshStatus() noexcept;
 
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  bool Click() override;
-  void ReClick() override;
-  void Show(const PixelRect &rc) override;
-  void Hide() override;
-  void Move(const PixelRect &rc) override;
-  bool SetFocus() override;
-
-private:
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Click() noexcept override;
+  void ReClick() noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
+  bool SetFocus() noexcept override;
 };
 
 #endif

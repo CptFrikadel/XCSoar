@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,12 +27,12 @@
 #include "Look/Look.hpp"
 #include "Interface.hpp"
 #include "Components.hpp"
-#include "Util/Clamp.hpp"
+#include "util/Clamp.hpp"
 
 void
 CrossSectionWidget::Update(const MoreData &basic,
                            const DerivedInfo &calculated,
-                           const MapSettings &settings)
+                           const MapSettings &settings) noexcept
 {
   CrossSectionWindow &w = (CrossSectionWindow &)GetWindow();
 
@@ -53,7 +53,8 @@ CrossSectionWidget::Update(const MoreData &basic,
 }
 
 void
-CrossSectionWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+CrossSectionWidget::Prepare(ContainerWindow &parent,
+                            const PixelRect &rc) noexcept
 {
   const Look &look = UIGlobals::GetLook();
 
@@ -61,23 +62,19 @@ CrossSectionWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
   style.Hide();
   style.Disable();
 
-  CrossSectionWindow *w =
-      new CrossSectionWindow(look.cross_section, look.map.airspace, look.chart, look.info_box);
+  auto w =
+    std::make_unique<CrossSectionWindow>(look.cross_section,
+                                         look.map.airspace,
+                                         look.chart, look.info_box);
   w->SetAirspaces(&airspace_database);
   w->SetTerrain(terrain);
   w->Create(parent, rc, style);
 
-  SetWindow(w);
+  SetWindow(std::move(w));
 }
 
 void
-CrossSectionWidget::Unprepare()
-{
-  DeleteWindow();
-}
-
-void
-CrossSectionWidget::Show(const PixelRect &rc)
+CrossSectionWidget::Show(const PixelRect &rc) noexcept
 {
   Update(CommonInterface::Basic(), CommonInterface::Calculated(),
          CommonInterface::GetMapSettings());
@@ -87,7 +84,7 @@ CrossSectionWidget::Show(const PixelRect &rc)
 }
 
 void
-CrossSectionWidget::Hide()
+CrossSectionWidget::Hide() noexcept
 {
   WindowWidget::Hide();
 

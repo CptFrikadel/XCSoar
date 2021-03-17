@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@ Copyright_License {
 #include "PagerWidget.hpp"
 
 #include <cassert>
+#include <memory>
 #include <tchar.h>
 
 class MaskedIcon;
@@ -70,34 +71,34 @@ private:
 
   const Orientation orientation;
 
-  TabDisplay *tab_display;
+  TabDisplay *tab_display = nullptr;
 
   /**
    * An optional #Widget that is shown at the corner right or below
    * the tabs.
    */
-  Widget *extra;
+  std::unique_ptr<Widget> extra;
 
   PixelRect extra_position;
 
-  bool large_extra;
+  bool large_extra = false;
 
 public:
   explicit TabWidget(Orientation _orientation=Orientation::AUTO,
-                     Widget *_extra=nullptr)
-    :orientation(_orientation), tab_display(nullptr),
-     extra(_extra), large_extra(false) {}
+                     std::unique_ptr<Widget> &&_extra=nullptr) noexcept
+    :orientation(_orientation),
+     extra(std::move(_extra)) {}
 
-  ~TabWidget() override;
+  ~TabWidget() noexcept override;
 
   /**
    * Must be called before Initialise().
    */
-  void SetExtra(Widget *_extra) {
+  void SetExtra(std::unique_ptr<Widget> &&_extra) noexcept {
     assert(extra == nullptr);
     assert(_extra != nullptr);
 
-    extra = _extra;
+    extra = std::move(_extra);
     large_extra = false;
   }
 
@@ -132,10 +133,10 @@ public:
       LargeExtra();
   }
 
-  void AddTab(Widget *widget, const TCHAR *caption,
+  void AddTab(std::unique_ptr<Widget> widget, const TCHAR *caption,
               const MaskedIcon *icon=nullptr);
 
-  gcc_pure
+  [[gnu::pure]]
   const TCHAR *GetButtonCaption(unsigned i) const;
 
   bool ClickPage(unsigned i);
@@ -143,20 +144,20 @@ public:
   bool PreviousPage();
 
   /* virtual methods from class Widget */
-  PixelSize GetMinimumSize() const override;
-  PixelSize GetMaximumSize() const override;
-  void Initialise(ContainerWindow &parent, const PixelRect &rc) override;
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override;
-  void Show(const PixelRect &rc) override;
-  void Hide() override;
-  void Move(const PixelRect &rc) override;
-  bool SetFocus() override;
-  bool KeyPress(unsigned key_code) override;
+  PixelSize GetMinimumSize() const noexcept override;
+  PixelSize GetMaximumSize() const noexcept override;
+  void Initialise(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Unprepare() noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
+  bool SetFocus() noexcept override;
+  bool KeyPress(unsigned key_code) noexcept override;
 
 protected:
   /* virtual methods from class PagerWidget */
-  void OnPageFlipped() override;
+  void OnPageFlipped() noexcept override;
 };
 
 #endif

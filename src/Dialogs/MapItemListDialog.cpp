@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@ Copyright_License {
 
 #include "Dialogs/MapItemListDialog.hpp"
 #include "Dialogs/WidgetDialog.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Dialogs/Airspace/Airspace.hpp"
 #include "Dialogs/Task/TaskDialogs.hpp"
 #include "Dialogs/Waypoint/WaypointDialogs.hpp"
@@ -76,13 +76,7 @@ HasDetails(const MapItem &item)
 }
 
 class MapItemListWidget final
-  : public ListWidget, private ActionListener {
-  enum Buttons {
-    SETTINGS,
-    GOTO,
-    ACK,
-  };
-
+  : public ListWidget {
   const MapItemList &list;
 
   const DialogLook &dialog_look;
@@ -125,10 +119,7 @@ protected:
 
 public:
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual void Unprepare() override {
-    DeleteWindow();
-  }
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
   /* virtual methods from class List::Handler */
   void OnPaintItem(Canvas &canvas, const PixelRect rc,
@@ -164,23 +155,30 @@ public:
   }
 
   void OnActivateItem(unsigned index) noexcept override;
-
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
 };
 
 void
 MapItemListWidget::CreateButtons(WidgetDialog &dialog)
 {
-  settings_button = dialog.AddButton(_("Settings"), *this, SETTINGS);
-  goto_button = dialog.AddButton(_("Goto"), *this, GOTO);
-  ack_button = dialog.AddButton(_("Ack Day"), *this, ACK);
+  settings_button = dialog.AddButton(_("Settings"), [](){
+    ShowMapItemListSettingsDialog();
+  });
+
+  goto_button = dialog.AddButton(_("Goto"), [this](){
+    OnGotoClicked();
+  });
+
+  ack_button = dialog.AddButton(_("Ack Day"), [this](){
+    OnAckClicked();
+  });
+
   details_button = dialog.AddButton(_("Details"), mrOK);
   cancel_button = dialog.AddButton(_("Close"), mrCancel);
 }
 
 void
-MapItemListWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+MapItemListWidget::Prepare(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
   CreateList(parent, dialog_look, rc,
              renderer.CalculateLayout(dialog_look));
@@ -210,7 +208,7 @@ MapItemListWidget::OnPaintItem(Canvas &canvas, const PixelRect rc,
       (!settings.item_list.add_arrival_altitude &&
        item.type == MapItem::Type::LOCATION)) {
     canvas.SelectBlackPen();
-    canvas.DrawLine(rc.left, rc.bottom - 1, rc.right, rc.bottom - 1);
+    canvas.DrawLine({rc.left, rc.bottom - 1}, {rc.right, rc.bottom - 1});
   }
 }
 
@@ -245,23 +243,6 @@ MapItemListWidget::OnAckClicked()
   UpdateButtons();
 }
 
-void
-MapItemListWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case SETTINGS:
-    ShowMapItemListSettingsDialog();
-    break;
-  case GOTO:
-    OnGotoClicked();
-    break;
-
-  case ACK:
-    OnAckClicked();
-    break;
-  }
-}
-
 static int
 ShowMapItemListDialog(const MapItemList &list,
                       const DialogLook &dialog_look, const MapLook &look,
@@ -269,21 +250,18 @@ ShowMapItemListDialog(const MapItemList &list,
                       const FinalGlideBarLook &final_glide_look,
                       const MapSettings &settings)
 {
-  MapItemListWidget widget(list, dialog_look, look,
-                           traffic_look, final_glide_look,
-                           settings);
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      dialog_look, _("Map elements at this location"),
-                      &widget);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<MapItemListWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           dialog_look, _("Map elements at this location"));
+  dialog.SetWidget(list, dialog_look, look,
+                   traffic_look, final_glide_look,
+                   settings);
+  dialog.GetWidget().CreateButtons(dialog);
   dialog.EnableCursorSelection();
 
-  int result = dialog.ShowModal() == mrOK
-    ? (int)widget.GetCursorIndex()
+  return dialog.ShowModal() == mrOK
+    ? (int)dialog.GetWidget().GetCursorIndex()
     : -1;
-  dialog.StealWidget();
-
-  return result;
 }
 
 static void

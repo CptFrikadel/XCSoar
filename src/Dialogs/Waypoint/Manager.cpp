@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -48,14 +48,7 @@ Copyright_License {
 #endif
 
 class WaypointManagerWidget final
-  : public ListWidget, private ActionListener {
-  enum Buttons {
-    NEW,
-    IMPORT,
-    EDIT,
-    SAVE,
-    DELETE,
-  };
+  : public ListWidget {
 
   Button *new_button, *edit_button, *save_button, *delete_button;
 
@@ -77,13 +70,9 @@ public:
   void SaveWaypoints();
 
   /* virtual methods from Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
-  void Unprepare() override {
-    DeleteWindow();
-  }
-
-  void Show(const PixelRect &rc) override {
+  void Show(const PixelRect &rc) noexcept override {
     ListWidget::Show(rc);
     Update();
   }
@@ -99,9 +88,6 @@ private:
   }
 
   void OnActivateItem(unsigned index) noexcept override;
-
-  /* virtual methods from ActionListener */
-  void OnAction(int id) noexcept override;
 
 private:
   void UpdateList();
@@ -122,11 +108,25 @@ private:
 void
 WaypointManagerWidget::CreateButtons(WidgetDialog &dialog)
 {
-  new_button = dialog.AddButton(_("New"), *this, NEW);
-  edit_button = dialog.AddButton(_("Import"), *this, IMPORT);
-  edit_button = dialog.AddButton(_("Edit"), *this, EDIT);
-  save_button = dialog.AddButton(_("Save"), *this, SAVE);
-  delete_button = dialog.AddButton(_("Delete"), *this, DELETE);
+  new_button = dialog.AddButton(_("New"), [this](){
+    OnWaypointNewClicked();
+  });
+
+  edit_button = dialog.AddButton(_("Import"), [this](){
+    OnWaypointImportClicked();
+  });
+
+  edit_button = dialog.AddButton(_("Edit"), [this](){
+    OnWaypointEditClicked(GetList().GetCursorIndex());
+  });
+
+  save_button = dialog.AddButton(_("Save"), [this](){
+    OnWaypointSaveClicked();
+  });
+
+  delete_button = dialog.AddButton(_("Delete"), [this](){
+    OnWaypointDeleteClicked(GetList().GetCursorIndex());
+  });
 }
 
 void
@@ -158,7 +158,8 @@ WaypointManagerWidget::UpdateList()
 }
 
 void
-WaypointManagerWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+WaypointManagerWidget::Prepare(ContainerWindow &parent,
+                               const PixelRect &rc) noexcept
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
   CreateList(parent, look, rc,
@@ -286,47 +287,21 @@ WaypointManagerWidget::OnWaypointDeleteClicked(unsigned i)
 }
 
 void
-WaypointManagerWidget::OnAction(int id) noexcept
-{
-  switch (Buttons(id)) {
-  case NEW:
-    OnWaypointNewClicked();
-    break;
-
-  case IMPORT:
-    OnWaypointImportClicked();
-    break;
-
-  case EDIT:
-    OnWaypointEditClicked(GetList().GetCursorIndex());
-    break;
-
-  case SAVE:
-    OnWaypointSaveClicked();
-    break;
-
-  case DELETE:
-    OnWaypointDeleteClicked(GetList().GetCursorIndex());
-    break;
-  }
-}
-
-void
 dlgConfigWaypointsShowModal()
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
-  WaypointManagerWidget widget;
-  WidgetDialog dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
-                      look, _("Waypoints Editor"), &widget);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<WaypointManagerWidget>
+    dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
+           look, _("Waypoints Editor"));
   dialog.AddButton(_("Close"), mrCancel);
+  dialog.SetWidget();
+  dialog.GetWidget().CreateButtons(dialog);
   dialog.EnableCursorSelection();
 
   dialog.ShowModal();
-  dialog.StealWidget();
 
-  if (widget.IsModified() &&
+  if (dialog.GetWidget().IsModified() &&
       ShowMessageBox(_("Save changes to waypoint file?"), _("Waypoints edited"),
                   MB_YESNO | MB_ICONQUESTION) == IDYES)
-      widget.SaveWaypoints();
+      dialog.GetWidget().SaveWaypoints();
 }

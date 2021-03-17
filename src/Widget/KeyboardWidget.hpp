@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,7 +26,6 @@ Copyright_License {
 
 #include "Widget.hpp"
 #include "Form/CharacterButton.hpp"
-#include "Form/ActionListener.hpp"
 #include "Form/Button.hpp"
 
 #include <tchar.h>
@@ -34,15 +33,11 @@ Copyright_License {
 struct ButtonLook;
 class WndSymbolButton;
 
-class KeyboardWidget : public NullWidget, ActionListener {
+class KeyboardWidget : public NullWidget {
 public:
   typedef bool (*OnCharacterCallback_t)(unsigned ch);
 
 protected:
-  enum Actions {
-    SHIFT,
-  };
-
   static constexpr unsigned MAX_BUTTONS = 40;
 
   const ButtonLook &look;
@@ -78,7 +73,7 @@ private:
   void PrepareSize(const PixelRect &rc);
   void OnResize(const PixelRect &rc);
 
-  gcc_pure
+  [[gnu::pure]]
   Button *FindButton(unsigned ch);
 
   void MoveButton(unsigned ch, int left, int top);
@@ -90,7 +85,7 @@ private:
                         int offset_left = 0);
   void MoveButtons(const PixelRect &rc);
 
-  gcc_pure
+  [[gnu::pure]]
   static bool IsLandscape(const PixelRect &rc) {
     return rc.GetWidth() >= rc.GetHeight();
   }
@@ -102,16 +97,13 @@ private:
 
 public:
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Show(const PixelRect &rc) override;
-  void Hide() override;
-  void Move(const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
 
 private:
   void OnShiftClicked();
-
-  /* virtual methods from ActionListener */
-  void OnAction(int id) noexcept override;
 };
 
 #endif

@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -58,8 +58,8 @@ public:
   void PresetCheck();
 
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
 private:
   /* methods from DataFieldListener */
@@ -116,7 +116,8 @@ UnitsConfigPanel::OnModified(DataField &df)
 }
 
 void
-UnitsConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+UnitsConfigPanel::Prepare(ContainerWindow &parent,
+                          const PixelRect &rc) noexcept
 {
   const UnitSetting &config = CommonInterface::GetUISettings().format.units;
   const CoordinateFormat coordinate_format =
@@ -257,7 +258,7 @@ UnitsConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-UnitsConfigPanel::Save(bool &_changed)
+UnitsConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -296,9 +297,9 @@ UnitsConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateUnitsConfigPanel()
 {
-  return new UnitsConfigPanel();
+  return std::make_unique<UnitsConfigPanel>();
 }
 

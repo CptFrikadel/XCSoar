@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -31,14 +31,14 @@ class FlightStatusPanel : public StatusPanel {
   const WaypointPtr nearest_waypoint;
 
 public:
-  FlightStatusPanel(const DialogLook &look, WaypointPtr &&_waypoint)
+  FlightStatusPanel(const DialogLook &look, WaypointPtr &&_waypoint) noexcept
     :StatusPanel(look), nearest_waypoint(std::move(_waypoint)) {}
 
   /* virtual methods from class StatusPanel */
-  void Refresh() override;
+  void Refresh() noexcept override;
 
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 };
 
 #endif

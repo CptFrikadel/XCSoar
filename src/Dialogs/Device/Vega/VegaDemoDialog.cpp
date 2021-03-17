@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@ Copyright_License {
 #include "Form/DataField/Listener.hpp"
 #include "Form/DataField/Float.hpp"
 #include "Form/DataField/Boolean.hpp"
-#include "Time/PeriodClock.hpp"
+#include "time/PeriodClock.hpp"
 #include "Operation/PopupOperationEnvironment.hpp"
 #include "Math/Util.hpp"
 
@@ -69,7 +69,7 @@ public:
     :RowFormWidget(_look) {}
 
   /* virtual methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
 private:
   /* methods from DataFieldListener */
@@ -94,7 +94,7 @@ VegaDemoWidget::OnModified(DataField &df)
 }
 
 void
-VegaDemoWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+VegaDemoWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   AddFloat(_("TE vario"),
            _("This produces a fake TE vario gross vertical velocity.  It can be used when in circling mode to demonstrate the lift tones.  When not in circling mode, set this to a realistic negative value so speed command tones are produced."),
@@ -121,12 +121,12 @@ dlgVegaDemoShowModal()
   VarioWriteNMEA(_T("PDVSC,S,DemoMode,3"), env);
 
   const DialogLook &look = UIGlobals::GetDialogLook();
-  VegaDemoWidget widget(look);
-  WidgetDialog dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
-                      look, _("Vario Demo"), &widget);
+  TWidgetDialog<VegaDemoWidget>
+    dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
+           look, _("Vario Demo"));
   dialog.AddButton(_("Close"), mrOK);
+  dialog.SetWidget(look);
   dialog.ShowModal();
-  dialog.StealWidget();
 
   // deactivate demo.
   VarioWriteNMEA(_T("PDVSC,S,DemoMode,0"), env);

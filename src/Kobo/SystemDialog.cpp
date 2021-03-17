@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,13 +27,13 @@ Copyright_License {
 #include "Dialogs/Message.hpp"
 #include "UIGlobals.hpp"
 #include "Language/Language.hpp"
-#include "Form/ActionListener.hpp"
 #include "Widget/RowFormWidget.hpp"
 #include "System.hpp"
 #include "Model.hpp"
 
 class SystemWidget final
-  : public RowFormWidget, ActionListener {
+  : public RowFormWidget {
+
   enum Buttons {
     REBOOT,
     SWITCH_KERNEL,
@@ -48,21 +48,18 @@ private:
   void ExportUSBStorage();
 
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override;
-
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override;
 };
 
 void
-SystemWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+SystemWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
-  AddButton("Reboot", *this, REBOOT);
+  AddButton("Reboot", [](){ KoboReboot(); });
   AddButton(IsKoboOTGKernel() ? "Disable USB-OTG" : "Enable USB-OTG",
-            *this, SWITCH_KERNEL);
+            [this](){ SwitchKernel(); });
 
-  AddButton("Export USB storage", *this, USB_STORAGE);
+  AddButton("Export USB storage", [this](){ ExportUSBStorage(); });
   SetRowEnabled(USB_STORAGE, !IsKoboOTGKernel());
 }
 
@@ -137,31 +134,12 @@ SystemWidget::ExportUSBStorage()
 }
 
 void
-SystemWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case REBOOT:
-    KoboReboot();
-    break;
-
-  case SWITCH_KERNEL:
-    SwitchKernel();
-    break;
-
-  case USB_STORAGE:
-    ExportUSBStorage();
-    break;
-  }
-}
-
-void
 ShowSystemDialog()
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
-  SystemWidget widget(look);
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      look, "System", &widget);
+  TWidgetDialog<SystemWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(), look, "System");
   dialog.AddButton(_("Close"), mrOK);
+  dialog.SetWidget(look);
   dialog.ShowModal();
-  dialog.StealWidget();
 }

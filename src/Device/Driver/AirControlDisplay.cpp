@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -77,16 +77,19 @@ ParsePAAVS(NMEAInputLine &line, NMEAInfo &info)
 
     if (line.ReadChecked(value)) {
       freq.SetKiloHertz(value);
+      info.settings.has_active_frequency.Update(info.clock);
       info.settings.active_frequency = freq;
     }
 
     if (line.ReadChecked(value)) {
       freq.SetKiloHertz(value);
+      info.settings.has_standby_frequency.Update(info.clock);
       info.settings.standby_frequency = freq;
     }
 
-    if (line.ReadChecked(value))
-      info.settings.volume = value;
+    unsigned volume;
+    if (line.ReadChecked(volume))
+      info.settings.ProvideVolume(volume, info.clock);
   } else {
     // ignore responses from XPDR
     return false;

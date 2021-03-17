@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -179,18 +179,18 @@ static void
 TestFlightToFinish(double aircraft_altitude)
 {
   OrderedTask task(task_behaviour);
-  const StartPoint tp1(new LineSectorZone(wp1->location),
+  const StartPoint tp1(std::make_unique<LineSectorZone>(wp1->location),
                        WaypointPtr(wp1), task_behaviour,
                        ordered_task_settings.start_constraints);
   task.Append(tp1);
-  const FinishPoint tp2(new LineSectorZone(wp2->location),
+  const FinishPoint tp2(std::make_unique<LineSectorZone>(wp2->location),
                         WaypointPtr(wp2), task_behaviour,
                         ordered_task_settings.finish_constraints, false);
   task.Append(tp2);
   task.SetActiveTaskPoint(1);
   task.UpdateGeometry();
 
-  ok1(task.CheckTask());
+  ok1(!IsError(task.CheckTask()));
 
   AircraftState aircraft;
   aircraft.Reset();
@@ -220,17 +220,17 @@ static void
 TestSimpleTask()
 {
   OrderedTask task(task_behaviour);
-  const StartPoint tp1(new LineSectorZone(wp1->location),
+  const StartPoint tp1(std::make_unique<LineSectorZone>(wp1->location),
                        WaypointPtr(wp1), task_behaviour,
                        ordered_task_settings.start_constraints);
   task.Append(tp1);
-  const FinishPoint tp2(new LineSectorZone(wp3->location),
+  const FinishPoint tp2(std::make_unique<LineSectorZone>(wp3->location),
                         WaypointPtr(wp3), task_behaviour,
                         ordered_task_settings.finish_constraints, false);
   task.Append(tp2);
   task.UpdateGeometry();
 
-  ok1(task.CheckTask());
+  ok1(!IsError(task.CheckTask()));
 
   AircraftState aircraft;
   aircraft.Reset();
@@ -257,20 +257,20 @@ static void
 TestHighFinish()
 {
   OrderedTask task(task_behaviour);
-  const StartPoint tp1(new LineSectorZone(wp1->location),
+  const StartPoint tp1(std::make_unique<LineSectorZone>(wp1->location),
                        WaypointPtr(wp1), task_behaviour,
                        ordered_task_settings.start_constraints);
   task.Append(tp1);
   Waypoint wp2b(*wp2);
   wp2b.elevation = 1000;
-  const FinishPoint tp2(new LineSectorZone(wp2b.location),
+  const FinishPoint tp2(std::make_unique<LineSectorZone>(wp2b.location),
                         WaypointPtr(new Waypoint(wp2b)), task_behaviour,
                         ordered_task_settings.finish_constraints, false);
   task.Append(tp2);
   task.SetActiveTaskPoint(1);
   task.UpdateGeometry();
 
-  ok1(task.CheckTask());
+  ok1(!IsError(task.CheckTask()));
 
   AircraftState aircraft;
   aircraft.Reset();
@@ -301,21 +301,21 @@ TestHighTP()
 {
   const double width(1);
   OrderedTask task(task_behaviour);
-  const StartPoint tp1(new LineSectorZone(wp1->location, width),
+  const StartPoint tp1(std::make_unique<LineSectorZone>(wp1->location, width),
                        WaypointPtr(wp1), task_behaviour,
                        ordered_task_settings.start_constraints);
   task.Append(tp1);
-  const ASTPoint tp2(new LineSectorZone(wp3->location, width),
+  const ASTPoint tp2(std::make_unique<LineSectorZone>(wp3->location, width),
                      MakeWaypointPtr(*wp3, 1500), task_behaviour);
   task.Append(tp2);
-  const FinishPoint tp3(new LineSectorZone(wp4->location, width),
+  const FinishPoint tp3(std::make_unique<LineSectorZone>(wp4->location, width),
                         MakeWaypointPtr(*wp4, 100), task_behaviour,
                         ordered_task_settings.finish_constraints, false);
   task.Append(tp3);
   task.SetActiveTaskPoint(1);
   task.UpdateGeometry();
 
-  ok1(task.CheckTask());
+  ok1(!IsError(task.CheckTask()));
 
   AircraftState aircraft;
   aircraft.Reset();
@@ -338,21 +338,21 @@ TestHighTPFinal()
 {
   const double width(1);
   OrderedTask task(task_behaviour);
-  const StartPoint tp1(new LineSectorZone(wp1->location, width),
+  const StartPoint tp1(std::make_unique<LineSectorZone>(wp1->location, width),
                        WaypointPtr(wp1), task_behaviour,
                        ordered_task_settings.start_constraints);
   task.Append(tp1);
-  const ASTPoint tp2(new LineSectorZone(wp3->location, width),
+  const ASTPoint tp2(std::make_unique<LineSectorZone>(wp3->location, width),
                      MakeWaypointPtr(*wp3, 1500), task_behaviour);
   task.Append(tp2);
-  const FinishPoint tp3(new LineSectorZone(wp5->location, width),
+  const FinishPoint tp3(std::make_unique<LineSectorZone>(wp5->location, width),
                         MakeWaypointPtr(*wp5, 200), task_behaviour,
                         ordered_task_settings.finish_constraints, false);
   task.Append(tp3);
   task.SetActiveTaskPoint(1);
   task.UpdateGeometry();
 
-  ok1(task.CheckTask());
+  ok1(!IsError(task.CheckTask()));
 
   AircraftState aircraft;
   aircraft.Reset();
@@ -375,21 +375,21 @@ TestLowTPFinal()
 {
   const double width(1);
   OrderedTask task(task_behaviour);
-  const StartPoint tp1(new LineSectorZone(wp1->location, width),
+  const StartPoint tp1(std::make_unique<LineSectorZone>(wp1->location, width),
                        MakeWaypointPtr(*wp1, 1500), task_behaviour,
                        ordered_task_settings.start_constraints);
   task.Append(tp1);
-  const ASTPoint tp2(new LineSectorZone(wp2->location, width),
+  const ASTPoint tp2(std::make_unique<LineSectorZone>(wp2->location, width),
                      WaypointPtr(wp2), task_behaviour);
   task.Append(tp2);
-  const FinishPoint tp3(new LineSectorZone(wp3->location, width),
+  const FinishPoint tp3(std::make_unique<LineSectorZone>(wp3->location, width),
                         WaypointPtr(wp3), task_behaviour,
                         ordered_task_settings.finish_constraints, false);
   task.Append(tp3);
   task.SetActiveTaskPoint(1);
   task.UpdateGeometry();
 
-  ok1(task.CheckTask());
+  ok1(!IsError(task.CheckTask()));
 
   AircraftState aircraft;
   aircraft.Reset();

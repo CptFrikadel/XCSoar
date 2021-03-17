@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -47,10 +47,11 @@ enum Controls {
 };
 
 TaskPropertiesPanel::TaskPropertiesPanel(TaskManagerDialog &_dialog,
-                                         OrderedTask **_active_task,
-                                         bool *_task_modified)
+                                         std::unique_ptr<OrderedTask> &_active_task,
+                                         bool *_task_modified) noexcept
   :RowFormWidget(_dialog.GetLook()), dialog(_dialog),
-   ordered_task_pointer(_active_task), ordered_task(*ordered_task_pointer),
+   ordered_task_pointer(_active_task),
+   ordered_task(ordered_task_pointer.get()),
    task_changed(_task_modified) {}
 
 void
@@ -197,7 +198,8 @@ TaskPropertiesPanel::OnModified(DataField &df)
 }
 
 void
-TaskPropertiesPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+TaskPropertiesPanel::Prepare(ContainerWindow &parent,
+                             const PixelRect &rc) noexcept
 {
   DataFieldEnum *dfe = new DataFieldEnum(this);
   dfe->EnableItemHelp(true);
@@ -263,15 +265,15 @@ TaskPropertiesPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 void
-TaskPropertiesPanel::ReClick()
+TaskPropertiesPanel::ReClick() noexcept
 {
   dialog.TaskViewClicked();
 }
 
 void
-TaskPropertiesPanel::Show(const PixelRect &rc)
+TaskPropertiesPanel::Show(const PixelRect &rc) noexcept
 {
-  ordered_task = *ordered_task_pointer;
+  ordered_task = ordered_task_pointer.get();
   orig_taskType = ordered_task->GetFactoryType();
 
   RefreshView();
@@ -280,7 +282,7 @@ TaskPropertiesPanel::Show(const PixelRect &rc)
 }
 
 bool
-TaskPropertiesPanel::Leave()
+TaskPropertiesPanel::Leave() noexcept
 {
   ReadValues();
   if (orig_taskType != ordered_task->GetFactoryType()) {

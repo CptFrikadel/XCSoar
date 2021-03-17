@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@ Copyright_License {
 #include "Widget/ListWidget.hpp"
 #include "Widget/TwoWidgets.hpp"
 #include "Widget/RowFormWidget.hpp"
-#include "Event/KeyCode.hpp"
+#include "ui/event/KeyCode.hpp"
 #include "Form/Edit.hpp"
 #include "Form/DataField/Listener.hpp"
 #include "Form/DataField/Prefix.hpp"
@@ -40,12 +40,12 @@ Copyright_License {
 #include "Waypoint/Waypoints.hpp"
 #include "Components.hpp"
 #include "Form/DataField/Enum.hpp"
-#include "Util/StringPointer.hxx"
-#include "Util/AllocatedString.hxx"
+#include "util/StringPointer.hxx"
+#include "util/AllocatedString.hxx"
 #include "UIGlobals.hpp"
 #include "Look/MapLook.hpp"
 #include "Look/DialogLook.hpp"
-#include "Util/Macros.hpp"
+#include "util/Macros.hpp"
 #include "Renderer/WaypointListRenderer.hpp"
 #include "Renderer/TwoTextRowsRenderer.hpp"
 #include "Units/Units.hpp"
@@ -66,10 +66,6 @@ enum Controls {
   DISTANCE,
   DIRECTION,
   TYPE,
-};
-
-enum Buttons {
-  SELECT,
 };
 
 static constexpr unsigned distance_filter_items[] = {
@@ -124,8 +120,8 @@ class WaypointFilterWidget;
 
 class WaypointListWidget final
   : public ListWidget, public DataFieldListener,
-    public ActionListener, NullBlackboardListener {
-  ActionListener &action_listener;
+    NullBlackboardListener {
+  WndForm &dialog;
 
   WaypointFilterWidget &filter_widget;
 
@@ -140,12 +136,12 @@ class WaypointListWidget final
   const unsigned ordered_task_index;
 
 public:
-  WaypointListWidget(ActionListener &_action_listener,
+  WaypointListWidget(WndForm &_dialog,
                      WaypointFilterWidget &_filter_widget,
                      GeoPoint _location, Angle _heading,
                      OrderedTask *_ordered_task,
                      unsigned _ordered_task_index)
-    :action_listener(_action_listener),
+    :dialog(_dialog),
      filter_widget(_filter_widget),
      location(_location), last_heading(_heading),
      ordered_task(_ordered_task),
@@ -162,19 +158,15 @@ public:
   }
 
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
-  void Unprepare() override {
-    DeleteWindow();
-  }
-
-  void Show(const PixelRect &rc) override {
+  void Show(const PixelRect &rc) noexcept override {
     ListWidget::Show(rc);
     UpdateList();
     CommonInterface::GetLiveBlackboard().AddListener(*this);
   }
 
-  void Hide() override {
+  void Hide() noexcept override {
     CommonInterface::GetLiveBlackboard().RemoveListener(*this);
 
     ListWidget::Hide();
@@ -190,9 +182,6 @@ public:
   }
 
   void OnActivateItem(unsigned index) noexcept override;
-
-  /* virtual methods from ActionListener */
-  void OnAction(int id) noexcept override;
 
   /* virtual methods from DataFieldListener */
   void OnModified(DataField &df) override;
@@ -219,25 +208,28 @@ public:
 
   /* virtual methods from class Widget */
   void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override;
+                       const PixelRect &rc) noexcept override;
 };
 
 class WaypointListButtons : public RowFormWidget {
-  ActionListener &dialog;
-  ActionListener *list;
+  WndForm &dialog;
+  WaypointListWidget *list;
 
 public:
-  WaypointListButtons(const DialogLook &look, ActionListener &_dialog)
+  WaypointListButtons(const DialogLook &look, WndForm &_dialog)
     :RowFormWidget(look), dialog(_dialog) {}
 
-  void SetList(ActionListener *_list) {
+  void SetList(WaypointListWidget *_list) {
     list = _list;
   }
 
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override {
-    AddButton(_("Select"), *list, SELECT);
-    AddButton(_("Cancel"), dialog, mrCancel);
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override {
+    AddButton(_("Select"), [this](){
+      list->OnWaypointListEnter();
+    });
+
+    AddButton(_("Cancel"), dialog.MakeModalResultCallback(mrCancel));
   }
 };
 
@@ -327,7 +319,8 @@ WaypointListWidget::UpdateList()
 }
 
 void
-WaypointListWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+WaypointListWidget::Prepare(ContainerWindow &parent,
+                            const PixelRect &rc) noexcept
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
   CreateList(parent, look, rc,
@@ -384,7 +377,7 @@ ReplaceProfilePathBase(DataFieldEnum &df, unsigned i,
                        const char *profile_key)
 {
   const auto p = Profile::map.GetPathBase(profile_key);
-  if (!p.IsNull())
+  if (p != nullptr)
     df.replaceEnumText(i, p.c_str());
 }
 
@@ -407,7 +400,7 @@ CreateTypeDataField(DataFieldListener *listener)
 
 void
 WaypointFilterWidget::Prepare(ContainerWindow &parent,
-                              const PixelRect &rc)
+                              const PixelRect &rc) noexcept
 {
   Add(_("Name"), nullptr, CreateNameDataField(listener));
   Add(_("Distance"), nullptr, CreateDistanceDataField(listener));
@@ -473,7 +466,7 @@ void
 WaypointListWidget::OnWaypointListEnter()
 {
   if (!items.empty())
-    action_listener.OnAction(mrOK);
+    dialog.SetModalResult(mrOK);
   else
     filter_widget.GetControl(NAME).BeginEditing();
 }
@@ -482,16 +475,6 @@ void
 WaypointListWidget::OnActivateItem(unsigned index) noexcept
 {
   OnWaypointListEnter();
-}
-
-void
-WaypointListWidget::OnAction(int id) noexcept
-{
-  switch (Buttons(id)) {
-  case SELECT:
-    OnWaypointListEnter();
-    break;
-  }
 }
 
 void
@@ -522,25 +505,29 @@ ShowWaypointListDialog(const GeoPoint &_location,
   WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
                       look, _("Select Waypoint"));
 
-  auto *filter_widget = new WaypointFilterWidget(look, heading);
+  auto left_widget =
+    std::make_unique<TwoWidgets>(std::make_unique<WaypointFilterWidget>(look, heading),
+                                 std::make_unique<WaypointListButtons>(look, dialog),
+                                 true);
 
-  WaypointListButtons *buttons_widget = new WaypointListButtons(look, dialog);
+  auto &filter_widget = (WaypointFilterWidget &)left_widget->GetFirst();
+  auto &buttons_widget = (WaypointListButtons &)left_widget->GetSecond();
 
-  TwoWidgets *left_widget =
-    new TwoWidgets(filter_widget, buttons_widget, true);
+  auto list_widget =
+    std::make_unique<WaypointListWidget>(dialog, filter_widget,
+                                         _location, heading,
+                                         _ordered_task, _ordered_task_index);
+  const auto &list_widget_ = *list_widget;
 
-  WaypointListWidget *const list_widget =
-    new WaypointListWidget(dialog, *filter_widget,
-                           _location, heading,
-                           _ordered_task, _ordered_task_index);
+  filter_widget.SetListener(list_widget.get());
+  buttons_widget.SetList(list_widget.get());
 
-  filter_widget->SetListener(list_widget);
-  buttons_widget->SetList(list_widget);
-
-  TwoWidgets *widget = new TwoWidgets(left_widget, list_widget, false);
+  TwoWidgets *widget = new TwoWidgets(std::move(left_widget),
+                                      std::move(list_widget),
+                                      false);
 
   dialog.FinishPreliminary(widget);
   return dialog.ShowModal() == mrOK
-    ? list_widget->GetCursorObject()
+    ? list_widget_.GetCursorObject()
     : nullptr;
 }

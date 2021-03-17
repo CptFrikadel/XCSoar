@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -44,14 +44,19 @@ UnorderedTask::CalcBestMC(const AircraftState &aircraft,
     return false;
   }
 
-  TaskBestMc bmc(tp, aircraft, task_behaviour.glide, glide_polar);
+  TaskBestMc bmc(*tp, aircraft, task_behaviour.glide, glide_polar);
   return bmc.search(glide_polar.GetMC(), best);
 }
 
-bool
-UnorderedTask::CheckTask() const
+TaskValidationErrorSet
+UnorderedTask::CheckTask() const noexcept
 {
-  return (GetActiveTaskPoint()!=NULL);
+  TaskValidationErrorSet errors;
+
+  if (GetActiveTaskPoint() == nullptr)
+    errors |= TaskValidationErrorType::EMPTY_TASK;
+
+  return errors;
 }
 
 bool
@@ -77,7 +82,7 @@ UnorderedTask::CalcRequiredGlide(const AircraftState &aircraft,
   if (tp == nullptr || !aircraft.location.IsValid())
     return 0;
 
-  TaskGlideRequired bgr(tp, aircraft, task_behaviour.glide, glide_polar);
+  TaskGlideRequired bgr(*tp, aircraft, task_behaviour.glide, glide_polar);
   return bgr.search(0);
 }
 

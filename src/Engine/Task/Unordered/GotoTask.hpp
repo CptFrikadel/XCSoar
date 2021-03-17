@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,6 +26,8 @@
 #include "UnorderedTask.hpp"
 #include "Engine/Waypoint/Ptr.hpp"
 
+#include <memory>
+
 class Waypoints;
 class UnorderedTaskPoint;
 
@@ -34,7 +36,7 @@ class UnorderedTaskPoint;
  */
 class GotoTask final : public UnorderedTask
 {
-  UnorderedTaskPoint *tp;
+  std::unique_ptr<UnorderedTaskPoint> tp;
   const Waypoints &waypoints;
 
 public:
@@ -75,10 +77,10 @@ public:
 
 public:
   /* virtual methods from class TaskInterface */
-  virtual unsigned TaskSize() const override;
-  virtual TaskWaypoint *GetActiveTaskPoint() const override;
-  virtual void SetActiveTaskPoint(unsigned index) override;
-  virtual bool IsValidTaskPoint(const int index_offset) const override;
+  unsigned TaskSize() const noexcept override;
+  TaskWaypoint *GetActiveTaskPoint() const noexcept override;
+  void SetActiveTaskPoint(unsigned index) noexcept override;
+  bool IsValidTaskPoint(const int index_offset) const noexcept override;
 
 protected:
   virtual bool UpdateSample(const AircraftState &state_now,

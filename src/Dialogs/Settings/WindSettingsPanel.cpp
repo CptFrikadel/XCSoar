@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@ Copyright_License {
 
 WindSettingsPanel::WindSettingsPanel(bool _edit_manual_wind,
                                      bool _clear_manual_button,
-                                     bool _edit_trail_drift)
+                                     bool _edit_trail_drift) noexcept
   :RowFormWidget(UIGlobals::GetDialogLook()),
    edit_manual_wind(_edit_manual_wind),
    clear_manual_button(_clear_manual_button),
@@ -41,7 +41,16 @@ WindSettingsPanel::WindSettingsPanel(bool _edit_manual_wind,
    clear_manual_window(nullptr) {}
 
 void
-WindSettingsPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+WindSettingsPanel::ClearManual() noexcept
+{
+  CommonInterface::SetComputerSettings().wind.manual_wind_available.Clear();
+  manual_modified = false;
+  UpdateVector();
+}
+
+void
+WindSettingsPanel::Prepare(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
   RowFormWidget::Prepare(parent, rc);
 
@@ -103,13 +112,13 @@ WindSettingsPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
   }
 
   if (clear_manual_button)
-    AddButton(_("Clear"), *this, CLEAR_MANUAL);
+    AddButton(_("Clear"), [this](){ ClearManual(); });
 
   UpdateVector();
 }
 
 void
-WindSettingsPanel::Show(const PixelRect &rc)
+WindSettingsPanel::Show(const PixelRect &rc) noexcept
 {
   if (edit_manual_wind) {
     UpdateVector();
@@ -120,7 +129,7 @@ WindSettingsPanel::Show(const PixelRect &rc)
 }
 
 void
-WindSettingsPanel::Hide()
+WindSettingsPanel::Hide() noexcept
 {
   RowFormWidget::Hide();
 
@@ -129,7 +138,7 @@ WindSettingsPanel::Hide()
 }
 
 bool
-WindSettingsPanel::Save(bool &_changed)
+WindSettingsPanel::Save(bool &_changed) noexcept
 {
   WindSettings &settings = CommonInterface::SetComputerSettings().wind;
   MapSettings &map_settings = CommonInterface::SetMapSettings();
@@ -154,18 +163,6 @@ WindSettingsPanel::Save(bool &_changed)
 }
 
 void
-WindSettingsPanel::OnAction(int id) noexcept
-{
-  switch (id) {
-  case CLEAR_MANUAL:
-    CommonInterface::SetComputerSettings().wind.manual_wind_available.Clear();
-    manual_modified = false;
-    UpdateVector();
-    break;
-  }
-}
-
-void
 WindSettingsPanel::OnModified(DataField &df)
 {
   if (!edit_manual_wind)
@@ -185,7 +182,7 @@ WindSettingsPanel::OnModified(DataField &df)
 }
 
 void
-WindSettingsPanel::UpdateVector()
+WindSettingsPanel::UpdateVector() noexcept
 {
   if (!edit_manual_wind)
     return;

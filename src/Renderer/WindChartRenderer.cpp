@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@ Copyright_License {
 #include "Math/LeastSquares.hpp"
 #include "Units/Units.hpp"
 #include "Math/FastRotation.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
 
 static void
@@ -63,6 +63,9 @@ RenderWindChart(Canvas &canvas, const PixelRect rc,
   LeastSquares windstats_mag;
 
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.SetXLabel(_T("w"), Units::GetSpeedName());
+  chart.SetYLabel(_T("h"), Units::GetAltitudeName());
+  chart.Begin();
 
   const auto height =
     fs.altitude_ceiling.GetMaxY() - fs.altitude_ceiling.GetMinY();
@@ -120,6 +123,5 @@ RenderWindChart(Canvas &canvas, const PixelRect rc,
     DrawArrow(canvas, point, mag * WINDVECTORMAG, angle);
   }
 
-  chart.DrawXLabel(_T("w"), Units::GetSpeedName());
-  chart.DrawYLabel(_T("h"), Units::GetAltitudeName());
+  chart.Finish();
 }

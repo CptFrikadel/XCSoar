@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,17 +26,16 @@ Copyright_License {
 #include "TaskListPanel.hpp"
 
 TaskMiscPanel::TaskMiscPanel(TaskManagerDialog &dialog,
-                             OrderedTask **_active_task, bool *_task_modified)
+                             std::unique_ptr<OrderedTask> &_active_task,
+                             bool *_task_modified) noexcept
 {
-  TaskActionsPanel *actions_panel =
-    new TaskActionsPanel(dialog, *this, _active_task, _task_modified);
-  Add(actions_panel);
+  Add(std::make_unique<TaskActionsPanel>(dialog, *this, _active_task, _task_modified));
 
   Add(CreateTaskListPanel(dialog, _active_task, _task_modified));
 }
 
 void
-TaskMiscPanel::ReClick()
+TaskMiscPanel::ReClick() noexcept
 {
   if (GetCurrentIndex() > 0)
     SetCurrent(0);
@@ -45,7 +44,7 @@ TaskMiscPanel::ReClick()
 }
 
 void
-TaskMiscPanel::Show(const PixelRect &rc)
+TaskMiscPanel::Show(const PixelRect &rc) noexcept
 {
   SetCurrent(0);
   PagerWidget::Show(rc);

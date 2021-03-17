@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@ Copyright_License {
 
 #include "ButtonRenderer.hpp"
 #include "TextRenderer.hpp"
-#include "Util/StaticString.hxx"
+#include "util/StaticString.hxx"
 
 /**
  * A #ButtonRenderer instance that renders a regular button frame and
@@ -55,6 +55,10 @@ public:
     text_renderer.SetControl();
   }
 
+  [[gnu::pure]]
+  static unsigned GetMinimumButtonWidth(const ButtonLook &look,
+                                        const TCHAR *caption) noexcept;
+
   const ButtonLook &GetLook() const {
     return frame_renderer.GetLook();
   }
@@ -68,7 +72,7 @@ public:
     text_renderer.InvalidateLayout();
   }
 
-  gcc_pure
+  [[gnu::pure]]
   unsigned GetMinimumButtonWidth() const override;
 
   void DrawButton(Canvas &canvas, const PixelRect &rc,

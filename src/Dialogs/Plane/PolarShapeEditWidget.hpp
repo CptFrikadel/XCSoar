@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,6 +27,8 @@
 #include "Widget/PanelWidget.hpp"
 #include "Polar/Shape.hpp"
 
+#include <memory>
+
 class WndFrame;
 class WndProperty;
 class DataFieldListener;
@@ -34,36 +36,37 @@ class DataFieldListener;
 class PolarShapeEditWidget : public PanelWidget {
 public:
   struct PointEditor {
-    WndProperty *v, *w;
+    std::unique_ptr<WndProperty> v, w;
   };
 
 private:
   PolarShape shape;
 
-  WndFrame *v_label, *w_label;
+  std::unique_ptr<WndFrame> v_label, w_label;
 
   PointEditor points[3];
 
   DataFieldListener *const listener;
 
 public:
-  PolarShapeEditWidget(const PolarShape &shape, DataFieldListener *_listener);
+  PolarShapeEditWidget(const PolarShape &shape,
+                       DataFieldListener *_listener) noexcept;
+  ~PolarShapeEditWidget() noexcept;
 
-  const PolarShape &GetPolarShape() const {
+  const PolarShape &GetPolarShape() const noexcept {
     return shape;
   }
 
   /**
    * Fill new values into the form.
    */
-  void SetPolarShape(const PolarShape &shape);
+  void SetPolarShape(const PolarShape &shape) noexcept;
 
   /* virtual methods from class Widget */
-  PixelSize GetMinimumSize() const override;
-  PixelSize GetMaximumSize() const override;
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override;
-  bool Save(bool &changed) override;
+  PixelSize GetMinimumSize() const noexcept override;
+  PixelSize GetMaximumSize() const noexcept override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 };
 
 #endif

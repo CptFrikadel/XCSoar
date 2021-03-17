@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -30,7 +30,7 @@ Copyright_License {
 #include "Widget/RowFormWidget.hpp"
 #include "UIGlobals.hpp"
 #include "Waypoint/Patterns.hpp"
-#include "OS/Path.hpp"
+#include "system/Path.hpp"
 
 enum ControlIndex {
   DataPath,
@@ -53,12 +53,12 @@ public:
     :RowFormWidget(UIGlobals::GetDialogLook()) {}
 
 public:
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 };
 
 void
-SiteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+SiteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   WndProperty *wp = Add(_T(""), 0, true);
   wp->SetText(GetPrimaryDataPath().c_str());
@@ -109,7 +109,7 @@ SiteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-SiteConfigPanel::Save(bool &_changed)
+SiteConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -134,8 +134,8 @@ SiteConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateSiteConfigPanel()
 {
-  return new SiteConfigPanel();
+  return std::make_unique<SiteConfigPanel>();
 }

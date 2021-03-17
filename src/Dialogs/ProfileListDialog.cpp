@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -29,26 +29,21 @@ Copyright_License {
 #include "Dialogs/WidgetDialog.hpp"
 #include "Widget/TextListWidget.hpp"
 #include "Form/Button.hpp"
-#include "OS/FileUtil.hpp"
-#include "OS/Path.hpp"
+#include "system/FileUtil.hpp"
+#include "system/Path.hpp"
 #include "LocalPath.hpp"
 #include "Profile/Map.hpp"
 #include "Profile/File.hpp"
 #include "UIGlobals.hpp"
 #include "Language/Language.hpp"
-#include "Util/StaticString.hxx"
+#include "util/StaticString.hxx"
 
 #include <vector>
 
 #include <cassert>
 
-/* this macro exists in the WIN32 API */
-#ifdef DELETE
-#undef DELETE
-#endif
-
 class ProfileListWidget final
-  : public TextListWidget, private ActionListener {
+  : public TextListWidget {
 
   struct ListItem {
     StaticString<32> name;
@@ -74,13 +69,6 @@ class ProfileListWidget final
     }
   };
 
-  enum Buttons {
-    NEW,
-    PASSWORD,
-    COPY,
-    DELETE,
-  };
-
   const bool select;
 
   WndForm *form;
@@ -90,7 +78,7 @@ class ProfileListWidget final
   std::vector<ListItem> list;
 
 public:
-  ProfileListWidget(bool _select=false):select(_select) {}
+  ProfileListWidget(bool _select):select(_select) {}
 
   void CreateButtons(WidgetDialog &dialog);
 
@@ -117,8 +105,8 @@ private:
 
 public:
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override;
 
 protected:
   /* virtual methods from TextListWidget */
@@ -134,10 +122,6 @@ protected:
   void OnActivateItem(unsigned index) noexcept override {
     form->SetModalResult(mrOK);
   }
-
-private:
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
 };
 
 void
@@ -186,14 +170,15 @@ ProfileListWidget::CreateButtons(WidgetDialog &dialog)
 {
   form = &dialog;
 
-  dialog.AddButton(_("New"), *this, NEW);
-  password_button = dialog.AddButton(_("Password"), *this, PASSWORD);
-  copy_button = dialog.AddButton(_("Copy"), *this, COPY);
-  delete_button = dialog.AddButton(_("Delete"), *this, DELETE);
+  dialog.AddButton(_("New"), [this](){ NewClicked(); });
+  password_button = dialog.AddButton(_("Password"), [this](){ PasswordClicked(); });
+  copy_button = dialog.AddButton(_("Copy"), [this](){ CopyClicked(); });
+  delete_button = dialog.AddButton(_("Delete"), [this](){ DeleteClicked(); });
 }
 
 void
-ProfileListWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+ProfileListWidget::Prepare(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
   TextListWidget::Prepare(parent, rc);
   UpdateList();
@@ -344,65 +329,39 @@ ProfileListWidget::DeleteClicked()
 }
 
 void
-ProfileListWidget::OnAction(int id) noexcept
-{
-  switch ((Buttons)id) {
-  case NEW:
-    NewClicked();
-    break;
-
-  case PASSWORD:
-    PasswordClicked();
-    break;
-
-  case COPY:
-    CopyClicked();
-    break;
-
-  case DELETE:
-    DeleteClicked();
-    break;
-  }
-}
-
-void
 ProfileListDialog()
 {
-  ProfileListWidget widget;
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      UIGlobals::GetDialogLook(),
-                      _("Profiles"), &widget);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<ProfileListWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           UIGlobals::GetDialogLook(), _("Profiles"));
   dialog.AddButton(_("Close"), mrOK);
+  dialog.SetWidget(false);
+  dialog.GetWidget().CreateButtons(dialog);
   dialog.EnableCursorSelection();
 
   dialog.ShowModal();
-  dialog.StealWidget();
 }
 
 AllocatedPath
 SelectProfileDialog(Path selected_path)
 {
-  ProfileListWidget widget(true);
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      UIGlobals::GetDialogLook(),
-                      _("Select profile"), &widget);
+  TWidgetDialog<ProfileListWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           UIGlobals::GetDialogLook(), _("Select profile"));
+  dialog.SetWidget(true);
   dialog.AddButton(_("Select"), mrOK);
-  widget.CreateButtons(dialog);
+  dialog.GetWidget().CreateButtons(dialog);
   dialog.AddButton(_("Cancel"), mrCancel);
   dialog.EnableCursorSelection();
 
   if (!selected_path.IsNull()) {
     dialog.PrepareWidget();
-    widget.SelectPath(selected_path);
+    dialog.GetWidget().SelectPath(selected_path);
   }
 
   auto result = dialog.ShowModal();
 
-  selected_path = result == mrOK
-    ? widget.GetSelectedPath()
+  return result == mrOK
+    ? dialog.GetWidget().GetSelectedPath()
     : nullptr;
-  dialog.StealWidget();
-
-  return selected_path;
 }

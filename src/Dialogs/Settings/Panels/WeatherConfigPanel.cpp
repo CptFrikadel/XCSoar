@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@ Copyright_License {
 #include "Widget/RowFormWidget.hpp"
 #include "Interface.hpp"
 #include "UIGlobals.hpp"
-#include "Util/NumberParser.hpp"
+#include "util/NumberParser.hpp"
 
 enum ControlIndex {
 #ifdef HAVE_PCMET
@@ -47,12 +47,13 @@ public:
 
 public:
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 };
 
 void
-WeatherConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+WeatherConfigPanel::Prepare(ContainerWindow &parent,
+                            const PixelRect &rc) noexcept
 {
   const auto &settings = CommonInterface::GetComputerSettings().weather;
 
@@ -63,14 +64,17 @@ WeatherConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
   AddPassword(_T("pc_met Password"), _T(""),
               settings.pcmet.www_credentials.password);
 
+#if 0
+  // code disabled because DWD has terminated our access */
   AddText(_T("pc_met FTP Username"), _T(""),
           settings.pcmet.ftp_credentials.username);
   AddPassword(_T("pc_met FTP Password"), _T(""),
               settings.pcmet.ftp_credentials.password);
+#endif
 }
 
 bool
-WeatherConfigPanel::Save(bool &_changed)
+WeatherConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -83,11 +87,14 @@ WeatherConfigPanel::Save(bool &_changed)
   changed |= SaveValue(PCMET_PASSWORD, ProfileKeys::PCMetPassword,
                        settings.pcmet.www_credentials.password);
 
+#if 0
+  // code disabled because DWD has terminated our access */
   changed |= SaveValue(PCMET_FTP_USER, ProfileKeys::PCMetFtpUsername,
                        settings.pcmet.ftp_credentials.username);
 
   changed |= SaveValue(PCMET_FTP_PASSWORD, ProfileKeys::PCMetFtpPassword,
                        settings.pcmet.ftp_credentials.password);
+#endif
 #endif
 
   _changed |= changed;
@@ -95,8 +102,8 @@ WeatherConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateWeatherConfigPanel()
 {
-  return new WeatherConfigPanel();
+  return std::make_unique<WeatherConfigPanel>();
 }

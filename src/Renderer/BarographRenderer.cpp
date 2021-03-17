@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@ Copyright_License {
 #include "BarographRenderer.hpp"
 #include "ChartRenderer.hpp"
 #include "Look/CrossSectionLook.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
 #include "Units/Units.hpp"
 #include "Task/ProtectedTaskManager.hpp"
@@ -72,6 +72,7 @@ RenderBarographSpark(Canvas &canvas, const PixelRect rc,
 {
   std::lock_guard<Mutex> lock(fs.mutex);
   ChartRenderer chart(chart_look, canvas, rc, false);
+  chart.Begin();
 
   if (!fs.altitude.HasResult())
     return;
@@ -102,6 +103,8 @@ RenderBarographSpark(Canvas &canvas, const PixelRect rc,
     const auto &s = fs.altitude.GetSlots()[fs.altitude.GetCount()-1];
     chart.DrawDot(s.x, s.y, Layout::Scale(2));
   }
+
+  chart.Finish();
 }
 
 void
@@ -114,6 +117,9 @@ RenderBarograph(Canvas &canvas, const PixelRect rc,
                 const ProtectedTaskManager *_task)
 {
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.SetXLabel(_T("t"), _T("hr"));
+  chart.SetYLabel(_T("h"), Units::GetAltitudeName());
+  chart.Begin();
 
   if (!fs.altitude.HasResult()) {
     chart.DrawNoData();
@@ -162,8 +168,6 @@ RenderBarograph(Canvas &canvas, const PixelRect rc,
   }
 
   chart.DrawLineGraph(fs.altitude, ChartLook::STYLE_BLACK);
-
-  chart.DrawXLabel(_T("t"), _T("hr"));
-  chart.DrawYLabel(_T("h"), Units::GetAltitudeName());
+  chart.Finish();
 }
 

@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -29,7 +29,6 @@
 GotoTask::GotoTask(const TaskBehaviour &tb,
                    const Waypoints &wps)
   :UnorderedTask(TaskType::GOTO, tb),
-   tp(NULL),
    waypoints(wps)
 {
 }
@@ -45,24 +44,23 @@ GotoTask::SetTaskBehaviour(const TaskBehaviour &tb)
 
 GotoTask::~GotoTask() 
 {
-  delete tp;
 }
 
 TaskWaypoint*
-GotoTask::GetActiveTaskPoint() const
+GotoTask::GetActiveTaskPoint() const noexcept
 { 
-  return tp;
+  return tp.get();
 }
 
 bool 
-GotoTask::IsValidTaskPoint(const int index_offset) const
+GotoTask::IsValidTaskPoint(const int index_offset) const noexcept
 {
   return (index_offset == 0 && tp != NULL);
 }
 
 
 void 
-GotoTask::SetActiveTaskPoint(unsigned index)
+GotoTask::SetActiveTaskPoint(unsigned index) noexcept
 {
   // nothing to do
 }
@@ -81,8 +79,7 @@ bool
 GotoTask::DoGoto(WaypointPtr &&wp)
 {
   if (task_behaviour.goto_nonlandable || wp->IsLandable()) {
-    delete tp;
-    tp = new UnorderedTaskPoint(std::move(wp), task_behaviour);
+    tp = std::make_unique<UnorderedTaskPoint>(std::move(wp), task_behaviour);
     stats.start.Reset();
     force_full_update = true;
     return true;
@@ -99,7 +96,7 @@ GotoTask::AcceptTaskPointVisitor(TaskPointConstVisitor& visitor) const
 }
 
 unsigned 
-GotoTask::TaskSize() const
+GotoTask::TaskSize() const noexcept
 {
   return tp ? 1 : 0;
 }
@@ -112,8 +109,8 @@ GotoTask::TakeoffAutotask(const GeoPoint& location, const double terrain_alt)
 
   auto wp = waypoints.GetNearestLandable(location, 5000);
   if (!wp)
-    wp.reset(new Waypoint(waypoints.GenerateTakeoffPoint(location,
-                                                         terrain_alt)));
+    wp = std::make_unique<Waypoint>(waypoints.GenerateTakeoffPoint(location,
+                                                                   terrain_alt));
 
   return DoGoto(std::move(wp));
 }

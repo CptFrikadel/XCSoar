@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,25 +26,18 @@ Copyright_License {
 #include "Blackboard/LiveBlackboard.hpp"
 
 void
-GlueGaugeVario::Prepare(ContainerWindow &parent, const PixelRect &rc)
+GlueGaugeVario::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   WindowStyle style;
   style.Hide();
   style.Disable();
 
-  GaugeVario *gauge = new GaugeVario(blackboard, parent, look,
-                                     rc, style);
-  SetWindow(gauge);
+  SetWindow(std::make_unique<GaugeVario>(blackboard, parent, look,
+                                         rc, style));
 }
 
 void
-GlueGaugeVario::Unprepare()
-{
-  DeleteWindow();
-}
-
-void
-GlueGaugeVario::Show(const PixelRect &rc)
+GlueGaugeVario::Show(const PixelRect &rc) noexcept
 {
   WindowWidget::Show(rc);
 
@@ -52,7 +45,7 @@ GlueGaugeVario::Show(const PixelRect &rc)
 }
 
 void
-GlueGaugeVario::Hide()
+GlueGaugeVario::Hide() noexcept
 {
   blackboard.RemoveListener(*this);
 

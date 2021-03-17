@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,10 +27,11 @@
 #include "Task/AbstractTask.hpp"
 #include "SmartTaskAdvance.hpp"
 #include "Waypoint/Ptr.hpp"
-#include "Util/DereferenceIterator.hxx"
-#include "Util/StaticString.hxx"
+#include "util/DereferenceIterator.hxx"
+#include "util/StaticString.hxx"
 
 #include <cassert>
+#include <memory>
 #include <vector>
 
 class SearchPoint;
@@ -63,28 +64,33 @@ class OrderedTask final : public AbstractTask
 {
 public:
   /** Storage type of task points */
-  typedef std::vector<OrderedTaskPoint*> OrderedTaskPointVector;
+  using OrderedTaskPointVector = std::vector<std::unique_ptr<OrderedTaskPoint>>;
 
-  typedef DereferenceContainerAdapter<const OrderedTaskPointVector,
-                                      const OrderedTaskPoint> ConstTaskPointList;
+  using ConstTaskPointList =
+    DereferenceContainerAdapter<const OrderedTaskPointVector,
+                                const OrderedTaskPoint>;
+
+  using TaskPointList =
+    DereferenceContainerAdapter<const OrderedTaskPointVector,
+                                OrderedTaskPoint>;
 
 private:
   OrderedTaskPointVector task_points;
   OrderedTaskPointVector optional_start_points;
 
-  StartPoint *taskpoint_start;
-  FinishPoint *taskpoint_finish;
+  StartPoint *taskpoint_start = nullptr;
+  FinishPoint *taskpoint_finish = nullptr;
 
   TaskProjection task_projection;
 
   GeoPoint last_min_location;
 
   TaskFactoryType factory_mode;
-  AbstractTaskFactory* active_factory;
+  std::unique_ptr<AbstractTaskFactory> active_factory;
   OrderedTaskSettings ordered_settings;
   SmartTaskAdvance task_advance;
-  TaskDijkstraMin *dijkstra_min;
-  TaskDijkstraMax *dijkstra_max;
+  std::unique_ptr<TaskDijkstraMin> dijkstra_min;
+  std::unique_ptr<TaskDijkstraMax> dijkstra_max;
 
   StaticString<64> name;
 
@@ -99,8 +105,8 @@ public:
    *
    * @return Initialised object
    */
-  explicit OrderedTask(const TaskBehaviour &tb);
-  ~OrderedTask();
+  explicit OrderedTask(const TaskBehaviour &tb) noexcept;
+  ~OrderedTask() noexcept;
 
   /**
    * Accessor for factory system for constructing tasks
@@ -108,7 +114,7 @@ public:
    * @return Factory
    */
   gcc_pure
-  AbstractTaskFactory& GetFactory() const {
+  AbstractTaskFactory &GetFactory() const noexcept {
     return *active_factory;
   }
 
@@ -154,8 +160,7 @@ public:
    *
    * @return Initialised object
    */
-  gcc_malloc
-  OrderedTask *Clone(const TaskBehaviour &tb) const;
+  std::unique_ptr<OrderedTask> Clone(const TaskBehaviour &tb) const noexcept;
 
   /**
    * Copy task into this task
@@ -676,20 +681,20 @@ public:
 
 public:
   /* virtual methods from class TaskInterface */
-  unsigned TaskSize() const override {
+  unsigned TaskSize() const noexcept override {
     return task_points.size();
   }
 
-  void SetActiveTaskPoint(unsigned desired) override;
-  TaskWaypoint *GetActiveTaskPoint() const override;
-  bool IsValidTaskPoint(const int index_offset=0) const override;
+  void SetActiveTaskPoint(unsigned desired) noexcept override;
+  TaskWaypoint *GetActiveTaskPoint() const noexcept override;
+  bool IsValidTaskPoint(const int index_offset=0) const noexcept override;
   bool UpdateIdle(const AircraftState& state_now,
-                  const GlidePolar &glide_polar) override;
+                  const GlidePolar &glide_polar) noexcept override;
 
   /* virtual methods from class AbstractTask */
   void Reset() override;
   bool TaskStarted(bool soft=false) const override;
-  bool CheckTask() const override;
+  TaskValidationErrorSet CheckTask() const noexcept override;
 
 protected:
   /* virtual methods from class AbstractTask */

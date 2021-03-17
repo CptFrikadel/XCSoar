@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,8 +22,10 @@ Copyright_License {
 */
 
 #include "Screen/Layout.hpp"
+#include "ui/dim/Size.hpp"
 #include "Hardware/DisplayDPI.hpp"
 #include "Hardware/DisplaySize.hpp"
+#include "Asset.hpp"
 
 #include <algorithm>
 
@@ -33,7 +35,6 @@ namespace Layout
   unsigned min_screen_pixels = 512;
   unsigned scale = 1;
   unsigned scale_1024 = 1024;
-  unsigned small_scale = 1024;
   unsigned pen_width_scale = 1024;
   unsigned fine_pen_width_scale = 1024;
   unsigned pt_scale = 1024;
@@ -48,7 +49,7 @@ namespace Layout
  * Is the given pixel size smaller than 5 inch?
  */
 static constexpr bool
-IsSmallScreen(unsigned size, unsigned dpi)
+IsSmallScreen(unsigned size, unsigned dpi) noexcept
 {
   return size < dpi * 5;
 }
@@ -58,7 +59,7 @@ IsSmallScreen(unsigned size, unsigned dpi)
  */
 static constexpr bool
 IsSmallScreen(unsigned width, unsigned height,
-              unsigned x_dpi, unsigned y_dpi)
+              unsigned x_dpi, unsigned y_dpi) noexcept
 {
   return width < height
     ? IsSmallScreen(width, x_dpi)
@@ -70,15 +71,15 @@ IsSmallScreen(unsigned width, unsigned height,
  */
 static constexpr bool
 IsSmallScreen(PixelSize size,
-              unsigned x_dpi, unsigned y_dpi)
+              unsigned x_dpi, unsigned y_dpi) noexcept
 {
-  return IsSmallScreen(size.cx, size.cy, x_dpi, y_dpi);
+  return IsSmallScreen(size.width, size.height, x_dpi, y_dpi);
 }
 
 void
-Layout::Initialize(PixelSize new_size, unsigned ui_scale, unsigned custom_dpi)
+Layout::Initialize(PixelSize new_size, unsigned ui_scale, unsigned custom_dpi) noexcept
 {
-  const unsigned width = new_size.cx, height = new_size.cy;
+  const unsigned width = new_size.width, height = new_size.height;
 
   min_screen_pixels = std::min(width, height);
   landscape = width > height;
@@ -96,8 +97,6 @@ Layout::Initialize(PixelSize new_size, unsigned ui_scale, unsigned custom_dpi)
   // square should be shrunk
   scale_1024 = std::max(1024U, min_screen_pixels * 1024 / (square ? 320 : 240));
   scale = scale_1024 / 1024;
-
-  small_scale = (scale_1024 - 1024) / 2 + 1024;
 
   pen_width_scale = std::max(1024u, x_dpi * 1024u / 80u);
   fine_pen_width_scale = std::max(1024u, x_dpi * 1024u / 160u);

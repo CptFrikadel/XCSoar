@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -47,20 +47,22 @@ ListPicker(const TCHAR *caption,
   ListPickerWidget *const list_widget =
     new ListPickerWidget(num_items, initial_value, item_height,
                          item_renderer, dialog, caption, help_text);
-  TextWidget *text_widget = nullptr;
-  TwoWidgets *two_widgets = nullptr;
 
-  Widget *widget = list_widget;
+  std::unique_ptr<Widget> widget(list_widget);
 
   if (_itemhelp_callback != nullptr) {
-    text_widget = new TextWidget();
-    widget = two_widgets = new TwoWidgets(list_widget, text_widget);
-
-    list_widget->EnableItemHelp(_itemhelp_callback, text_widget, two_widgets);
+    widget = std::make_unique<TwoWidgets>(std::move(widget),
+                                          std::make_unique<TextWidget>());
+    auto &two_widgets = (TwoWidgets &)*widget;
+    list_widget->EnableItemHelp(_itemhelp_callback,
+                                (TextWidget &)two_widgets.GetSecond(),
+                                two_widgets);
   }
 
   if (help_text != nullptr)
-    dialog.AddButton(_("Help"), *list_widget, HELP);
+    dialog.AddButton(_("Help"), [list_widget](){
+      list_widget->ShowHelp();
+    });
 
   if (num_items > 0)
     dialog.AddButton(_("Select"), mrOK);
@@ -72,13 +74,13 @@ ListPicker(const TCHAR *caption,
 
   dialog.EnableCursorSelection();
 
-  PeriodicTimer update_timer([list_widget](){
+  UI::PeriodicTimer update_timer([list_widget](){
     list_widget->GetList().Invalidate();
   });
   if (update)
     update_timer.Schedule(std::chrono::seconds(1));
 
-  dialog.FinishPreliminary(widget);
+  dialog.FinishPreliminary(widget.release());
 
   int result = dialog.ShowModal();
   if (result == mrOK)

@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -59,8 +59,8 @@ public:
   void SetFinishLabel();
 
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
 private:
   /* methods from DataFieldListener */
@@ -130,7 +130,8 @@ FillPointTypes(WndProperty &wp,
 }
 
 void
-TaskDefaultsConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+TaskDefaultsConfigPanel::Prepare(ContainerWindow &parent,
+                                 const PixelRect &rc) noexcept
 {
   WndProperty *wp;
   const ComputerSettings &settings_computer = CommonInterface::GetComputerSettings();
@@ -205,7 +206,7 @@ TaskDefaultsConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-TaskDefaultsConfigPanel::Save(bool &_changed)
+TaskDefaultsConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -249,8 +250,8 @@ TaskDefaultsConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateTaskDefaultsConfigPanel()
 {
-  return new TaskDefaultsConfigPanel();
+  return std::make_unique<TaskDefaultsConfigPanel>();
 }

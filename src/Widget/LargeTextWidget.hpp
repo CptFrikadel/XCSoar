@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -38,15 +38,15 @@ class LargeTextWidget : public WindowWidget {
   const TCHAR *text;
 
 public:
-  LargeTextWidget(const DialogLook &_look, const TCHAR *_text=nullptr)
+  explicit LargeTextWidget(const DialogLook &_look,
+                           const TCHAR *_text=nullptr) noexcept
     :look(_look), text(_text) {}
 
-  void SetText(const TCHAR *text);
+  void SetText(const TCHAR *text) noexcept;
 
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override;
-  bool KeyPress(unsigned key_code) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool KeyPress(unsigned key_code) noexcept override;
 };
 
 #endif

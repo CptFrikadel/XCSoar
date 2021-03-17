@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,13 +23,13 @@ Copyright_License {
 
 #include "MacCreadyRenderer.hpp"
 #include "ChartRenderer.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
 #include "Engine/GlideSolvers/GlidePolar.hpp"
 #include "Units/Units.hpp"
 #include "Language/Language.hpp"
 #include "Formatter/UserUnits.hpp"
-#include "Util/StaticString.hxx"
+#include "util/StaticString.hxx"
 #include "GlidePolarInfoRenderer.hpp"
 
 #define MAX_MACCREADY 5.2
@@ -60,6 +60,9 @@ RenderMacCready(Canvas &canvas, const PixelRect rc,
                  const GlidePolar &glide_polar)
 {
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.SetYLabel(_T("V"), Units::GetSpeedName());
+  chart.SetXLabel(_T("MC"), Units::GetVerticalSpeedName());
+  chart.Begin();
 
   if (!glide_polar.IsValid()) {
     chart.DrawNoData();
@@ -103,8 +106,7 @@ RenderMacCready(Canvas &canvas, const PixelRect rc,
   gp.SetMC(0.9*MAX_MACCREADY);
   chart.DrawLabel(_T("Vave"), 0.9*MAX_MACCREADY, gp.GetAverageSpeed());
 
-  chart.DrawYLabel(_T("V"), Units::GetSpeedName());
-  chart.DrawXLabel(_T("MC"), Units::GetVerticalSpeedName());
+  chart.Finish();
 
   RenderGlidePolarInfo(canvas, rc, chart_look, glide_polar);
 }

@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@ Copyright_License {
 #include "Widget.hpp"
 
 #include <cassert>
+#include <memory>
 
 class Window;
 
@@ -35,53 +36,50 @@ class Window;
  * not be deleted in the destructor.
  */
 class WindowWidget : public NullWidget {
-  Window *window;
+  std::unique_ptr<Window> window;
 
 public:
   /**
    * Initialise an empty instance.  Call SetWindow() to finish it.
    */
-  WindowWidget():window(nullptr) {}
+  WindowWidget() noexcept;
 
   /**
    * Initialise an instance with an existing #Window pointer.  It must
    * be hidden or undefined (i.e. not yet created).  However, it must
    * be created before the #Widget gets shown.
    */
-  WindowWidget(Window *_window);
+  WindowWidget(std::unique_ptr<Window> _window) noexcept;
+
+  ~WindowWidget() noexcept override;
 
 protected:
-  bool IsDefined() const {
+  bool IsDefined() const noexcept {
     return window != nullptr;
   }
 
-  void SetWindow(Window *_window) {
-    assert(window == nullptr);
-    assert(_window != nullptr);
-
-    window = _window;
-  }
+  void SetWindow(std::unique_ptr<Window> &&_window) noexcept;
 
   /**
    * Deletes the window object
    */
-  void DeleteWindow();
-
-  const Window &GetWindow() const {
-    assert(window != nullptr);
-    return *window;
-  }
-
-  Window &GetWindow() {
-    assert(window != nullptr);
-    return *window;
-  }
+  void DeleteWindow() noexcept;
 
 public:
+  const Window &GetWindow() const noexcept {
+    assert(window != nullptr);
+    return *window;
+  }
+
+  Window &GetWindow() noexcept {
+    assert(window != nullptr);
+    return *window;
+  }
+
   /* virtual methods from class Widget */
-  void Show(const PixelRect &rc) override;
-  void Hide() override;
-  void Move(const PixelRect &rc) override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
 };
 
 #endif

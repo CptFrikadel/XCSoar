@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -28,8 +28,8 @@ Copyright_License {
 #include "Blackboard/ComputerSettingsBlackboard.hpp"
 #include "Device/Simulator.hpp"
 #include "Device/Features.hpp"
-#include "Thread/Mutex.hxx"
-#include "Time/WrapClock.hpp"
+#include "thread/Mutex.hxx"
+#include "time/WrapClock.hpp"
 
 #include <cassert>
 
@@ -107,6 +107,34 @@ public:
   NMEAInfo &SetRealState(unsigned i) {
     assert(i < NUMDEV);
     return per_device_data[i];
+  }
+
+  /**
+   * Return a copy of a device's data after updating its clock via
+   * NMEAInfo::UpdateClock().  The method takes care for locking and
+   * unlocking the mutex.
+   */
+  NMEAInfo LockGetDeviceDataUpdateClock(unsigned i) noexcept {
+    assert(i < NUMDEV);
+
+    const std::lock_guard<Mutex> lock(mutex);
+    per_device_data[i].UpdateClock();
+    return per_device_data[i];
+  }
+
+  /**
+   * Overwrites a device's data and schedule the MergeThread.  The
+   * method takes care for locking and unlocking the mutex.
+   */
+  void LockSetDeviceDataScheuduleMerge(unsigned i, const NMEAInfo &src) noexcept {
+    assert(i < NUMDEV);
+
+    {
+      const std::lock_guard<Mutex> lock(mutex);
+      per_device_data[i] = src;
+    }
+
+    ScheduleMerge();
   }
 
   NMEAInfo &SetSimulatorState() { return simulator_data; }

@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -37,7 +37,7 @@ Copyright_License {
 #include "Engine/Task/Points/Type.hpp"
 #include "Engine/Task/Factory/AbstractTaskFactory.hpp"
 #include "LocalPath.hpp"
-#include "OS/Path.hpp"
+#include "system/Path.hpp"
 
 #include <cassert>
 
@@ -99,10 +99,10 @@ OrderedTaskSummary(const OrderedTask *task, TCHAR *text, bool linebreaks)
   TCHAR summary_shape[100];
   bool FAIShape = TaskSummaryShape(task, summary_shape);
   if (FAIShape || task->GetFactoryType() == TaskFactoryType::FAI_GENERAL) {
-    if (!task->GetFactory().ValidateFAIOZs()) {
+    const auto errors = task->GetFactory().ValidateFAIOZs();
+    if (!errors.IsEmpty()) {
       _tcscat(summary_shape, _T("/ "));
-      _tcscat(summary_shape, getTaskValidationErrors(
-          task->GetFactory().GetValidationErrors()));
+      _tcscat(summary_shape, getTaskValidationErrors(errors));
     }
   }
 

@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@ class CylinderZoneEditWidget : public ObservationZoneEditWidget {
   const bool radius_editable;
 
 public:
-  CylinderZoneEditWidget(CylinderZone &oz, bool _length_editable);
+  CylinderZoneEditWidget(CylinderZone &oz, bool _length_editable) noexcept;
 
 protected:
   const CylinderZone &GetObject() const {
@@ -45,8 +45,8 @@ protected:
 
 public:
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 };
 
 #endif

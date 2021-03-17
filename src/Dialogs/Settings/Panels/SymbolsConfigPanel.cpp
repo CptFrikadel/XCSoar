@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -54,8 +54,8 @@ public:
   void ShowTrailControls(bool show);
 
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
 private:
   /* methods from DataFieldListener */
@@ -144,7 +144,8 @@ static constexpr StaticEnumChoice skylines_map_mode_list[] = {
 };
 
 void
-SymbolsConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+SymbolsConfigPanel::Prepare(ContainerWindow &parent,
+                            const PixelRect &rc) noexcept
 {
   const MapSettings &settings_map = CommonInterface::GetMapSettings();
 
@@ -200,7 +201,7 @@ SymbolsConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-SymbolsConfigPanel::Save(bool &_changed)
+SymbolsConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -236,8 +237,8 @@ SymbolsConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateSymbolsConfigPanel()
 {
-  return new SymbolsConfigPanel();
+  return std::make_unique<SymbolsConfigPanel>();
 }

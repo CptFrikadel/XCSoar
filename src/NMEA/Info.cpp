@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,7 +22,7 @@ Copyright_License {
 */
 
 #include "NMEA/Info.hpp"
-#include "OS/Clock.hpp"
+#include "system/Clock.hpp"
 #include "Atmosphere/AirDensity.hpp"
 
 void
@@ -180,6 +180,10 @@ NMEAInfo::Reset()
   device.Clear();
   secondary_device.Clear();
   flarm.Clear();
+
+#ifdef ANDROID
+  glink_data.Clear();
+#endif
 }
 
 void
@@ -201,6 +205,10 @@ NMEAInfo::ExpireWallClock()
     time_available.Clear();
     gps.Reset();
     flarm.Clear();
+
+#ifdef ANDROID
+    glink_data.Clear();
+#endif
   } else {
     time_available.Expire(clock, std::chrono::seconds(10));
   }

@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -25,8 +25,8 @@
 #include "UIGlobals.hpp"
 #include "Look/Look.hpp"
 #include "Interface.hpp"
-#include "Screen/AntiFlickerWindow.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/window/AntiFlickerWindow.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Renderer/HorizonRenderer.hpp"
 
 /**
@@ -42,11 +42,13 @@ public:
   /**
    * Constructor. Initializes most class members.
    */
-  HorizonWindow(const HorizonLook &_look, const bool &_inverse):look(_look),inverse(_inverse) {
+  HorizonWindow(const HorizonLook &_look, const bool &_inverse) noexcept
+    :look(_look),inverse(_inverse)
+  {
     attitude.Reset();
   }
 
-  void ReadBlackboard(const AttitudeState _attitude) {
+  void ReadBlackboard(const AttitudeState _attitude) noexcept {
     attitude = _attitude;
     Invalidate();
   }
@@ -68,7 +70,7 @@ protected:
 };
 
 void
-HorizonWidget::Update(const MoreData &basic)
+HorizonWidget::Update(const MoreData &basic) noexcept
 {
   HorizonWindow &w = (HorizonWindow &)GetWindow();
   w.ReadBlackboard(basic.attitude);
@@ -76,7 +78,7 @@ HorizonWidget::Update(const MoreData &basic)
 }
 
 void
-HorizonWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+HorizonWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   const Look &look = UIGlobals::GetLook();
 
@@ -84,19 +86,13 @@ HorizonWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
   style.Hide();
   style.Disable();
 
-  HorizonWindow *w = new HorizonWindow(look.horizon, look.info_box.inverse);
+  auto w = std::make_unique<HorizonWindow>(look.horizon, look.info_box.inverse);
   w->Create(parent, rc, style);
-  SetWindow(w);
+  SetWindow(std::move(w));
 }
 
 void
-HorizonWidget::Unprepare()
-{
-  DeleteWindow();
-}
-
-void
-HorizonWidget::Show(const PixelRect &rc)
+HorizonWidget::Show(const PixelRect &rc) noexcept
 {
   Update(CommonInterface::Basic());
   CommonInterface::GetLiveBlackboard().AddListener(*this);
@@ -105,7 +101,7 @@ HorizonWidget::Show(const PixelRect &rc)
 }
 
 void
-HorizonWidget::Hide()
+HorizonWidget::Hide() noexcept
 {
   WindowWidget::Hide();
 
@@ -113,7 +109,7 @@ HorizonWidget::Hide()
 }
 
 void
-HorizonWidget::OnGPSUpdate(const MoreData &basic)
+HorizonWidget::OnGPSUpdate(const MoreData &basic) noexcept
 {
   Update(basic);
 }

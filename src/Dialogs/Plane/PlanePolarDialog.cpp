@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -30,28 +30,23 @@ Copyright_License {
 #include "Form/DataField/Listener.hpp"
 #include "Widget/RowFormWidget.hpp"
 #include "Widget/TextWidget.hpp"
-#include "Screen/Color.hpp"
+#include "ui/canvas/Color.hpp"
 #include "Polar/Polar.hpp"
 #include "Polar/PolarStore.hpp"
 #include "Polar/PolarFileGlue.hpp"
 #include "Plane/Plane.hpp"
-#include "OS/Path.hpp"
+#include "system/Path.hpp"
 #include "Language/Language.hpp"
 #include "UIGlobals.hpp"
 
 class PlanePolarWidget final
-  : public RowFormWidget, DataFieldListener, ActionListener {
+  : public RowFormWidget, DataFieldListener {
   enum Controls {
     NAME,
     INVALID,
     SHAPE,
     REFERENCE_MASS,
     DRY_MASS,
-  };
-
-  enum Actions {
-    LIST,
-    IMPORT,
   };
 
   Plane plane;
@@ -65,8 +60,8 @@ public:
   }
 
   void CreateButtons(WidgetDialog &buttons) {
-    buttons.AddButton(_("List"), *this, LIST);
-    buttons.AddButton(_("Import"), *this, IMPORT);
+    buttons.AddButton(_("List"), [this](){ ListClicked(); });
+    buttons.AddButton(_("Import"), [this](){ ImportClicked(); });
   }
 
 private:
@@ -89,15 +84,12 @@ private:
   void ImportClicked();
 
   /* virtual methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual void Show(const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
   /* methods from DataFieldListener */
   virtual void OnModified(DataField &df) override;
-
-  /* virtual methods from ActionListener */
-  void OnAction(int id) noexcept override;
 };
 
 void
@@ -129,14 +121,16 @@ PlanePolarWidget::Update()
 }
 
 void
-PlanePolarWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+PlanePolarWidget::Prepare(ContainerWindow &parent,
+                          const PixelRect &rc) noexcept
 {
   AddReadOnly(_("Name"), nullptr, plane.polar_name);
 
-  Add(new TextWidget());
+  Add(std::make_unique<TextWidget>());
   SetRowVisible(INVALID, false);
 
-  Add(new PolarShapeEditWidget(plane.polar_shape, this));
+  DataFieldListener *listener = this;
+  Add(std::make_unique<PolarShapeEditWidget>(plane.polar_shape, listener));
 
   AddFloat(_("Reference Mass"), _("Reference mass of the polar"),
            _T("%.0f %s"), _T("%.0f"),
@@ -150,14 +144,14 @@ PlanePolarWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 void
-PlanePolarWidget::Show(const PixelRect &rc)
+PlanePolarWidget::Show(const PixelRect &rc) noexcept
 {
   RowFormWidget::Show(rc);
   UpdateInvalidLabel();
 }
 
 bool
-PlanePolarWidget::Save(bool &_changed)
+PlanePolarWidget::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -245,20 +239,6 @@ PlanePolarWidget::ImportClicked()
 }
 
 void
-PlanePolarWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case LIST:
-    ListClicked();
-    break;
-
-  case IMPORT:
-    ImportClicked();
-    break;
-  }
-}
-
-void
 PlanePolarWidget::OnModified(DataField &df)
 {
   plane.polar_name = _T("Custom");
@@ -273,18 +253,17 @@ dlgPlanePolarShowModal(Plane &_plane)
   caption.Format(_T("%s: %s"), _("Plane Polar"), _plane.registration.c_str());
 
   const DialogLook &look = UIGlobals::GetDialogLook();
-  PlanePolarWidget widget(_plane, look);
-  WidgetDialog dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(),
-                      look, caption, &widget);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<PlanePolarWidget>
+    dialog(WidgetDialog::Auto{}, UIGlobals::GetMainWindow(), look, caption);
   dialog.AddButton(_("OK"), mrOK);
   dialog.AddButton(_("Cancel"), mrCancel);
+  dialog.SetWidget(_plane, look);
+  dialog.GetWidget().CreateButtons(dialog);
   const int result = dialog.ShowModal();
-  dialog.StealWidget();
 
   if (result != mrOK)
     return false;
 
-  _plane = widget.GetValue();
+  _plane = dialog.GetWidget().GetValue();
   return true;
 }

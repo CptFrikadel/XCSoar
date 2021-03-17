@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -33,8 +33,14 @@ Copyright_License {
 #include "Interface.hpp"
 #include "PageActions.hpp"
 
+BigThermalAssistantWidget::BigThermalAssistantWidget(LiveBlackboard &_blackboard,
+                                                     const ThermalAssistantLook &_look) noexcept
+    :blackboard(_blackboard), look(_look) {}
+
+BigThermalAssistantWidget::~BigThermalAssistantWidget() noexcept = default;
+
 void
-BigThermalAssistantWidget::UpdateLayout()
+BigThermalAssistantWidget::UpdateLayout() noexcept
 {
   const PixelRect rc = GetContainer().GetClientRect();
   view->Move(rc);
@@ -52,39 +58,31 @@ BigThermalAssistantWidget::UpdateLayout()
 
 void
 BigThermalAssistantWidget::Update(const AttitudeState &attitude,
-                                  const DerivedInfo &calculated)
+                                  const DerivedInfo &calculated) noexcept
 {
   view->Update(attitude, calculated);
 }
 
 void
 BigThermalAssistantWidget::Prepare(ContainerWindow &parent,
-                                   const PixelRect &_rc)
+                                   const PixelRect &_rc) noexcept
 {
   ContainerWidget::Prepare(parent, _rc);
 
   const PixelRect rc = GetContainer().GetClientRect();
 
-  close_button = new Button(GetContainer(),
-                            UIGlobals::GetDialogLook().button,
-                            _("Close"), rc, WindowStyle(),
-                            *this, CLOSE);
+  close_button = std::make_unique<Button>(GetContainer(),
+                                          UIGlobals::GetDialogLook().button,
+                                          _("Close"), rc, WindowStyle(),
+                                          [](){ PageActions::Restore(); });
 
-  view = new BigThermalAssistantWindow(look, Layout::FastScale(10));
+  view = std::make_unique<BigThermalAssistantWindow>(look,
+                                                     Layout::FastScale(10));
   view->Create(GetContainer(), rc);
 }
 
 void
-BigThermalAssistantWidget::Unprepare()
-{
-  delete view;
-  delete close_button;
-
-  ContainerWidget::Unprepare();
-}
-
-void
-BigThermalAssistantWidget::Show(const PixelRect &rc)
+BigThermalAssistantWidget::Show(const PixelRect &rc) noexcept
 {
   Update(blackboard.Basic().attitude, blackboard.Calculated());
 
@@ -98,14 +96,14 @@ BigThermalAssistantWidget::Show(const PixelRect &rc)
 }
 
 void
-BigThermalAssistantWidget::Hide()
+BigThermalAssistantWidget::Hide() noexcept
 {
   blackboard.RemoveListener(*this);
   ContainerWidget::Hide();
 }
 
 void
-BigThermalAssistantWidget::Move(const PixelRect &rc)
+BigThermalAssistantWidget::Move(const PixelRect &rc) noexcept
 {
   ContainerWidget::Move(rc);
 
@@ -113,19 +111,9 @@ BigThermalAssistantWidget::Move(const PixelRect &rc)
 }
 
 bool
-BigThermalAssistantWidget::SetFocus()
+BigThermalAssistantWidget::SetFocus() noexcept
 {
   return false;
-}
-
-void
-BigThermalAssistantWidget::OnAction(int id) noexcept
-{
-  switch ((Action)id) {
-  case CLOSE:
-    PageActions::Restore();
-    break;
-  }
 }
 
 void

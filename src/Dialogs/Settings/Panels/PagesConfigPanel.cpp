@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,9 +22,8 @@ Copyright_License {
 */
 
 #include "PagesConfigPanel.hpp"
-#include "Screen/Layout.hpp"
-#include "Screen/Canvas.hpp"
-#include "Form/ActionListener.hpp"
+#include "Look/DialogLook.hpp"
+#include "Renderer/TextRowRenderer.hpp"
 #include "Form/Button.hpp"
 #include "Form/ButtonPanel.hpp"
 #include "Form/DataField/Enum.hpp"
@@ -74,7 +73,7 @@ public:
   void SetValue(const PageLayout &_value);
 
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
 private:
   /* virtual methods from class DataFieldListener */
@@ -82,14 +81,10 @@ private:
 };
 
 class PageListWidget
-  : public ListWidget, private ActionListener,
+  : public ListWidget,
     public PageLayoutEditWidget::Listener {
-  enum Buttons {
-    ADD,
-    DELETE,
-    MOVE_UP,
-    MOVE_DOWN,
-  };
+
+  TextRowRenderer row_renderer;
 
   PageLayoutEditWidget *editor;
 
@@ -114,10 +109,48 @@ public:
   }
 
   void CreateButtons(ButtonPanel &buttons) {
-    add_button = buttons.Add(_("Add"), *this, ADD);
-    delete_button = buttons.Add(_("Delete"), *this, DELETE);
-    move_up_button = buttons.AddSymbol(_T("^"), *this, MOVE_UP);
-    move_down_button = buttons.AddSymbol(_T("v"), *this, MOVE_DOWN);
+    add_button = buttons.Add(_("Add"), [this](){
+      const unsigned n = GetList().GetLength();
+      if (n < PageSettings::MAX_PAGES) {
+        auto &page = settings.pages[n];
+        page = PageLayout::Default();
+        GetList().SetLength(n + 1);
+        GetList().SetCursorIndex(n);
+      }
+    });
+
+    delete_button = buttons.Add(_("Delete"), [this](){
+      const unsigned n = GetList().GetLength();
+      const unsigned cursor = GetList().GetCursorIndex();
+      if (n >= 2 && GetList().GetCursorIndex() < n) {
+        std::copy(settings.pages.begin() + cursor + 1,
+                  settings.pages.begin() + n,
+                  settings.pages.begin() + cursor);
+        GetList().SetLength(n - 1);
+
+        if (cursor == n - 1)
+          GetList().SetCursorIndex(cursor - 1);
+        else
+          editor->SetValue(settings.pages[cursor]);
+      }
+    });
+
+    move_up_button = buttons.AddSymbol(_T("^"), [this](){
+      const unsigned cursor = GetList().GetCursorIndex();
+      if (cursor > 0) {
+        std::swap(settings.pages[cursor], settings.pages[cursor - 1]);
+        GetList().SetCursorIndex(cursor - 1);
+      }
+    });
+
+    move_down_button = buttons.AddSymbol(_T("v"), [this](){
+      const unsigned n = GetList().GetLength();
+      const unsigned cursor = GetList().GetCursorIndex();
+      if (cursor + 1 < n) {
+        std::swap(settings.pages[cursor], settings.pages[cursor + 1]);
+        GetList().SetCursorIndex(cursor + 1);
+      }
+    });
   }
 
   void UpdateButtons() {
@@ -131,10 +164,10 @@ public:
   }
 
   /* virtual methods from class Widget */
-  virtual void Initialise(ContainerWindow &parent,
-                          const PixelRect &rc) override;
-  virtual void Show(const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Initialise(ContainerWindow &parent,
+                  const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
   /* virtual methods from class ListItemRenderer */
   void OnPaintItem(Canvas &canvas, const PixelRect rc,
@@ -149,14 +182,10 @@ public:
 
   /* virtual methods from class PageLayoutEditWidget::Listener */
   virtual void OnModified(const PageLayout &new_value) override;
-
-private:
-  /* virtual methods from ActionListener */
-  void OnAction(int id) noexcept override;
 };
 
 void
-PageLayoutEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+PageLayoutEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   const InfoBoxSettings &info_box_settings =
     CommonInterface::GetUISettings().info_boxes;
@@ -270,19 +299,23 @@ PageLayoutEditWidget::OnModified(DataField &df)
 }
 
 void
-PageListWidget::Initialise(ContainerWindow &parent, const PixelRect &rc)
+PageListWidget::Initialise(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
+  const DialogLook &look = UIGlobals::GetDialogLook();
+
   settings = CommonInterface::GetUISettings().pages;
 
-  CreateList(parent, UIGlobals::GetDialogLook(),
-             rc, Layout::Scale(18)).SetLength(settings.n_pages);
+  CreateList(parent, UIGlobals::GetDialogLook(), rc,
+             row_renderer.CalculateLayout(*look.list.font))
+    .SetLength(settings.n_pages);
 
   CreateButtons(buttons->GetButtonPanel());
   UpdateButtons();
 }
 
 void
-PageListWidget::Show(const PixelRect &rc)
+PageListWidget::Show(const PixelRect &rc) noexcept
 {
   editor->SetValue(settings.pages[GetList().GetCursorIndex()]);
 
@@ -290,7 +323,7 @@ PageListWidget::Show(const PixelRect &rc)
 }
 
 bool
-PageListWidget::Save(bool &_changed)
+PageListWidget::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -375,9 +408,7 @@ PageListWidget::OnPaintItem(Canvas &canvas, const PixelRect rc,
     gcc_unreachable();
   }
 
-  canvas.DrawText(rc.left + Layout::GetTextPadding(),
-                  rc.top + Layout::GetTextPadding(),
-                  buffer);
+  row_renderer.DrawTextRow(canvas, rc, buffer);
 }
 
 void
@@ -410,67 +441,22 @@ PageListWidget::OnModified(const PageLayout &new_value)
   GetList().Invalidate();
 }
 
-void
-PageListWidget::OnAction(int id) noexcept
-{
-  const unsigned n = GetList().GetLength();
-  const unsigned cursor = GetList().GetCursorIndex();
-
-  switch (id) {
-  case ADD:
-    if (n < PageSettings::MAX_PAGES) {
-      auto &page = settings.pages[n];
-      page = PageLayout::Default();
-      GetList().SetLength(n + 1);
-      GetList().SetCursorIndex(n);
-    }
-
-    break;
-
-  case DELETE:
-    if (n >= 2 && GetList().GetCursorIndex() < n) {
-      std::copy(settings.pages.begin() + cursor + 1,
-                settings.pages.begin() + n,
-                settings.pages.begin() + cursor);
-      GetList().SetLength(n - 1);
-
-      if (cursor == n - 1)
-        GetList().SetCursorIndex(cursor - 1);
-      else
-        editor->SetValue(settings.pages[cursor]);
-    }
-
-    break;
-
-  case MOVE_UP:
-    if (cursor > 0) {
-      std::swap(settings.pages[cursor], settings.pages[cursor - 1]);
-      GetList().SetCursorIndex(cursor - 1);
-    }
-
-    break;
-
-  case MOVE_DOWN:
-    if (cursor + 1 < n) {
-      std::swap(settings.pages[cursor], settings.pages[cursor + 1]);
-      GetList().SetCursorIndex(cursor + 1);
-    }
-
-    break;
-  }
-}
-
-Widget *
+std::unique_ptr<Widget>
 CreatePagesConfigPanel()
 {
-  PageListWidget *list = new PageListWidget();
-  PageLayoutEditWidget *editor =
-    new PageLayoutEditWidget(UIGlobals::GetDialogLook(), *list);
-  list->SetEditor(*editor);
+  auto _list = std::make_unique<PageListWidget>();
+  auto _editor = std::make_unique<PageLayoutEditWidget>(UIGlobals::GetDialogLook(),
+                                                        *_list);
 
-  TwoWidgets *two = new TwoWidgets(list, editor);
-  ButtonPanelWidget *buttons = new ButtonPanelWidget(two, ButtonPanelWidget::Alignment::BOTTOM);
-  list->SetButtonPanel(*buttons);
+  auto two = std::make_unique<TwoWidgets>(std::move(_list),
+                                          std::move(_editor));
+  auto &list = (PageListWidget &)two->GetFirst();
+  auto &editor = (PageLayoutEditWidget &)two->GetSecond();
+  list.SetEditor(editor);
+
+  auto buttons = std::make_unique<ButtonPanelWidget>(std::move(two),
+                                                     ButtonPanelWidget::Alignment::BOTTOM);
+  list.SetButtonPanel(*buttons);
 
   return buttons;
 }

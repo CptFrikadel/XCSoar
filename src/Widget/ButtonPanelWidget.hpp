@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@ Copyright_License {
 #include "Widget.hpp"
 
 #include <cassert>
+#include <memory>
 
 class ButtonPanel;
 
@@ -40,43 +41,45 @@ public:
   };
 
 private:
-  Widget *widget;
-  ButtonPanel *buttons;
+  const std::unique_ptr<Widget> widget;
+  std::unique_ptr<ButtonPanel> buttons;
   Alignment alignment;
 
 public:
-  ButtonPanelWidget(Widget *_widget, Alignment _alignment=Alignment::AUTO)
-    :widget(_widget), buttons(nullptr), alignment(_alignment) {}
-  virtual ~ButtonPanelWidget();
+  ButtonPanelWidget(std::unique_ptr<Widget> &&_widget,
+                    Alignment _alignment=Alignment::AUTO) noexcept
+    :widget(std::move(_widget)), alignment(_alignment) {}
 
-  Widget &GetWidget() {
+  ~ButtonPanelWidget() noexcept override;
+
+  Widget &GetWidget() noexcept {
     return *widget;
   }
 
-  ButtonPanel &GetButtonPanel() {
+  ButtonPanel &GetButtonPanel() noexcept {
     assert(buttons != nullptr);
 
     return *buttons;
   }
 
 private:
-  PixelRect UpdateLayout(const PixelRect &rc);
+  PixelRect UpdateLayout(const PixelRect &rc) noexcept;
 
 public:
-  PixelSize GetMinimumSize() const override;
-  PixelSize GetMaximumSize() const override;
-  void Initialise(ContainerWindow &parent, const PixelRect &rc) override;
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override;
-  bool Save(bool &changed) override;
-  bool Click() override;
-  void ReClick() override;
-  void Show(const PixelRect &rc) override;
-  bool Leave() override;
-  void Hide() override;
-  void Move(const PixelRect &rc) override;
-  bool SetFocus() override;
-  bool KeyPress(unsigned key_code) override;
+  PixelSize GetMinimumSize() const noexcept override;
+  PixelSize GetMaximumSize() const noexcept override;
+  void Initialise(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Unprepare() noexcept override;
+  bool Save(bool &changed) noexcept override;
+  bool Click() noexcept override;
+  void ReClick() noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  bool Leave() noexcept override;
+  void Hide() noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
+  bool SetFocus() noexcept override;
+  bool KeyPress(unsigned key_code) noexcept override;
 };
 
 #endif

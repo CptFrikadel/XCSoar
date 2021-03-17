@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@ Copyright_License {
 #include "Language/Language.hpp"
 
 class AlternatesListWidget final
-  : public ListWidget, private ActionListener {
+  : public ListWidget {
   enum Buttons {
     SETTINGS,
     GOTO,
@@ -72,10 +72,7 @@ public:
 
 public:
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override {
-    DeleteWindow();
-  }
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
   /* virtual methods from class List::Handler */
   void OnPaintItem(Canvas &canvas, const PixelRect rc,
@@ -98,21 +95,29 @@ public:
   }
 
   void OnActivateItem(unsigned index) noexcept override;
-
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
 };
 
 void
 AlternatesListWidget::CreateButtons(WidgetDialog &dialog)
 {
-  goto_button = dialog.AddButton(_("Goto"), *this, GOTO);
+  goto_button = dialog.AddButton(_("Goto"), [this](){
+    unsigned index = GetCursorIndex();
+    assert(index < alternates.size());
+
+    auto const &item = alternates[index];
+    auto const &waypoint = item.waypoint;
+
+    protected_task_manager->DoGoto(waypoint);
+    cancel_button->Click();
+  });
+
   details_button = dialog.AddButton(_("Details"), mrOK);
   cancel_button = dialog.AddButton(_("Close"), mrCancel);
 }
 
 void
-AlternatesListWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+AlternatesListWidget::Prepare(ContainerWindow &parent,
+                              const PixelRect &rc) noexcept
 {
   CreateList(parent, dialog_look, rc,
              row_renderer.CalculateLayout(*dialog_look.list.font_bold,
@@ -128,24 +133,6 @@ AlternatesListWidget::OnActivateItem(unsigned index) noexcept
 }
 
 void
-AlternatesListWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case GOTO:
-    unsigned index = GetCursorIndex();
-    assert(index < alternates.size());
-
-    auto const &item = alternates[index];
-    auto const &waypoint = item.waypoint;
-
-    protected_task_manager->DoGoto(waypoint);
-    cancel_button->Click();
-
-    break;
-  }
-}
-
-void
 dlgAlternatesListShowModal()
 {
   if (protected_task_manager == nullptr)
@@ -153,23 +140,24 @@ dlgAlternatesListShowModal()
 
   const DialogLook &dialog_look = UIGlobals::GetDialogLook();
 
-  AlternatesListWidget widget(dialog_look);
-  if (!widget.Update())
+  auto widget = std::make_unique<AlternatesListWidget>(dialog_look);
+  if (!widget->Update())
     /* no alternates: don't show the dialog */
     return;
 
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      dialog_look, _("Alternates"), &widget);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<AlternatesListWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           dialog_look, _("Alternates"));
+  widget->CreateButtons(dialog);
+  dialog.FinishPreliminary(std::move(widget));
   dialog.EnableCursorSelection();
 
   int i = dialog.ShowModal() == mrOK
-    ? (int)widget.GetCursorIndex()
+    ? (int)dialog.GetWidget().GetCursorIndex()
     : -1;
-  dialog.StealWidget();
 
-  if (i < 0 || (unsigned)i >= widget.alternates.size())
+  if (i < 0 || (unsigned)i >= dialog.GetWidget().alternates.size())
     return;
 
-  dlgWaypointDetailsShowModal(widget.alternates[i].waypoint, false);
+  dlgWaypointDetailsShowModal(dialog.GetWidget().alternates[i].waypoint, false);
 }

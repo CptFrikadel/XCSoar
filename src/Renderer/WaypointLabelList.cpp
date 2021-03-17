@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,14 +22,14 @@ Copyright_License {
 */
 
 #include "WaypointLabelList.hpp"
-#include "Util/StringUtil.hpp"
-#include "Util/Macros.hpp"
+#include "util/StringUtil.hpp"
+#include "util/Macros.hpp"
 
 #include <algorithm>
 
 static constexpr int WPCIRCLESIZE = 2;
 
-gcc_pure
+[[gnu::pure]]
 static bool
 MapWaypointLabelListCompare(const WaypointLabelList::Label &e1,
                             const WaypointLabelList::Label &e2)

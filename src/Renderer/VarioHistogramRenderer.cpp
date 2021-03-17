@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,18 +23,18 @@ Copyright_License {
 
 #include "VarioHistogramRenderer.hpp"
 #include "ChartRenderer.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
 #include "FlightStatistics.hpp"
 #include "Engine/GlideSolvers/GlidePolar.hpp"
 #include "Units/Units.hpp"
 #include "Language/Language.hpp"
 #include "Formatter/UserUnits.hpp"
-#include "Util/StaticString.hxx"
+#include "util/StaticString.hxx"
 #include "GradientRenderer.hpp"
 
 #ifdef ENABLE_OPENGL
-#include "Screen/OpenGL/Scope.hpp"
+#include "ui/canvas/opengl/Scope.hpp"
 #endif
 
 void
@@ -44,6 +44,8 @@ RenderVarioHistogram(Canvas &canvas, const PixelRect rc,
                      const GlidePolar &glide_polar)
 {
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.SetYLabel(_T("w"), Units::GetVerticalSpeedName());
+  chart.Begin();
 
   const auto acc = std::max(fs.vario_cruise_histogram.GetAccumulator(),
                             fs.vario_circling_histogram.GetAccumulator());
@@ -109,6 +111,5 @@ RenderVarioHistogram(Canvas &canvas, const PixelRect rc,
   chart.DrawLabel(_T("MC"), tref, mc);
   chart.DrawLabel(_T("S cruise"), tref, s);
 
-  chart.DrawYLabel(_T("w"), Units::GetVerticalSpeedName());
-
+  chart.Finish();
 }

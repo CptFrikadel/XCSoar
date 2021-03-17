@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -25,12 +25,11 @@ Copyright_License {
 #define XCSOAR_AIRSPACE_CLASS_RENDERER_SETTINGS_PANEL_HPP
 
 #include "Widget/RowFormWidget.hpp"
-#include "Form/ActionListener.hpp"
 #include "Airspace/AirspaceClass.hpp"
 #include "Renderer/AirspaceRendererSettings.hpp"
 
 class AirspaceClassRendererSettingsPanel:
-  public RowFormWidget, ActionListener
+  public RowFormWidget
 {
   enum ControlIndex {
     BorderColor,
@@ -47,17 +46,13 @@ class AirspaceClassRendererSettingsPanel:
   AirspaceClassRendererSettings settings;
 
 public:
-  AirspaceClassRendererSettingsPanel(AirspaceClass type);
+  explicit AirspaceClassRendererSettingsPanel(AirspaceClass type) noexcept;
 
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
-
-protected:
-  /* methods from ActionListener */
-  void OnAction(int id) noexcept override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
 private:
-  void FillAirspaceClasses();
+  void FillAirspaceClasses() noexcept;
 };
 
 #endif

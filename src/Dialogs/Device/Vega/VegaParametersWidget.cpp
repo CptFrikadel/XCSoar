@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@ Copyright_License {
 #include "VegaParametersWidget.hpp"
 #include "Device/Driver/Vega/Internal.hpp"
 #include "Language/Language.hpp"
-#include "OS/Sleep.h"
+#include "system/Sleep.h"
 #include "Operation/PopupOperationEnvironment.hpp"
 
 #include <cassert>
@@ -183,7 +183,8 @@ VegaParametersWidget::Revert()
 }
 
 void
-VegaParametersWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+VegaParametersWidget::Prepare(ContainerWindow &parent,
+                              const PixelRect &rc) noexcept
 {
   RowFormWidget::Prepare(parent, rc);
 
@@ -193,7 +194,7 @@ VegaParametersWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 void
-VegaParametersWidget::Show(const PixelRect &rc)
+VegaParametersWidget::Show(const PixelRect &rc) noexcept
 {
   RequestAll();
   UpdateUI();
@@ -202,7 +203,7 @@ VegaParametersWidget::Show(const PixelRect &rc)
 }
 
 bool
-VegaParametersWidget::Save(bool &changed_r)
+VegaParametersWidget::Save(bool &changed_r) noexcept
 {
   bool changed = false;
 

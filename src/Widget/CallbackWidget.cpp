@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -24,26 +24,26 @@ Copyright_License {
 #include "CallbackWidget.hpp"
 
 bool
-CallbackWidget::Click()
+CallbackWidget::Click() noexcept
 {
   callback();
   return false;
 }
 
 void
-CallbackWidget::ReClick()
+CallbackWidget::ReClick() noexcept
 {
   callback();
 }
 
 #ifndef HAVE_CLIPPING
 void
-CallbackWidget::Show(const PixelRect &rc)
+CallbackWidget::Show(const PixelRect &rc) noexcept
 {
 }
 
 void
-CallbackWidget::Hide()
+CallbackWidget::Hide() noexcept
 {
 }
 #endif

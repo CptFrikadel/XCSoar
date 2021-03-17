@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -48,9 +48,16 @@ struct PageState {
    */
   double circling_scale;
 
+  /**
+   * The last zoom mode on this page. This attribute is only used if
+   * PageSettings::distinct_zoom is enabled.
+   */
+  bool auto_zoom_enabled;
+
   void Clear() {
     cruise_scale = -1;
     circling_scale = -1;
+    auto_zoom_enabled = false;
   }
 };
 

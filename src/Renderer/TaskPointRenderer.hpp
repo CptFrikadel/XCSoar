@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,7 +27,6 @@ Copyright_License {
 #include "Geo/GeoPoint.hpp"
 #include "Geo/Flat/FlatBoundingBox.hpp"
 #include "MapWindow/MapCanvas.hpp"
-#include "Util/Compiler.h"
 
 class Canvas;
 class WindowProjection;
@@ -124,7 +123,7 @@ private:
     return index == active_index;
   }
 
-  gcc_pure
+  [[gnu::pure]]
   bool IsTargetVisible(const TaskPoint &tp) const;
 
   void DrawBearing(const TaskPoint &tp);

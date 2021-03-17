@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -25,7 +25,12 @@ Copyright_License {
 
 #include <cassert>
 
-PagerWidget::~PagerWidget()
+PagerWidget::Child::~Child() noexcept
+{
+  assert(!prepared);
+}
+
+PagerWidget::~PagerWidget() noexcept
 {
   assert(!initialised || !prepared);
 
@@ -33,7 +38,7 @@ PagerWidget::~PagerWidget()
 }
 
 void
-PagerWidget::Add(Widget *w)
+PagerWidget::Add(std::unique_ptr<Widget> w) noexcept
 {
   const bool was_empty = children.empty();
   if (was_empty) {
@@ -42,37 +47,31 @@ PagerWidget::Add(Widget *w)
     assert(current < children.size());
   }
 
-  children.append(w);
+  auto &child = children.emplace_back(std::move(w));
 
   if (initialised) {
-    w->Initialise(*parent, position);
+    child.widget->Initialise(*parent, position);
 
     if (prepared) {
-      children.back().prepared = true;
-      w->Prepare(*parent, position);
+      child.prepared = true;
+      child.widget->Prepare(*parent, position);
 
       if (visible && was_empty)
-        w->Show(position);
+        child.widget->Show(position);
     }
   }
 }
 
 void
-PagerWidget::Clear()
+PagerWidget::Clear() noexcept
 {
   assert(!initialised || !prepared);
-
-  for (auto &i : children) {
-    assert(!i.prepared);
-
-    delete i.widget;
-  }
 
   children.clear();
 }
 
 void
-PagerWidget::PrepareWidget(unsigned i)
+PagerWidget::PrepareWidget(unsigned i) noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -85,7 +84,7 @@ PagerWidget::PrepareWidget(unsigned i)
 }
 
 bool
-PagerWidget::SetCurrent(unsigned i, bool click)
+PagerWidget::SetCurrent(unsigned i, bool click) noexcept
 {
   assert(i < children.size());
 
@@ -140,7 +139,7 @@ PagerWidget::SetCurrent(unsigned i, bool click)
 }
 
 bool
-PagerWidget::Next(bool wrap)
+PagerWidget::Next(bool wrap) noexcept
 {
   if (children.size() < 2)
     return false;
@@ -159,7 +158,7 @@ PagerWidget::Next(bool wrap)
 }
 
 bool
-PagerWidget::Previous(bool wrap)
+PagerWidget::Previous(bool wrap) noexcept
 {
   if (children.size() < 2)
     return false;
@@ -178,7 +177,7 @@ PagerWidget::Previous(bool wrap)
 }
 
 PixelSize
-PagerWidget::GetMinimumSize() const
+PagerWidget::GetMinimumSize() const noexcept
 {
   /* determine the largest "minimum" size of all pages */
 
@@ -186,17 +185,17 @@ PagerWidget::GetMinimumSize() const
 
   for (const auto &i : children) {
     PixelSize size = i.widget->GetMinimumSize();
-    if (size.cx > result.cx)
-      result.cx = size.cx;
-    if (size.cy > result.cy)
-      result.cy = size.cy;
+    if (size.width > result.width)
+      result.width = size.width;
+    if (size.height > result.height)
+      result.height = size.height;
   }
 
   return result;
 }
 
 PixelSize
-PagerWidget::GetMaximumSize() const
+PagerWidget::GetMaximumSize() const noexcept
 {
   /* determine the largest "maximum" size of all pages */
 
@@ -204,17 +203,17 @@ PagerWidget::GetMaximumSize() const
 
   for (const auto &i : children) {
     PixelSize size = i.widget->GetMaximumSize();
-    if (size.cx > result.cx)
-      result.cx = size.cx;
-    if (size.cy > result.cy)
-      result.cy = size.cy;
+    if (size.width > result.width)
+      result.width = size.width;
+    if (size.height > result.height)
+      result.height = size.height;
   }
 
   return result;
 }
 
 void
-PagerWidget::Initialise(ContainerWindow &_parent, const PixelRect &rc)
+PagerWidget::Initialise(ContainerWindow &_parent, const PixelRect &rc) noexcept
 {
   assert(!initialised);
 
@@ -228,7 +227,7 @@ PagerWidget::Initialise(ContainerWindow &_parent, const PixelRect &rc)
 }
 
 void
-PagerWidget::Prepare(ContainerWindow &_parent, const PixelRect &rc)
+PagerWidget::Prepare(ContainerWindow &_parent, const PixelRect &rc) noexcept
 {
   assert(initialised);
   assert(!prepared);
@@ -246,7 +245,7 @@ PagerWidget::Prepare(ContainerWindow &_parent, const PixelRect &rc)
 }
 
 void
-PagerWidget::Unprepare()
+PagerWidget::Unprepare() noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -263,7 +262,7 @@ PagerWidget::Unprepare()
 }
 
 bool
-PagerWidget::Save(bool &changed)
+PagerWidget::Save(bool &changed) noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -276,13 +275,13 @@ PagerWidget::Save(bool &changed)
 }
 
 bool
-PagerWidget::Click()
+PagerWidget::Click() noexcept
 {
   return children.empty() || children[current].widget->Click();
 }
 
 void
-PagerWidget::ReClick()
+PagerWidget::ReClick() noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -294,7 +293,7 @@ PagerWidget::ReClick()
 }
 
 void
-PagerWidget::Show(const PixelRect &rc)
+PagerWidget::Show(const PixelRect &rc) noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -319,7 +318,7 @@ PagerWidget::Show(const PixelRect &rc)
 }
 
 void
-PagerWidget::Hide()
+PagerWidget::Hide() noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -332,7 +331,7 @@ PagerWidget::Hide()
 }
 
 bool
-PagerWidget::Leave()
+PagerWidget::Leave() noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -344,7 +343,7 @@ PagerWidget::Leave()
 }
 
 void
-PagerWidget::Move(const PixelRect &rc)
+PagerWidget::Move(const PixelRect &rc) noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -362,7 +361,7 @@ PagerWidget::Move(const PixelRect &rc)
 }
 
 bool
-PagerWidget::SetFocus()
+PagerWidget::SetFocus() noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -374,7 +373,7 @@ PagerWidget::SetFocus()
 }
 
 bool
-PagerWidget::KeyPress(unsigned key_code)
+PagerWidget::KeyPress(unsigned key_code) noexcept
 {
   assert(initialised);
   assert(prepared);
@@ -386,7 +385,7 @@ PagerWidget::KeyPress(unsigned key_code)
 }
 
 void
-PagerWidget::OnPageFlipped()
+PagerWidget::OnPageFlipped() noexcept
 {
   if (page_flipped_callback)
     page_flipped_callback();

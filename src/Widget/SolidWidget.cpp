@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,82 +22,82 @@ Copyright_License {
 */
 
 #include "SolidWidget.hpp"
-#include "Screen/SolidContainerWindow.hpp"
+#include "ui/window/SolidContainerWindow.hpp"
 #include "UIGlobals.hpp"
 #include "Look/DialogLook.hpp"
 
-SolidWidget::~SolidWidget()
+SolidWidget::~SolidWidget() noexcept
 {
-  delete widget;
+  widget.reset();
   DeleteWindow();
 }
 
 PixelSize
-SolidWidget::GetMinimumSize() const
+SolidWidget::GetMinimumSize() const noexcept
 {
   return widget->GetMinimumSize();
 }
 
 PixelSize
-SolidWidget::GetMaximumSize() const
+SolidWidget::GetMaximumSize() const noexcept
 {
   return widget->GetMaximumSize();
 }
 
 constexpr
 static PixelRect
-ToOrigin(PixelRect rc)
+ToOrigin(PixelRect rc) noexcept
 {
   return PixelRect(PixelPoint(0, 0), rc.GetSize());
 }
 
 void
-SolidWidget::Initialise(ContainerWindow &parent, const PixelRect &rc)
+SolidWidget::Initialise(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   WindowStyle style;
   style.ControlParent();
   style.Hide();
 
-  auto window = new SolidContainerWindow();
+  auto window = std::make_unique<SolidContainerWindow>();
   window->Create(parent, rc, UIGlobals::GetDialogLook().background_color,
                  style);
-  SetWindow(window);
+  SetWindow(std::move(window));
 
-  widget->Initialise(*window, ToOrigin(rc));
+  widget->Initialise((ContainerWindow &)GetWindow(), ToOrigin(rc));
 }
 
 void
-SolidWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+SolidWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   widget->Prepare((ContainerWindow &)GetWindow(), ToOrigin(rc));
 }
 
 void
-SolidWidget::Unprepare()
+SolidWidget::Unprepare() noexcept
 {
   widget->Unprepare();
 }
 
 bool
-SolidWidget::Save(bool &changed)
+SolidWidget::Save(bool &changed) noexcept
 {
   return widget->Save(changed);
 }
 
 bool
-SolidWidget::Click()
+SolidWidget::Click() noexcept
 {
   return widget->Click();
 }
 
 void
-SolidWidget::ReClick()
+SolidWidget::ReClick() noexcept
 {
   widget->ReClick();
 }
 
 void
-SolidWidget::Show(const PixelRect &rc)
+SolidWidget::Show(const PixelRect &rc) noexcept
 {
   widget->Show(ToOrigin(rc));
 
@@ -105,33 +105,33 @@ SolidWidget::Show(const PixelRect &rc)
 }
 
 bool
-SolidWidget::Leave()
+SolidWidget::Leave() noexcept
 {
   return widget->Leave();
 }
 
 void
-SolidWidget::Hide()
+SolidWidget::Hide() noexcept
 {
   WindowWidget::Hide();
   widget->Hide();
 }
 
 void
-SolidWidget::Move(const PixelRect &rc)
+SolidWidget::Move(const PixelRect &rc) noexcept
 {
   WindowWidget::Move(rc);
   widget->Move(ToOrigin(rc));
 }
 
 bool
-SolidWidget::SetFocus()
+SolidWidget::SetFocus() noexcept
 {
   return widget->SetFocus();
 }
 
 bool
-SolidWidget::KeyPress(unsigned key_code)
+SolidWidget::KeyPress(unsigned key_code) noexcept
 {
   return widget->KeyPress(key_code);
 }

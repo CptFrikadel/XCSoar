@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -38,12 +38,7 @@ Copyright_License {
 #include "Weather/NOAAFormatter.hpp"
 #include "UIGlobals.hpp"
 
-class NOAADetailsWidget final : public LargeTextWidget, ActionListener {
-  enum Buttons {
-    UPDATE,
-    REMOVE,
-  };
-
+class NOAADetailsWidget final : public LargeTextWidget {
   WndForm &dialog;
   NOAAStore::iterator station_iterator;
 
@@ -60,17 +55,14 @@ private:
   void RemoveClicked();
 
   /* virtual methods from class Widget */
-  virtual void Show(const PixelRect &rc) override;
-
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
 };
 
 void
 NOAADetailsWidget::CreateButtons(WidgetDialog &buttons)
 {
-  buttons.AddButton(_("Update"), *this, UPDATE);
-  buttons.AddButton(_("Remove"), *this, REMOVE);
+  buttons.AddButton(_("Update"), [this](){ UpdateClicked(); });
+  buttons.AddButton(_("Remove"), [this](){ RemoveClicked(); });
 }
 
 void
@@ -122,38 +114,23 @@ NOAADetailsWidget::RemoveClicked()
 }
 
 void
-NOAADetailsWidget::Show(const PixelRect &rc)
+NOAADetailsWidget::Show(const PixelRect &rc) noexcept
 {
   LargeTextWidget::Show(rc);
   Update();
 }
 
 void
-NOAADetailsWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case UPDATE:
-    UpdateClicked();
-    break;
-
-  case REMOVE:
-    RemoveClicked();
-    break;
-  }
-}
-
-void
 dlgNOAADetailsShowModal(NOAAStore::iterator iterator)
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      look, _("METAR and TAF"));
-  NOAADetailsWidget widget(dialog, iterator);
-  widget.CreateButtons(dialog);
+  TWidgetDialog<NOAADetailsWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           look, _("METAR and TAF"));
   dialog.AddButton(_("Close"), mrOK);
-  dialog.FinishPreliminary(&widget);
+  dialog.SetWidget(dialog, iterator);
+  dialog.GetWidget().CreateButtons(dialog);
   dialog.ShowModal();
-  dialog.StealWidget();
 }
 
 #else

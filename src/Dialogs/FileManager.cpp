@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -30,18 +30,17 @@ Copyright_License {
 #include "Renderer/TwoTextRowsRenderer.hpp"
 #include "Form/List.hpp"
 #include "Widget/ListWidget.hpp"
-#include "Screen/Canvas.hpp"
 #include "Language/Language.hpp"
 #include "LocalPath.hpp"
-#include "OS/FileUtil.hpp"
-#include "OS/Path.hpp"
-#include "IO/FileLineReader.hpp"
+#include "system/FileUtil.hpp"
+#include "system/Path.hpp"
+#include "io/FileLineReader.hpp"
 #include "Formatter/ByteSizeFormatter.hpp"
 #include "Formatter/TimeFormatter.hpp"
-#include "Time/BrokenDateTime.hpp"
-#include "Net/HTTP/Features.hpp"
-#include "Util/ConvertString.hpp"
-#include "Util/Macros.hpp"
+#include "time/BrokenDateTime.hpp"
+#include "net/http/Features.hpp"
+#include "util/ConvertString.hpp"
+#include "util/Macros.hpp"
 #include "Repository/FileRepository.hpp"
 #include "Repository/Parser.hpp"
 
@@ -49,10 +48,10 @@ Copyright_License {
 #include "Repository/Glue.hpp"
 #include "ListPicker.hpp"
 #include "Form/Button.hpp"
-#include "Net/HTTP/DownloadManager.hpp"
-#include "Event/Notify.hpp"
-#include "Thread/Mutex.hxx"
-#include "Event/PeriodicTimer.hpp"
+#include "net/http/DownloadManager.hpp"
+#include "ui/event/Notify.hpp"
+#include "thread/Mutex.hxx"
+#include "ui/event/PeriodicTimer.hpp"
 
 #include <map>
 #include <set>
@@ -123,18 +122,11 @@ UpdateAvailable(const FileRepository &repository, const TCHAR *name)
 #endif
 
 class ManagedFileListWidget
-  : public ListWidget,
+  : public ListWidget
 #ifdef HAVE_DOWNLOAD_MANAGER
-    private Net::DownloadListener,
+  , private Net::DownloadListener
 #endif
-    private ActionListener {
-  enum Buttons {
-    DOWNLOAD,
-    ADD,
-    CANCEL,
-    UPDATE,
-  };
-
+{
   struct DownloadStatus {
     int64_t size, position;
   };
@@ -211,9 +203,9 @@ class ManagedFileListWidget
    */
   std::set<std::string> failures;
 
-  PeriodicTimer refresh_download_timer{[this]{ OnTimer(); }};
+  UI::PeriodicTimer refresh_download_timer{[this]{ OnTimer(); }};
 
-  Notify download_notify{[this]{ OnDownloadNotification(); }};
+  UI::Notify download_notify{[this]{ OnDownloadNotification(); }};
 
   /**
    * Was the repository file modified, and needs to be reloaded by
@@ -230,11 +222,11 @@ class ManagedFileListWidget
   TrivialArray<FileItem, 64u> items;
 
 public:
-  void CreateButtons(WidgetDialog &dialog);
+  void CreateButtons(WidgetDialog &dialog) noexcept;
 
 protected:
   gcc_pure
-  bool IsDownloading(const char *name) const {
+  bool IsDownloading(const char *name) const noexcept {
 #ifdef HAVE_DOWNLOAD_MANAGER
     std::lock_guard<Mutex> lock(mutex);
     return downloads.find(name) != downloads.end();
@@ -244,12 +236,12 @@ protected:
   }
 
   gcc_pure
-  bool IsDownloading(const AvailableFile &file) const {
+  bool IsDownloading(const AvailableFile &file) const noexcept {
     return IsDownloading(file.GetName());
   }
 
-  gcc_pure
-  bool IsDownloading(const char *name, DownloadStatus &status_r) const {
+  bool IsDownloading(const char *name,
+                     DownloadStatus &status_r) const noexcept {
 #ifdef HAVE_DOWNLOAD_MANAGER
     std::lock_guard<Mutex> lock(mutex);
     auto i = downloads.find(name);
@@ -263,14 +255,13 @@ protected:
 #endif
   }
 
-  gcc_pure
   bool IsDownloading(const AvailableFile &file,
-                     DownloadStatus &status_r) const {
+                     DownloadStatus &status_r) const noexcept {
     return IsDownloading(file.GetName(), status_r);
   }
 
   gcc_pure
-  bool HasFailed(const char *name) const {
+  bool HasFailed(const char *name) const noexcept {
 #ifdef HAVE_DOWNLOAD_MANAGER
     std::lock_guard<Mutex> lock(mutex);
     return failures.find(name) != failures.end();
@@ -280,12 +271,12 @@ protected:
   }
 
   gcc_pure
-  bool HasFailed(const AvailableFile &file) const {
+  bool HasFailed(const AvailableFile &file) const noexcept {
     return HasFailed(file.GetName());
   }
 
   gcc_pure
-  int FindItem(const TCHAR *name) const;
+  int FindItem(const TCHAR *name) const noexcept;
 
   void LoadRepositoryFile();
   void RefreshList();
@@ -298,16 +289,13 @@ protected:
 
 public:
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual void Unprepare() override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Unprepare() noexcept override;
 
   /* virtual methods from class List::Handler */
   void OnPaintItem(Canvas &canvas, const PixelRect rc,
                    unsigned idx) noexcept override;
   void OnCursorMoved(unsigned index) noexcept override;
-
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
 
 #ifdef HAVE_DOWNLOAD_MANAGER
   void OnTimer();
@@ -323,7 +311,8 @@ public:
 };
 
 void
-ManagedFileListWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+ManagedFileListWidget::Prepare(ContainerWindow &parent,
+                               const PixelRect &rc) noexcept
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
 
@@ -346,22 +335,16 @@ ManagedFileListWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 void
-ManagedFileListWidget::Unprepare()
+ManagedFileListWidget::Unprepare() noexcept
 {
 #ifdef HAVE_DOWNLOAD_MANAGER
-  refresh_download_timer.Cancel();
-
   if (Net::DownloadManager::IsAvailable())
     Net::DownloadManager::RemoveListener(*this);
-
-  download_notify.ClearNotification();
 #endif
-
-  DeleteWindow();
 }
 
 int
-ManagedFileListWidget::FindItem(const TCHAR *name) const
+ManagedFileListWidget::FindItem(const TCHAR *name) const noexcept
 {
   for (auto i = items.begin(), end = items.end(); i != end; ++i)
     if (StringIsEqual(i->name, name))
@@ -442,14 +425,16 @@ ManagedFileListWidget::RefreshList()
 }
 
 void
-ManagedFileListWidget::CreateButtons(WidgetDialog &dialog)
+ManagedFileListWidget::CreateButtons(WidgetDialog &dialog) noexcept
 {
 #ifdef HAVE_DOWNLOAD_MANAGER
   if (Net::DownloadManager::IsAvailable()) {
-    download_button = dialog.AddButton(_("Download"), *this, DOWNLOAD);
-    add_button = dialog.AddButton(_("Add"), *this, ADD);
-    cancel_button = dialog.AddButton(_("Cancel"), *this, CANCEL);
-    update_button = dialog.AddButton(_("Update all"), *this, UPDATE);
+    download_button = dialog.AddButton(_("Download"), [this](){ Download(); });
+    add_button = dialog.AddButton(_("Add"), [this](){ Add(); });
+    cancel_button = dialog.AddButton(_("Cancel"), [this](){ Cancel(); });
+    update_button = dialog.AddButton(_("Update all"), [this](){
+      UpdateFiles();
+    });
   }
 #endif
 }
@@ -475,10 +460,7 @@ ManagedFileListWidget::OnPaintItem(Canvas &canvas, const PixelRect rc,
 {
   const FileItem &file = items[i];
 
-  canvas.Select(row_renderer.GetFirstFont());
   row_renderer.DrawFirstRow(canvas, rc, file.name.c_str());
-
-  canvas.Select(row_renderer.GetSecondFont());
 
   if (file.downloading) {
     StaticString<64> text;
@@ -654,28 +636,6 @@ ManagedFileListWidget::Cancel()
 #endif
 }
 
-void
-ManagedFileListWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case DOWNLOAD:
-    Download();
-    break;
-
-  case ADD:
-    Add();
-    break;
-
-  case CANCEL:
-    Cancel();
-    break;
-
-  case UPDATE:
-    UpdateFiles();
-    break;
-  }
-}
-
 #ifdef HAVE_DOWNLOAD_MANAGER
 
 void
@@ -774,17 +734,17 @@ ManagedFileListWidget::OnDownloadNotification() noexcept
 static void
 ShowFileManager2()
 {
-  ManagedFileListWidget widget;
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      UIGlobals::GetDialogLook(),
-                      _("File Manager"), &widget);
+  TWidgetDialog<ManagedFileListWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           UIGlobals::GetDialogLook(),
+           _("File Manager"));
   dialog.AddButton(_("Close"), mrOK);
-  widget.CreateButtons(dialog);
+  dialog.SetWidget();
+  dialog.GetWidget().CreateButtons(dialog);
 
   dialog.EnableCursorSelection();
 
   dialog.ShowModal();
-  dialog.StealWidget();
 }
 
 #endif

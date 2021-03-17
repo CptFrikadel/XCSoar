@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -22,16 +22,37 @@ Copyright_License {
 */
 
 #include "WindowWidget.hpp"
-#include "Screen/Window.hpp"
+#include "ui/window/Window.hpp"
 
-WindowWidget::WindowWidget(Window *_window)
-  :window(_window) {
+WindowWidget::WindowWidget() noexcept = default;
+
+WindowWidget::WindowWidget(std::unique_ptr<Window> _window) noexcept
+  :window(std::move(_window))
+{
   assert(window != nullptr);
   assert(!window->IsDefined() || !window->IsVisible());
 }
 
+WindowWidget::~WindowWidget() noexcept
+{
+  /* we must call Window::Destroy() explicitly here, because when
+     Window::~Window() attempts to do that, it's too late already to
+     invoke virtual overrides */
+  if (window)
+    window->Destroy();
+}
+
 void
-WindowWidget::DeleteWindow()
+WindowWidget::SetWindow(std::unique_ptr<Window> &&_window) noexcept
+{
+  assert(window == nullptr);
+  assert(_window != nullptr);
+
+  window = std::move(_window);
+}
+
+void
+WindowWidget::DeleteWindow() noexcept
 {
   assert(window != nullptr);
 
@@ -39,11 +60,11 @@ WindowWidget::DeleteWindow()
      Window::~Window() attempts to do that, it's too late already to
      invoke virtual overrides */
   window->Destroy();
-  delete window;
+  window.reset();
 }
 
 void
-WindowWidget::Show(const PixelRect &rc)
+WindowWidget::Show(const PixelRect &rc) noexcept
 {
   assert(window != nullptr);
   assert(window->IsDefined());
@@ -53,7 +74,7 @@ WindowWidget::Show(const PixelRect &rc)
 }
 
 void
-WindowWidget::Hide()
+WindowWidget::Hide() noexcept
 {
   assert(window != nullptr);
   assert(window->IsDefined());
@@ -63,7 +84,7 @@ WindowWidget::Hide()
 }
 
 void
-WindowWidget::Move(const PixelRect &rc)
+WindowWidget::Move(const PixelRect &rc) noexcept
 {
   assert(window != nullptr);
   assert(window->IsDefined());

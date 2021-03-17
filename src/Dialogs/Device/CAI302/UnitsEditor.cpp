@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,7 +27,8 @@ Copyright_License {
 #include "Units/Units.hpp"
 
 void
-CAI302UnitsEditor::Prepare(ContainerWindow &parent, const PixelRect &rc)
+CAI302UnitsEditor::Prepare(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
   static constexpr StaticEnumChoice vario_list[] = {
     { 0, _T("m/s"), },
@@ -89,7 +90,7 @@ CAI302UnitsEditor::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-CAI302UnitsEditor::Save(bool &_changed)
+CAI302UnitsEditor::Save(bool &_changed) noexcept
 {
   bool changed = false;
 

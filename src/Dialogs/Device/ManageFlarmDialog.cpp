@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@ Copyright_License {
 #include "FLARM/Version.hpp"
 
 class ManageFLARMWidget final
-  : public RowFormWidget, private ActionListener {
+  : public RowFormWidget {
   enum Controls {
     Setup,
     Reboot,
@@ -47,15 +47,12 @@ public:
     :RowFormWidget(look), device(_device), version(version) {}
 
   /* virtual methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-
-private:
-  /* virtual methods from ActionListener */
-  void OnAction(int id) noexcept override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 };
 
 void
-ManageFLARMWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+ManageFLARMWidget::Prepare(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
   if (version.available) {
     StaticString<64> buffer;
@@ -79,29 +76,16 @@ ManageFLARMWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
     }
   }
 
-  AddButton(_("Setup"), *this, Setup);
-  AddButton(_("Reboot"), *this, Reboot);
-}
+  AddButton(_("Setup"), [this](){
+    FLARMConfigWidget widget(GetLook(), device);
+    DefaultWidgetDialog(UIGlobals::GetMainWindow(), GetLook(),
+                        _T("FLARM"), widget);
+  });
 
-void
-ManageFLARMWidget::OnAction(int id) noexcept
-{
-  switch (id) {
-  case Setup:
-    {
-      FLARMConfigWidget widget(GetLook(), device);
-      DefaultWidgetDialog(UIGlobals::GetMainWindow(), GetLook(),
-                          _T("FLARM"), widget);
-    }
-    break;
-
-  case Reboot:
-    {
-      MessageOperationEnvironment env;
-      device.Restart(env);
-    }
-    break;
-  }
+  AddButton(_("Reboot"), [this](){
+    MessageOperationEnvironment env;
+    device.Restart(env);
+  });
 }
 
 void

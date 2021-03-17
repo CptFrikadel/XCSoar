@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -39,29 +39,31 @@ class TaskPropertiesPanel final
 
   TaskManagerDialog &dialog;
 
-  OrderedTask **ordered_task_pointer, *ordered_task;
+  std::unique_ptr<OrderedTask> &ordered_task_pointer;
+  OrderedTask *ordered_task;
   bool *task_changed;
 
   TaskFactoryType orig_taskType;
 
 public:
   TaskPropertiesPanel(TaskManagerDialog &_dialog,
-                      OrderedTask **_active_task, bool *_task_modified);
+                      std::unique_ptr<OrderedTask> &_active_task,
+                      bool *_task_modified) noexcept;
 
   void OnFAIFinishHeightChange(DataFieldBoolean &df);
   void OnTaskTypeChange(DataFieldEnum &df);
 
   /* virtual methods from Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void ReClick() override;
-  void Show(const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void ReClick() noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
 
   /**
    * Saves the panel's properties of the task to the temporary task
    * so they can be used by other panels editing the task.
    * @return true
    */
-  bool Leave() override;
+  bool Leave() noexcept override;
 
 protected:
   void RefreshView();

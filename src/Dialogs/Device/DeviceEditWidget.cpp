@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -24,9 +24,9 @@
 #include "DeviceEditWidget.hpp"
 #include "Dialogs/ComboPicker.hpp"
 #include "UIGlobals.hpp"
-#include "Util/Compiler.h"
-#include "Util/Macros.hpp"
-#include "Util/NumberParser.hpp"
+#include "util/Compiler.h"
+#include "util/Macros.hpp"
+#include "util/NumberParser.hpp"
 #include "Language/Language.hpp"
 #include "Form/DataField/Enum.hpp"
 #include "Form/DataField/Boolean.hpp"
@@ -42,7 +42,7 @@
 #endif
 
 #ifdef ANDROID
-#include "Java/Global.hxx"
+#include "java/Global.hxx"
 #include "Android/BluetoothHelper.hpp"
 #include "Device/Port/AndroidIOIOUartPort.hpp"
 #include "ScanBluetoothLeDialog.hpp"
@@ -72,7 +72,7 @@ static constexpr struct {
 #ifndef NDEBUG
   { DeviceConfig::PortType::NUNCHUCK, N_("IOIO switches and Nunchuk") },
 #endif
-  { DeviceConfig::PortType::I2CPRESSURESENSOR, N_("IOIO i2c pressure sensor") },
+  { DeviceConfig::PortType::I2CPRESSURESENSOR, N_("IOIO I²C pressure sensor") },
   { DeviceConfig::PortType::IOIOVOLTAGE, N_("IOIO voltage sensor") },
 #endif
 
@@ -80,8 +80,8 @@ static constexpr struct {
 
   /* label not translated for now, until we have a TCP/UDP port
      selection UI */
-  { DeviceConfig::PortType::TCP_LISTENER, N_("TCP Port") },
-  { DeviceConfig::PortType::UDP_LISTENER, N_("UDP Port") },
+  { DeviceConfig::PortType::TCP_LISTENER, N_("TCP port") },
+  { DeviceConfig::PortType::UDP_LISTENER, N_("UDP port") },
 
   { DeviceConfig::PortType::SERIAL, NULL } /* sentinel */
 };
@@ -92,7 +92,7 @@ static constexpr unsigned num_port_types = ARRAY_SIZE(port_types) - 1;
 static unsigned
 AddPort(DataFieldEnum &df, DeviceConfig::PortType type,
         const TCHAR *text, const TCHAR *display_string=NULL,
-        const TCHAR *help=NULL)
+        const TCHAR *help=NULL) noexcept
 {
   /* the uppper 16 bit is the port type, and the lower 16 bit is a
      serial number to make the enum id unique */
@@ -105,7 +105,7 @@ AddPort(DataFieldEnum &df, DeviceConfig::PortType type,
 #if defined(HAVE_POSIX)
 
 static bool
-DetectSerialPorts(DataFieldEnum &df)
+DetectSerialPorts(DataFieldEnum &df) noexcept
 {
   TTYEnumerator enumerator;
   if (enumerator.HasFailed())
@@ -135,7 +135,7 @@ DetectSerialPorts(DataFieldEnum &df)
 #if defined(_WIN32) && !defined(HAVE_POSIX)
 
 static void
-FillDefaultSerialPorts(DataFieldEnum &df)
+FillDefaultSerialPorts(DataFieldEnum &df) noexcept
 {
   for (unsigned i = 1; i <= 10; ++i) {
     TCHAR buffer[64];
@@ -147,7 +147,7 @@ FillDefaultSerialPorts(DataFieldEnum &df)
 #endif
 
 static void
-FillPortTypes(DataFieldEnum &df, const DeviceConfig &config)
+FillPortTypes(DataFieldEnum &df, const DeviceConfig &config) noexcept
 {
   for (unsigned i = 0; port_types[i].label != NULL; i++) {
     unsigned id = AddPort(df, port_types[i].type, port_types[i].label,
@@ -159,7 +159,8 @@ FillPortTypes(DataFieldEnum &df, const DeviceConfig &config)
 }
 
 static void
-SetPort(DataFieldEnum &df, DeviceConfig::PortType type, const TCHAR *value)
+SetPort(DataFieldEnum &df, DeviceConfig::PortType type,
+        const TCHAR *value) noexcept
 {
   assert(value != NULL);
 
@@ -168,7 +169,7 @@ SetPort(DataFieldEnum &df, DeviceConfig::PortType type, const TCHAR *value)
 }
 
 static void
-FillSerialPorts(DataFieldEnum &df, const DeviceConfig &config)
+FillSerialPorts(DataFieldEnum &df, const DeviceConfig &config) noexcept
 {
 #if defined(HAVE_POSIX)
   DetectSerialPorts(df);
@@ -181,7 +182,8 @@ FillSerialPorts(DataFieldEnum &df, const DeviceConfig &config)
 }
 
 static void
-FillAndroidBluetoothPorts(DataFieldEnum &df, const DeviceConfig &config)
+FillAndroidBluetoothPorts(DataFieldEnum &df,
+                          const DeviceConfig &config) noexcept
 {
 #ifdef ANDROID
   JNIEnv *env = Java::GetEnv();
@@ -220,7 +222,7 @@ FillAndroidBluetoothPorts(DataFieldEnum &df, const DeviceConfig &config)
 }
 
 static void
-FillAndroidIOIOPorts(DataFieldEnum &df, const DeviceConfig &config)
+FillAndroidIOIOPorts(DataFieldEnum &df, const DeviceConfig &config) noexcept
 {
 #if defined(ANDROID)
   df.EnableItemHelp(true);
@@ -229,7 +231,7 @@ FillAndroidIOIOPorts(DataFieldEnum &df, const DeviceConfig &config)
   TCHAR tempName[15];
   for (unsigned i = 0; i < AndroidIOIOUartPort::getNumberUarts(); i++) {
     StringFormatUnsafe(tempID, _T("%u"), i);
-    StringFormat(tempName, sizeof(tempName), _T("IOIO Uart %u"), i);
+    StringFormat(tempName, sizeof(tempName), _T("IOIO UART %u"), i);
     unsigned id = AddPort(df, DeviceConfig::PortType::IOIOUART,
                           tempID, tempName,
                           AndroidIOIOUartPort::getPortHelp(i));
@@ -241,7 +243,7 @@ FillAndroidIOIOPorts(DataFieldEnum &df, const DeviceConfig &config)
 }
 
 static void
-FillPorts(DataFieldEnum &df, const DeviceConfig &config)
+FillPorts(DataFieldEnum &df, const DeviceConfig &config) noexcept
 {
   FillPortTypes(df, config);
   FillSerialPorts(df, config);
@@ -250,7 +252,7 @@ FillPorts(DataFieldEnum &df, const DeviceConfig &config)
 }
 
 static void
-FillBaudRates(DataFieldEnum &dfe)
+FillBaudRates(DataFieldEnum &dfe) noexcept
 {
   dfe.addEnumText(_T("1200"), 1200);
   dfe.addEnumText(_T("2400"), 2400);
@@ -263,7 +265,7 @@ FillBaudRates(DataFieldEnum &dfe)
 }
 
 static void
-FillTCPPorts(DataFieldEnum &dfe)
+FillTCPPorts(DataFieldEnum &dfe) noexcept
 {
   dfe.addEnumText(_T("4353"), 4353);
   dfe.addEnumText(_T("10110"), 10110);
@@ -276,16 +278,16 @@ FillTCPPorts(DataFieldEnum &dfe)
 }
 
 static void
-FillI2CBus(DataFieldEnum &dfe)
+FillI2CBus(DataFieldEnum &dfe) noexcept
 {
-  dfe.addEnumText(_T("0"), 0u);
-  dfe.addEnumText(_T("1"), 1u);
-  dfe.addEnumText(_T("2"), 2u);
+  dfe.addEnumText(_T("0"), 0U);
+  dfe.addEnumText(_T("1"), 1U);
+  dfe.addEnumText(_T("2"), 2U);
 }
 
 /* Only lists possible addresses of supported devices */
 static void
-FillI2CAddr(DataFieldEnum &dfe)
+FillI2CAddr(DataFieldEnum &dfe) noexcept
 {
   dfe.addEnumText(_T("0x76 (MS5611)"), 0x76);
   dfe.addEnumText(_T("0x77 (BMP085 and MS5611)"), 0x77);
@@ -295,7 +297,7 @@ FillI2CAddr(DataFieldEnum &dfe)
 }
 
 static void
-FillPress(DataFieldEnum &dfe)
+FillPress(DataFieldEnum &dfe) noexcept
 {
   dfe.addEnumText(_T("Static & Vario"), (unsigned)DeviceConfig::PressureUse::STATIC_WITH_VARIO);
   dfe.addEnumText(_T("Static"), (unsigned)DeviceConfig::PressureUse::STATIC_ONLY);
@@ -305,7 +307,7 @@ FillPress(DataFieldEnum &dfe)
 }
 
 static void
-SetPort(DataFieldEnum &df, const DeviceConfig &config)
+SetPort(DataFieldEnum &df, const DeviceConfig &config) noexcept
 {
   switch (config.port_type) {
   case DeviceConfig::PortType::DISABLED:
@@ -348,7 +350,7 @@ SetPort(DataFieldEnum &df, const DeviceConfig &config)
 
 static bool
 EditPortCallback(const TCHAR *caption, DataField &_df,
-                 const TCHAR *help_text)
+                 const TCHAR *help_text) noexcept
 {
   DataFieldEnum &df = (DataFieldEnum &)_df;
 
@@ -381,13 +383,12 @@ EditPortCallback(const TCHAR *caption, DataField &_df,
   return true;
 }
 
-DeviceEditWidget::DeviceEditWidget(const DeviceConfig &_config)
+DeviceEditWidget::DeviceEditWidget(const DeviceConfig &_config) noexcept
   :RowFormWidget(UIGlobals::GetDialogLook()),
    config(_config), listener(NULL) {}
 
-
 void
-DeviceEditWidget::SetConfig(const DeviceConfig &_config)
+DeviceEditWidget::SetConfig(const DeviceConfig &_config) noexcept
 {
   config = _config;
 
@@ -470,7 +471,7 @@ DeviceEditWidget::SetConfig(const DeviceConfig &_config)
 
 gcc_pure
 static bool
-SupportsBulkBaudRate(const DataField &df)
+SupportsBulkBaudRate(const DataField &df) noexcept
 {
   const TCHAR *driver_name = df.GetAsString();
   if (driver_name == NULL)
@@ -485,7 +486,7 @@ SupportsBulkBaudRate(const DataField &df)
 
 gcc_pure
 static bool
-CanReceiveSettings(const DataField &df)
+CanReceiveSettings(const DataField &df) noexcept
 {
   const TCHAR *driver_name = df.GetAsString();
   if (driver_name == NULL)
@@ -500,7 +501,7 @@ CanReceiveSettings(const DataField &df)
 
 gcc_pure
 static bool
-CanSendSettings(const DataField &df)
+CanSendSettings(const DataField &df) noexcept
 {
   const TCHAR *driver_name = df.GetAsString();
   if (driver_name == NULL)
@@ -515,7 +516,7 @@ CanSendSettings(const DataField &df)
 
 gcc_pure
 static DeviceConfig::PortType
-GetPortType(const DataField &df)
+GetPortType(const DataField &df) noexcept
 {
   const DataFieldEnum &dfe = (const DataFieldEnum &)df;
   const unsigned port = dfe.GetValue();
@@ -528,7 +529,7 @@ GetPortType(const DataField &df)
 
 gcc_pure
 static bool
-CanPassThrough(const DataField &df)
+CanPassThrough(const DataField &df) noexcept
 {
   const TCHAR *driver_name = df.GetAsString();
   if (driver_name == nullptr)
@@ -541,9 +542,8 @@ CanPassThrough(const DataField &df)
   return driver->HasPassThrough();
 }
 
-
 void
-DeviceEditWidget::UpdateVisibilities()
+DeviceEditWidget::UpdateVisibilities() noexcept
 {
   const DeviceConfig::PortType type = GetPortType(GetDataField(Port));
   const bool maybe_bluetooth =
@@ -579,7 +579,8 @@ DeviceEditWidget::UpdateVisibilities()
 }
 
 void
-DeviceEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+DeviceEditWidget::Prepare(ContainerWindow &parent,
+                          const PixelRect &rc) noexcept
 {
   RowFormWidget::Prepare(parent, rc);
 
@@ -603,25 +604,25 @@ DeviceEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
 
   DataFieldString *ip_address_df = new DataFieldString(_T(""), this);
   ip_address_df->Set(config.ip_address);
-  Add(_("IP Address"), NULL, ip_address_df);
+  Add(_("IP address"), NULL, ip_address_df);
 
   DataFieldEnum *tcp_port_df = new DataFieldEnum(this);
   FillTCPPorts(*tcp_port_df);
   tcp_port_df->Set(config.tcp_port);
-  Add(_("TCP Port"), NULL, tcp_port_df);
+  Add(_("TCP port"), NULL, tcp_port_df);
 
   DataFieldEnum *i2c_bus_df = new DataFieldEnum(this);
   FillI2CBus(*i2c_bus_df);
   i2c_bus_df->Set(config.i2c_bus);
-  Add(_("I2C Bus"), _("Select the description or bus number that matches your configuration."),
+  Add(_("I²C bus"), _("Select the description or bus number that matches your configuration."),
                       i2c_bus_df);
 
   DataFieldEnum *i2c_addr_df = new DataFieldEnum(this);
   FillI2CAddr(*i2c_addr_df);
   i2c_addr_df->Set(config.i2c_addr);
-  Add(_("I2C Addr"), _("The i2c address that matches your configuration."
-                        "This field is not used when your selection in the I2C Bus field is not an i2c bus number. "
-                        "In case you do not understand the previous sentence you may assume that this field is not used."),
+  Add(_("I²C addr"), _("The I²C address that matches your configuration. "
+                        "This field is not used when your selection in the \"I²C bus\" field is not an I²C bus number. "
+                        "Assume this field is not in use if that doesn\'t make sense to you."),
                         i2c_addr_df);
 
   DataFieldEnum *press_df = new DataFieldEnum(this);
@@ -629,7 +630,7 @@ DeviceEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
   press_df->Set((unsigned)config.press_use);
   Add(_("Pressure use"), _("Select the purpose of this pressure sensor. "
                            "This sensor measures some pressure. Here you tell the system "
-                           "what pressure this is and what its should be used for."),
+                           "what pressure this is and what it should be used for."),
                            press_df);
 
   DataFieldEnum *driver_df = new DataFieldEnum(this);
@@ -645,8 +646,8 @@ DeviceEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
 
   // for a passthrough device, offer additional driver
   AddBoolean(_("Passthrough device"),
-             _("This option lets you configure if this device has a passed "
-               " through device connected."),
+             _("Whether the device has a passed-"
+               "through device connected."),
              config.use_second_device, this);
 
   DataFieldEnum *driver2_df = new DataFieldEnum(this);
@@ -659,19 +660,19 @@ DeviceEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
   Add(_("Second Driver"), nullptr, driver2_df);
 
   AddBoolean(_("Sync. from device"),
-             _("This option lets you configure if XCSoar should use settings "
+             _("Tells XCSoar to use settings "
                "like the MacCready value, bugs and ballast from the device."),
              config.sync_from_device, this);
   SetExpertRow(SyncFromDevice);
 
   AddBoolean(_("Sync. to device"),
-             _("This option lets you configure if XCSoar should send settings "
+             _("Tells XCSoar to send settings "
                "like the MacCready value, bugs and ballast to the device."),
              config.sync_to_device, this);
   SetExpertRow(SyncToDevice);
 
   AddBoolean(_T("K6Bt"),
-             _("Enable this if you use a K6Bt to connect the device."),
+             _("Whether you use a K6Bt to connect the device."),
              config.k6bt, this);
   SetExpertRow(K6Bt);
 
@@ -682,7 +683,7 @@ DeviceEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
  * @return true if the value has changed
  */
 static bool
-FinishPortField(DeviceConfig &config, const DataFieldEnum &df)
+FinishPortField(DeviceConfig &config, const DataFieldEnum &df) noexcept
 {
   unsigned value = df.GetValue();
 
@@ -748,7 +749,7 @@ FinishPortField(DeviceConfig &config, const DataFieldEnum &df)
 }
 
 bool
-DeviceEditWidget::Save(bool &_changed)
+DeviceEditWidget::Save(bool &_changed) noexcept
 {
   bool changed = false;
 

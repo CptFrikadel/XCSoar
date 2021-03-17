@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -25,68 +25,56 @@
 #define XCSOAR_TRAFFIC_WIDGET_HPP
 
 #include "Widget/ContainerWidget.hpp"
-#include "Form/ActionListener.hpp"
 #include "Blackboard/BlackboardListener.hpp"
-#include "Util/Compiler.h"
+#include "util/Compiler.h"
+
+#include <memory>
 
 class Button;
 class FlarmTrafficControl;
 
 class TrafficWidget : public ContainerWidget,
-                      private ActionListener,
                       private NullBlackboardListener {
-  enum Action {
-    CLOSE,
-    ZOOM_IN,
-    ZOOM_OUT,
-    PREVIOUS_ITEM,
-    NEXT_ITEM,
-    DETAILS,
-  };
+  struct Windows;
 
-  Button *zoom_in_button, *zoom_out_button;
-  Button *previous_item_button, *next_item_button;
-  Button *details_button;
-  Button *close_button;
-
-  FlarmTrafficControl *view;
-
-protected:
-  void UpdateLayout();
-  void UpdateButtons();
+  std::unique_ptr<Windows> windows;
 
 public:
-  void Update();
-  void OpenDetails();
-  void ZoomIn();
-  void ZoomOut();
-  void PreviousTarget();
-  void NextTarget();
-  void SwitchData();
+  TrafficWidget() noexcept;
+  ~TrafficWidget() noexcept;
+
+protected:
+  void UpdateLayout() noexcept;
+  void UpdateButtons() noexcept;
+
+public:
+  void Update() noexcept;
+  void OpenDetails() noexcept;
+  void ZoomIn() noexcept;
+  void ZoomOut() noexcept;
+  void PreviousTarget() noexcept;
+  void NextTarget() noexcept;
+  void SwitchData() noexcept;
 
   gcc_pure
-  bool GetAutoZoom() const;
-  void SetAutoZoom(bool value);
-  void ToggleAutoZoom();
+  bool GetAutoZoom() const noexcept;
+  void SetAutoZoom(bool value) noexcept;
+  void ToggleAutoZoom() noexcept;
 
   gcc_pure
-  bool GetNorthUp() const;
-  void SetNorthUp(bool value);
-  void ToggleNorthUp();
+  bool GetNorthUp() const noexcept;
+  void SetNorthUp(bool value) noexcept;
+  void ToggleNorthUp() noexcept;
 
   /* virtual methods from class Widget */
-  virtual void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override;
-  virtual void Unprepare() override;
-  virtual void Show(const PixelRect &rc) override;
-  virtual void Hide() override;
-  virtual void Move(const PixelRect &rc) override;
-  virtual bool SetFocus() override;
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
+  bool SetFocus() noexcept override;
 
 private:
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
-
   /* virtual methods from class BlackboardListener */
   virtual void OnGPSUpdate(const MoreData &basic) override;
 };

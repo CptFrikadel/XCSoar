@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@ Copyright_License {
 #include "Schemes.hpp"
 #include "Form/DataField/Enum.hpp"
 #include "Language/Language.hpp"
-#include "Util/StaticString.hxx"
+#include "util/StaticString.hxx"
 
 #include <stdio.h>
 
@@ -98,7 +98,8 @@ public:
   }
 
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) {
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override {
     VegaParametersWidget::Prepare(parent, rc);
 
     sprintf(names[0], "Tone%sBeepType", mode);

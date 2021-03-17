@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -25,25 +25,25 @@ Copyright_License {
 #include "UIGlobals.hpp"
 #include "Form/Frame.hpp"
 #include "Screen/Layout.hpp"
-#include "Screen/Font.hpp"
+#include "ui/canvas/Font.hpp"
 #include "Look/DialogLook.hpp"
 
 void
-TextWidget::SetText(const TCHAR *text)
+TextWidget::SetText(const TCHAR *text) noexcept
 {
   WndFrame &w = (WndFrame &)GetWindow();
   w.SetText(text);
 }
 
 void
-TextWidget::SetColor(Color _color)
+TextWidget::SetColor(Color _color) noexcept
 {
   WndFrame &w = (WndFrame &)GetWindow();
   w.SetTextColor(_color);
 }
 
 PixelSize
-TextWidget::GetMinimumSize() const
+TextWidget::GetMinimumSize() const noexcept
 {
   const Font &font = UIGlobals::GetDialogLook().text_font;
   const int height = 2 * Layout::GetTextPadding() + font.GetHeight();
@@ -52,34 +52,28 @@ TextWidget::GetMinimumSize() const
 }
 
 PixelSize
-TextWidget::GetMaximumSize() const
+TextWidget::GetMaximumSize() const noexcept
 {
   PixelSize size = GetMinimumSize();
 
   if (IsDefined()) {
     const WndFrame &w = (const WndFrame &)GetWindow();
-    int text_height = w.GetTextHeight() + Layout::Scale(4);
-    if (text_height > size.cy)
-      size.cy = text_height;
+    const unsigned text_height = 2 * Layout::GetTextPadding() + w.GetTextHeight();
+    if (text_height > size.height)
+      size.height = text_height;
   }
 
   return size;
 }
 
 void
-TextWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+TextWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   WindowStyle style;
   style.Hide();
 
-  WndFrame *w = new WndFrame(parent, UIGlobals::GetDialogLook(), rc, style);
-  SetWindow(w);
-}
-
-void
-TextWidget::Unprepare()
-{
-  DeleteWindow();
+  SetWindow(std::make_unique<WndFrame>(parent, UIGlobals::GetDialogLook(),
+                                       rc, style));
 }
 
 

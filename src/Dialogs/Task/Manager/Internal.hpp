@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,10 +27,12 @@ Copyright_License {
 #include "Widget/TabWidget.hpp"
 #include "Form/Form.hpp"
 
+#include <memory>
+
 class OrderedTask;
 class ButtonWidget;
 
-class TaskManagerDialog final : public TabWidget, ActionListener {
+class TaskManagerDialog final : public TabWidget {
   enum Tabs {
     TurnpointTab,
     PropertiesTab,
@@ -40,20 +42,16 @@ class TaskManagerDialog final : public TabWidget, ActionListener {
 
   WndForm &dialog;
 
-  OrderedTask *task;
+  std::unique_ptr<OrderedTask> task;
 
-  bool fullscreen;
+  bool fullscreen = false;
 
-  bool modified;
+  bool modified = false;
 
 public:
-  explicit TaskManagerDialog(WndForm &_dialog)
-    :TabWidget(Orientation::AUTO),
-     dialog(_dialog),
-     task(nullptr),
-     fullscreen(false), modified(false) {}
+  explicit TaskManagerDialog(WndForm &_dialog) noexcept;
 
-  virtual ~TaskManagerDialog();
+  ~TaskManagerDialog() noexcept override;
 
   const DialogLook &GetLook() const {
     return dialog.GetLook();
@@ -71,7 +69,7 @@ public:
     return *task;
   }
 
-  void Create(SingleWindow &parent);
+  void Create(UI::SingleWindow &parent);
   void Destroy();
 
   void UpdateCaption();
@@ -89,7 +87,7 @@ public:
   void ShowTaskView(const OrderedTask *task);
 
   void ResetTaskView() {
-      ShowTaskView(task);
+    ShowTaskView(task.get());
   }
 
   void SwitchToEditTab();
@@ -106,17 +104,13 @@ public:
   void Revert();
 
   /* virtual methods from class Widget */
-  void Initialise(ContainerWindow &parent, const PixelRect &rc) override;
-  void Show(const PixelRect &rc) override;
-  bool KeyPress(unsigned key_code) override;
+  void Initialise(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  bool KeyPress(unsigned key_code) noexcept override;
 
 protected:
   /* virtual methods from class PagerWidget */
-  void OnPageFlipped() override;
-
-private:
-  /* virtual methods from class ActionListener */
-  void OnAction(int id) noexcept override;
+  void OnPageFlipped() noexcept override;
 };
 
 #endif /* DLGTASKMANAGER_HPP */

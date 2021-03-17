@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -30,9 +30,7 @@
 #include "Task/ObservationZones/AnnularSectorZone.hpp"
 #include "Task/ObservationZones/SymmetricSectorZone.hpp"
 #include "XML/DataNode.hpp"
-#include "Util/Compiler.h"
-
-#include <memory>
+#include "util/Compiler.h"
 
 #include <cassert>
 #include <tchar.h>
@@ -83,8 +81,7 @@ Serialise(WritableDataNode &node, const Waypoint &data)
   node.SetAttribute(_T("comment"), data.comment.c_str());
   node.SetAttribute(_T("altitude"), data.elevation);
 
-  std::unique_ptr<WritableDataNode> child(node.AppendChild(_T("Location")));
-  Serialise(*child, data.location);
+  Serialise(*node.AppendChild(_T("Location")), data.location);
 }
 
 static void
@@ -187,14 +184,12 @@ Serialise(WritableDataNode &node, const OrderedTaskPoint &data,
           const TCHAR *name)
 {
   // do nothing
-  std::unique_ptr<WritableDataNode> child(node.AppendChild(_T("Point")));
+  auto child = node.AppendChild(_T("Point"));
   child->SetAttribute(_T("type"), name);
 
-  std::unique_ptr<WritableDataNode> wchild(child->AppendChild(_T("Waypoint")));
-  Serialise(*wchild, data.GetWaypoint());
-
-  std::unique_ptr<WritableDataNode> ochild(child->AppendChild(_T("ObservationZone")));
-  Serialise(*ochild, data.GetObservationZone());
+  Serialise(*child->AppendChild(_T("Waypoint")), data.GetWaypoint());
+  Serialise(*child->AppendChild(_T("ObservationZone")),
+                      data.GetObservationZone());
 
   if (data.GetType() == TaskPointType::AST) {
     const ASTPoint &ast = (const ASTPoint &)data;

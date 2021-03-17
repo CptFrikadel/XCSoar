@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -32,8 +32,8 @@ Copyright_License {
 #include "Dialogs/WidgetDialog.hpp"
 #include "Dialogs/JobDialog.hpp"
 #include "Dialogs/Error.hpp"
-#include "Screen/Bitmap.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Bitmap.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Widget/TwoWidgets.hpp"
 #include "Widget/TextListWidget.hpp"
 #include "Widget/ViewImageWidget.hpp"
@@ -44,13 +44,13 @@ Copyright_License {
 static void
 BitmapDialog(const Bitmap &bitmap)
 {
-  ViewImageWidget widget(bitmap);
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      UIGlobals::GetDialogLook(),
-                      _T("pc_met"), &widget);
+  TWidgetDialog<ViewImageWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           UIGlobals::GetDialogLook(),
+           _T("pc_met"), new ViewImageWidget(bitmap));
   dialog.AddButton(_("Close"), mrOK);
+//  dialog.SetWidget();
   dialog.ShowModal();
-  dialog.StealWidget();
 }
 
 static void
@@ -123,7 +123,7 @@ public:
     :area_list(_area_list) {}
 
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override {
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override {
       TextListWidget::Prepare(parent, rc);
 
       unsigned n = 0;
@@ -132,7 +132,7 @@ public:
       GetList().SetLength(n);
   }
 
-  void Show(const PixelRect &rc) override {
+  void Show(const PixelRect &rc) noexcept override {
     TextListWidget::Show(rc);
     area_list.SetType(&PCMet::image_types[GetList().GetCursorIndex()]);
   }
@@ -157,18 +157,20 @@ protected:
   }
 };
 
-Widget *
+std::unique_ptr<Widget>
 CreatePCMetWidget()
 {
   const auto &settings = CommonInterface::GetComputerSettings().weather.pcmet;
   if (!settings.www_credentials.IsDefined())
-    return new LargeTextWidget(UIGlobals::GetDialogLook(),
-                               _T("No account was configured."));
+    return std::make_unique<LargeTextWidget>(UIGlobals::GetDialogLook(),
+                                             _T("No account was configured."));
 
-  auto *area_widget = new ImageAreaListWidget();
-  auto *type_widget = new ImageTypeListWidget(*area_widget);
+  auto area_widget = std::make_unique<ImageAreaListWidget>();
+  auto type_widget = std::make_unique<ImageTypeListWidget>(*area_widget);
 
-  return new TwoWidgets(type_widget, area_widget, false);
+  return std::make_unique<TwoWidgets>(std::move(type_widget),
+                                      std::move(area_widget),
+                                      false);
 }
 
-#endif
+#endif  // HAVE_PCMET

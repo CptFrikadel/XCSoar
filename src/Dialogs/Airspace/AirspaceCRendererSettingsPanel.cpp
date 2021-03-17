@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@ Copyright_License {
 
 #include <cassert>
 
-AirspaceClassRendererSettingsPanel::AirspaceClassRendererSettingsPanel(AirspaceClass _type)
+AirspaceClassRendererSettingsPanel::AirspaceClassRendererSettingsPanel(AirspaceClass _type) noexcept
   :RowFormWidget(UIGlobals::GetDialogLook()), border_color_changed(false),
    fill_color_changed(false), fill_brush_changed(false), type(_type)
 {
@@ -43,29 +43,8 @@ AirspaceClassRendererSettingsPanel::AirspaceClassRendererSettingsPanel(AirspaceC
 }
 
 void
-AirspaceClassRendererSettingsPanel::OnAction(int id) noexcept
-{
-  if (id == BorderColor)
-    border_color_changed |= ShowColorListDialog(settings.border_color);
-
-  if (id == FillColor)
-    fill_color_changed |= ShowColorListDialog(settings.fill_color);
-
-#ifdef HAVE_HATCHED_BRUSH
-  if (id == FillBrush) {
-    int pattern_index =
-      dlgAirspacePatternsShowModal(UIGlobals::GetLook().map.airspace);
-
-    if (pattern_index >= 0 && pattern_index != settings.brush) {
-      settings.brush = pattern_index;
-      fill_brush_changed = true;
-    }
-  }
-#endif
-}
-
-void
-AirspaceClassRendererSettingsPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+AirspaceClassRendererSettingsPanel::Prepare(ContainerWindow &parent,
+                                            const PixelRect &rc) noexcept
 {
   RowFormWidget::Prepare(parent, rc);
 
@@ -73,15 +52,28 @@ AirspaceClassRendererSettingsPanel::Prepare(ContainerWindow &parent, const Pixel
   settings = CommonInterface::GetMapSettings().airspace.classes[type];
 
   // Add controls
-  AddButton(_("Change Border Color"), *this, BorderColor);
-  AddButton(_("Change Fill Color"), *this, FillColor);
+  AddButton(_("Change Border Color"), [this](){
+    border_color_changed |= ShowColorListDialog(settings.border_color);
+  });
+
+  AddButton(_("Change Fill Color"), [this](){
+    fill_color_changed |= ShowColorListDialog(settings.fill_color);
+  });
 
 #ifdef HAVE_HATCHED_BRUSH
 #ifdef HAVE_ALPHA_BLEND
   bool transparency = CommonInterface::GetMapSettings().airspace.transparency;
   if (!transparency)
 #endif
-    AddButton(_("Change Fill Brush"), *this, FillBrush);
+    AddButton(_("Change Fill Brush"), [this](){
+      int pattern_index =
+        dlgAirspacePatternsShowModal(UIGlobals::GetLook().map.airspace);
+
+      if (pattern_index >= 0 && pattern_index != settings.brush) {
+        settings.brush = pattern_index;
+        fill_brush_changed = true;
+      }
+    });
 #ifdef HAVE_ALPHA_BLEND
   else
     AddDummy();
@@ -108,7 +100,7 @@ AirspaceClassRendererSettingsPanel::Prepare(ContainerWindow &parent, const Pixel
 }
 
 bool
-AirspaceClassRendererSettingsPanel::Save(bool &changed)
+AirspaceClassRendererSettingsPanel::Save(bool &changed) noexcept
 {
   if (border_color_changed) {
     Profile::SetAirspaceBorderColor(Profile::map, type, settings.border_color);

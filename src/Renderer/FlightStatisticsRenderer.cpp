@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@ Copyright_License {
 #include "Task/ProtectedTaskManager.hpp"
 #include "Engine/Task/TaskManager.hpp"
 #include "Engine/Task/Ordered/OrderedTask.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
 #include "NMEA/Info.hpp"
 #include "NMEA/Derived.hpp"
@@ -94,6 +94,8 @@ FlightStatisticsRenderer::RenderOLC(Canvas &canvas, const PixelRect rc,
                                     const Retrospective &retrospective) const
 {
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.Begin();
+
   if (!trail_renderer.LoadTrace(trace_computer)) {
     chart.DrawNoData();
     return;
@@ -122,9 +124,7 @@ FlightStatisticsRenderer::RenderOLC(Canvas &canvas, const PixelRect rc,
 
     for (const auto &i : retrospective.getNearWaypointList()) {
       auto wp_pos = proj.GeoToScreen(i.waypoint->location);
-      canvas.DrawText(wp_pos.x,
-                      wp_pos.y,
-                      i.waypoint->name.c_str());
+      canvas.DrawText(wp_pos, i.waypoint->name.c_str());
     }
   }
 
@@ -165,6 +165,8 @@ FlightStatisticsRenderer::RenderOLC(Canvas &canvas, const PixelRect rc,
   }
 
   RenderMapScale(canvas, proj, rc_chart, map_look.overlay);
+
+  chart.Finish();
 }
 
 void
@@ -251,6 +253,7 @@ FlightStatisticsRenderer::RenderTask(Canvas &canvas, const PixelRect rc,
                                      const TraceComputer *trace_computer) const
 {
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.Begin();
 
   ChartProjection proj;
 
@@ -260,7 +263,7 @@ FlightStatisticsRenderer::RenderTask(Canvas &canvas, const PixelRect rc,
     ProtectedTaskManager::Lease task_manager(_task_manager);
     const OrderedTask &task = task_manager->GetOrderedTask();
 
-    if (!task.CheckTask()) {
+    if (IsError(task.CheckTask())) {
       chart.DrawNoData();
       return;
     }
@@ -287,6 +290,8 @@ FlightStatisticsRenderer::RenderTask(Canvas &canvas, const PixelRect rc,
   }
 
   RenderMapScale(canvas, proj, rc_chart, map_look.overlay);
+
+  chart.Finish();
 }
 
 void

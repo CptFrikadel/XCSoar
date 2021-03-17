@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -32,20 +32,23 @@ Copyright_License {
 
 class AltitudeInfoPanel : public TwoWidgets, NullBlackboardListener {
 public:
-  AltitudeInfoPanel():TwoWidgets(false) {}
+  explicit AltitudeInfoPanel(const DialogLook &look) noexcept
+    :TwoWidgets(std::make_unique<RowFormWidget>(look),
+                std::make_unique<RowFormWidget>(look),
+                false) {}
 
-  void Refresh();
+  void Refresh() noexcept;
 
-  virtual void Initialise(ContainerWindow &parent,
-                          const PixelRect &rc) override;
-  virtual void Show(const PixelRect &rc) override;
-  virtual void Hide() override;
+  void Initialise(ContainerWindow &parent,
+                  const PixelRect &rc) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
 
-  virtual void OnGPSUpdate(const MoreData &basic) override;
+  void OnGPSUpdate(const MoreData &basic) override;
 };
 
 void
-AltitudeInfoPanel::Refresh()
+AltitudeInfoPanel::Refresh() noexcept
 {
   const DerivedInfo &calculated = CommonInterface::Calculated();
   const NMEAInfo &basic = CommonInterface::Basic();
@@ -71,23 +74,22 @@ AltitudeInfoPanel::Refresh()
 }
 
 void
-AltitudeInfoPanel::Initialise(ContainerWindow &parent, const PixelRect &rc)
+AltitudeInfoPanel::Initialise(ContainerWindow &parent,
+                              const PixelRect &rc) noexcept
 {
-  const DialogLook &look = UIGlobals::GetDialogLook();
-
-  RowFormWidget *first = new RowFormWidget(look);
-  RowFormWidget *second = new RowFormWidget(look);
-  TwoWidgets::Set(first, second);
   TwoWidgets::Initialise(parent, rc);
 
-  first->AddReadOnly(_("Alt GPS"));
-  first->AddReadOnly(_("Alt Baro"));
-  second->AddReadOnly(_("H AGL"));
-  second->AddReadOnly(_("Terrain"));
+  RowFormWidget &first = (RowFormWidget &)GetFirst();
+  first.AddReadOnly(_("Alt GPS"));
+  first.AddReadOnly(_("Alt Baro"));
+
+  RowFormWidget &second = (RowFormWidget &)GetSecond();
+  second.AddReadOnly(_("H AGL"));
+  second.AddReadOnly(_("Terrain"));
 }
 
 void
-AltitudeInfoPanel::Show(const PixelRect &rc)
+AltitudeInfoPanel::Show(const PixelRect &rc) noexcept
 {
   Refresh();
   TwoWidgets::Show(rc);
@@ -96,7 +98,7 @@ AltitudeInfoPanel::Show(const PixelRect &rc)
 }
 
 void
-AltitudeInfoPanel::Hide()
+AltitudeInfoPanel::Hide() noexcept
 {
   CommonInterface::GetLiveBlackboard().RemoveListener(*this);
 
@@ -109,8 +111,8 @@ AltitudeInfoPanel::OnGPSUpdate(const MoreData &basic)
   Refresh();
 }
 
-Widget *
+std::unique_ptr<Widget>
 LoadAltitudeInfoPanel(unsigned id)
 {
-  return new AltitudeInfoPanel();
+  return std::make_unique<AltitudeInfoPanel>(UIGlobals::GetDialogLook());
 }

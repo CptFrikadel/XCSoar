@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -29,13 +29,14 @@ Copyright_License {
 
 class TaskStatusPanel : public StatusPanel, DataFieldListener {
 public:
-  TaskStatusPanel(const DialogLook &look):StatusPanel(look) {}
+  explicit TaskStatusPanel(const DialogLook &look) noexcept
+    :StatusPanel(look) {}
 
   /* virtual methods from class StatusPanel */
-  void Refresh() override;
+  void Refresh() noexcept override;
 
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
 private:
   /* virtual methods from DataFieldListener */

@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -38,8 +38,8 @@ Copyright_License {
 #include "ActionInterface.hpp"
 
 #ifdef USE_POLL_EVENT
-#include "Event/Globals.hpp"
-#include "Event/Queue.hpp"
+#include "ui/event/Globals.hpp"
+#include "ui/event/Queue.hpp"
 #endif
 
 enum ControlIndex {
@@ -168,12 +168,13 @@ public:
     :RowFormWidget(UIGlobals::GetDialogLook()) {}
 
 public:
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 };
 
 void
-LayoutConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+LayoutConfigPanel::Prepare(ContainerWindow &parent,
+                           const PixelRect &rc) noexcept
 {
   const UISettings &ui_settings = CommonInterface::GetUISettings();
 
@@ -234,7 +235,7 @@ LayoutConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-LayoutConfigPanel::Save(bool &_changed)
+LayoutConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -303,7 +304,7 @@ LayoutConfigPanel::Save(bool &_changed)
     }
 
 #ifdef USE_POLL_EVENT
-    event_queue->SetDisplayOrientation(ui_settings.display.orientation);
+    UI::event_queue->SetDisplayOrientation(ui_settings.display.orientation);
 #endif
 
     CommonInterface::main_window->CheckResize();
@@ -315,8 +316,8 @@ LayoutConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateLayoutConfigPanel()
 {
-  return new LayoutConfigPanel();
+  return std::make_unique<LayoutConfigPanel>();
 }

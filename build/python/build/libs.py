@@ -2,6 +2,7 @@ from os.path import abspath
 
 from build.zlib import ZlibProject
 from build.autotools import AutotoolsProject
+from build.cmake import CmakeProject
 from build.openssl import OpenSSLProject
 from build.freetype import FreeTypeProject
 from build.curl import CurlProject
@@ -36,9 +37,9 @@ libstdcxx_musl_headers = LibstdcxxMuslHeadersProject(
 )
 
 openssl = OpenSSLProject(
-    'https://www.openssl.org/source/old/3.0/openssl-3.0.0-alpha4.tar.gz',
-    'ftp://ftp.cert.dfn.de/pub/tools/net/old/3.0/openssl/source/openssl-3.0.0-alpha4.tar.gz',
-    'd930b650e0899f5baca8b80c50e7401620c129fef6c50198400999776a39bd37',
+    'https://www.openssl.org/source/openssl-3.0.0-alpha13.tar.gz',
+    'ftp://ftp.cert.dfn.de/pub/tools/net/openssl/source/openssl-3.0.0-alpha13.tar.gz',
+    'c88cbb9d330b4daa3dbb5af1ed511d5062253291a56e09fd17e9ac013a20f8a3',
     'include/openssl/ossl_typ.h',
 )
 
@@ -100,41 +101,51 @@ freetype = FreeTypeProject(
     ],
 )
 
-curl = AutotoolsProject(
-    'http://curl.haxx.se/download/curl-7.71.1.tar.xz',
-    'https://github.com/curl/curl/releases/download/curl-7_71_1/curl-7.71.1.tar.xz',
-    '40f83eda27cdbeb25cd4da48cefb639af1b9395d6026d2da1825bf059239658c',
+cares = CmakeProject(
+    'https://c-ares.haxx.se/download/c-ares-1.17.1.tar.gz',
+    'https://c-ares.haxx.se/download/c-ares-1.17.1.tar.gz',
+    'd73dd0f6de824afd407ce10750ea081af47eba52b8a6cb307d220131ad93fc40',
+    'lib/libcares.a',
+    [
+        '-DCARES_STATIC=ON',
+        '-DCARES_SHARED=OFF',
+        '-DCARES_STATIC_PIC=ON',
+        '-DCARES_BUILD_TOOLS=OFF',
+    ],
+    patches=abspath('lib/c-ares/patches'),
+    #autogen=True,
+    #subdirs=['include', 'src/lib'],
+)
+
+curl = CmakeProject(
+    'https://curl.se/download/curl-7.75.0.tar.xz',
+    'https://github.com/curl/curl/releases/download/curl-7_75_0/curl-7.75.0.tar.xz',
+    'fe0c49d8468249000bda75bcfdf9e30ff7e9a86d35f1a21f428d79c389d55675',
     'lib/libcurl.a',
     [
-        '--disable-shared', '--enable-static',
-        '--disable-debug',
-        '--disable-ares',
-        '--enable-http',
-        '--enable-ftp', '--disable-file',
-        '--disable-ldap', '--disable-ldaps',
-        '--disable-rtsp', '--disable-proxy', '--disable-dict', '--disable-telnet',
-        '--disable-tftp', '--disable-pop3', '--disable-imap', '--disable-smb',
-        '--disable-smtp',
-        '--disable-gopher',
-        '--disable-mqtt',
-        '--disable-manual',
-        '--enable-ipv6',
-        '--disable-threaded-resolver', '--disable-verbose', '--disable-sspi',
-        '--disable-crypto-auth', '--disable-ntlm-wb', '--disable-tls-srp', '--disable-cookies',
-        '--disable-doh',
-        '--disable-mime',
-        '--disable-dateparse',
-        '--disable-netrc',
-        '--disable-progress-meter',
-        '--disable-dnsshuffle',
-        '--disable-alt-svc',
-        '--without-brotli',
-        '--with-ssl', '--without-gnutls',
-        '--without-mbedtls', '--without-wolfssl',
-        '--without-mesalink', '--without-bearssl',
-        '--without-nss', '--without-libssh2',
-        '--without-nghttp2', '--without-ngtcp2', '--without-nghttp3',
-        '--without-quiche',
+        '-DBUILD_CURL_EXE=OFF',
+        '-DBUILD_SHARED_LIBS=OFF',
+        '-DENABLE_ARES=ON',
+        '-DCURL_DISABLE_LDAP=ON',
+        '-DCURL_DISABLE_TELNET=ON',
+        '-DCURL_DISABLE_DICT=ON',
+        '-DCURL_DISABLE_FILE=ON',
+        '-DCURL_DISABLE_TFTP=ON',
+        '-DCURL_DISABLE_LDAPS=ON',
+        '-DCURL_DISABLE_RTSP=ON',
+        '-DCURL_DISABLE_PROXY=ON',
+        '-DCURL_DISABLE_POP3=ON',
+        '-DCURL_DISABLE_IMAP=ON',
+        '-DCURL_DISABLE_SMTP=ON',
+        '-DCURL_DISABLE_GOPHER=ON',
+        '-DCURL_DISABLE_COOKIES=ON',
+        '-DCURL_DISABLE_CRYPTO_AUTH=ON',
+        '-DCURL_DISABLE_IMAP=ON',
+        '-DCMAKE_USE_LIBSSH2=OFF',
+        '-DBUILD_TESTING=OFF',
+    ],
+    windows_configure_args=[
+        '-DCMAKE_USE_SCHANNEL=ON',
     ],
     patches=abspath('lib/curl/patches'),
 )

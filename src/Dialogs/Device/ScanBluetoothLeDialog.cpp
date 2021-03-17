@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,17 +26,16 @@
 #include "Dialogs/Message.hpp"
 #include "UIGlobals.hpp"
 #include "Look/DialogLook.hpp"
-#include "Screen/Layout.hpp"
-#include "Screen/Canvas.hpp"
+#include "Renderer/TextRowRenderer.hpp"
 #include "Form/Button.hpp"
 #include "Widget/ListWidget.hpp"
-#include "Java/Global.hxx"
+#include "java/Global.hxx"
 #include "Android/LeScanCallback.hpp"
 #include "Android/BluetoothHelper.hpp"
 #include "Language/Language.hpp"
-#include "Thread/Mutex.hxx"
-#include "Event/Notify.hpp"
-#include "Util/StringCompare.hxx"
+#include "thread/Mutex.hxx"
+#include "ui/event/Notify.hpp"
+#include "util/StringCompare.hxx"
 
 #include <vector>
 #include <forward_list>
@@ -55,9 +54,11 @@ class ScanBluetoothLeWidget final
 
   WidgetDialog &dialog;
 
-  Notify le_scan_notify{[this]{ OnLeScanNotification(); }};
+  UI::Notify le_scan_notify{[this]{ OnLeScanNotification(); }};
 
   std::vector<Item> items;
+
+  TextRowRenderer row_renderer;
 
   Mutex mutex;
   std::set<std::string> addresses;
@@ -85,8 +86,7 @@ public:
 
 private:
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
 
   /* virtual methods from class ListItemRenderer */
   void OnPaintItem(Canvas &canvas, const PixelRect rc,
@@ -145,23 +145,13 @@ private:
 };
 
 void
-ScanBluetoothLeWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+ScanBluetoothLeWidget::Prepare(ContainerWindow &parent,
+                               const PixelRect &rc) noexcept
 {
   const DialogLook &look = UIGlobals::GetDialogLook();
-  const unsigned margin = Layout::GetTextPadding();
-  const unsigned font_height = look.list.font->GetHeight();
 
-  unsigned row_height = std::max(2u * margin + font_height,
-                                 Layout::GetMaximumControlHeight());
-  CreateList(parent, look, rc, row_height);
-}
-
-void
-ScanBluetoothLeWidget::Unprepare()
-{
-  le_scan_notify.ClearNotification();
-
-  DeleteWindow();
+  CreateList(parent, look, rc,
+             row_renderer.CalculateLayout(*look.list.font));
 }
 
 void
@@ -170,24 +160,23 @@ ScanBluetoothLeWidget::OnPaintItem(Canvas &canvas, const PixelRect rc,
 {
   const auto &item = items[i];
 
-  const unsigned margin = Layout::GetTextPadding();
-
   const char *name = item.name.c_str();
   if (StringIsEmpty(name))
     name = item.address.c_str();
 
-  canvas.DrawText(rc.left + margin, rc.top + margin, name);
+  row_renderer.DrawTextRow(canvas, rc, name);
 }
 
 std::string
 ScanBluetoothLeDialog() noexcept
 {
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      UIGlobals::GetDialogLook(), _("Bluetooth LE"));
-  ScanBluetoothLeWidget widget(dialog);
+  TWidgetDialog<ScanBluetoothLeWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           UIGlobals::GetDialogLook(), _("Bluetooth LE"));
+  dialog.SetWidget(dialog);
 
   const auto env = Java::GetEnv();
-  const auto callback = BluetoothHelper::StartLeScan(env, widget);
+  const auto callback = BluetoothHelper::StartLeScan(env, dialog.GetWidget());
   if (callback == nullptr) {
     const TCHAR *message =
       _("Bluetooth LE is not available on this device.");
@@ -195,17 +184,14 @@ ScanBluetoothLeDialog() noexcept
     return {};
   }
 
-  widget.CreateButtons();
+  dialog.GetWidget().CreateButtons();
   dialog.AddButton(_("Cancel"), mrCancel);
-  dialog.FinishPreliminary(&widget);
 
   int result = dialog.ShowModal();
   BluetoothHelper::StopLeScan(env, callback);
 
-  dialog.StealWidget();
-
   if (result != mrOK)
     return {};
 
-  return widget.GetSelectedAddress();
+  return dialog.GetWidget().GetSelectedAddress();
 }

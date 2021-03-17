@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@ Copyright_License {
 #include "Profile/Current.hpp"
 #include "Profile/Profile.hpp"
 #include "Profile/AirspaceConfig.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Screen/Features.hpp"
 #include "Screen/Layout.hpp"
 #include "Renderer/TextRowRenderer.hpp"
@@ -59,16 +59,12 @@ public:
 
   /* virtual methods from class Widget */
 
-  virtual void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override {
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override {
     const auto &look = UIGlobals::GetDialogLook();
     ListControl &list = CreateList(parent, look, rc,
                                    row_renderer.CalculateLayout(*look.list.font));
     list.SetLength(AIRSPACECLASSCOUNT);
-  }
-
-  virtual void Unprepare() override {
-    DeleteWindow();
   }
 
   /* virtual methods from class ListItemRenderer */
@@ -100,20 +96,16 @@ AirspaceSettingsListWidget::OnPaintItem(Canvas &canvas, PixelRect rc,
   if (color_mode) {
     int second_x = row_renderer.NextColumn(canvas, rc, name);
 
-    const unsigned padding = Layout::GetTextPadding();
+    const int padding = Layout::GetTextPadding();
 
     if (AirspacePreviewRenderer::PrepareFill(
         canvas, (AirspaceClass)i, look, renderer)) {
-      canvas.Rectangle(second_x, rc.top + padding,
-                       rc.right - padding,
-                       rc.bottom - padding);
+      canvas.DrawRectangle({second_x, rc.top + padding, rc.right - padding, rc.bottom - padding});
       AirspacePreviewRenderer::UnprepareFill(canvas);
     }
     if (AirspacePreviewRenderer::PrepareOutline(
         canvas, (AirspaceClass)i, look, renderer)) {
-      canvas.Rectangle(second_x, rc.top + padding,
-                       rc.right - padding,
-                       rc.bottom - padding);
+      canvas.DrawRectangle({second_x, rc.top + padding, rc.right - padding, rc.bottom - padding});
     }
   } else {
     rc.right = renderer.classes[i].display
@@ -166,17 +158,17 @@ AirspaceSettingsListWidget::OnActivateItem(unsigned index) noexcept
 void
 dlgAirspaceShowModal(bool color_mode)
 {
-  AirspaceSettingsListWidget widget(color_mode);
-  WidgetDialog dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
-                      UIGlobals::GetDialogLook(),
-                      _("Airspace"), &widget);
+  TWidgetDialog<AirspaceSettingsListWidget>
+    dialog(WidgetDialog::Full{}, UIGlobals::GetMainWindow(),
+           UIGlobals::GetDialogLook(),
+           _("Airspace"));
   dialog.AddButton(_("Close"), mrOK);
+  dialog.SetWidget(color_mode);
 
   dialog.ShowModal();
-  dialog.StealWidget();
 
   // now retrieve back the properties...
-  if (widget.IsModified()) {
+  if (dialog.GetWidget().IsModified()) {
     Profile::Save();
   }
 }

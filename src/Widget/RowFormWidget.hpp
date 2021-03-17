@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -28,16 +28,18 @@ Copyright_License {
 #include "Form/Edit.hpp"
 #include "Form/DataField/Base.hpp"
 #include "Repository/FileType.hpp"
-#include "Util/StaticArray.hxx"
-#include "Util/EnumCast.hpp"
+#include "util/EnumCast.hpp"
 #include "Units/Group.hpp"
+
+#include <boost/container/static_vector.hpp>
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
+#include <memory>
 
 struct DialogLook;
 struct StaticEnumChoice;
-class ActionListener;
 class Angle;
 class RoughTime;
 class RoughTimeDelta;
@@ -90,7 +92,7 @@ class RowFormWidget : public WindowWidget {
       REMAINING,
     };
 
-    Type type;
+    const Type type;
 
     /**
      * Only used for #type==WIDGET.
@@ -101,7 +103,7 @@ class RowFormWidget : public WindowWidget {
      * Shall this row be available?  If not, it is hidden and no
      * screen space is reserved for it.
      */
-    bool available;
+    bool available = true;
 
     /**
      * Shall this row be visible?  The "expert" flag overrides it in
@@ -112,11 +114,11 @@ class RowFormWidget : public WindowWidget {
     /**
      * If true, then the row is only visible in "expert" mode.
      */
-    bool expert;
+    bool expert = false;
 
-    Widget *widget;
+    std::unique_ptr<Widget> widget;
 
-    Window *window;
+    std::unique_ptr<Window> window;
 
     /**
      * The position determined by RowFormWidget::UpdateLayout().  This
@@ -125,28 +127,41 @@ class RowFormWidget : public WindowWidget {
      */
     PixelRect position;
 
-    Row() = default;
-
-    Row(Type _type)
-      :type(_type), available(true), visible(false), expert(false),
-       widget(nullptr), window(nullptr) {
+    Row(Type _type) noexcept
+      :type(_type), visible(false) {
       assert(_type == Type::DUMMY);
     }
 
-    Row(Type _type, Window *_window)
-      :type(_type), available(true), visible(true), expert(false),
-       widget(nullptr), window(_window) {
+    Row(Type _type, std::unique_ptr<Window> &&_window) noexcept
+      :type(_type), visible(true),
+       window(std::move(_window))
+    {
       assert(_type != Type::DUMMY);
-      assert(_window != nullptr);
+      assert(window != nullptr);
     }
 
-    Row(Widget *_widget)
+    Row(std::unique_ptr<Widget> &&_widget) noexcept
       :type(Type::WIDGET),
        initialised(false), prepared(false), shown(false),
-       available(true), visible(true), expert(false),
-       widget(_widget), window(nullptr) {
-      assert(_widget != nullptr);
+       visible(true),
+       widget(std::move(_widget))
+    {
+      assert(widget != nullptr);
     }
+
+    ~Row() noexcept{
+      Unprepare();
+
+      if (type == Type::WIDGET) {
+        assert(widget != nullptr);
+        assert(window == nullptr);
+        assert(!shown);
+        assert(!prepared);
+      }
+    }
+
+    Row(const Row &) = delete;
+    Row &operator=(const Row &) = delete;
 
     /**
      * Determines whether this row is available.  A row that is not
@@ -154,12 +169,12 @@ class RowFormWidget : public WindowWidget {
      *
      * @param expert_mode true if the user has enabled "expert" mode
      */
-    bool IsAvailable(bool expert_mode) const {
+    bool IsAvailable(bool expert_mode) const noexcept {
       return type != Row::Type::DUMMY && available &&
         (!expert || expert_mode);
     }
 
-    void Unprepare() {
+    void Unprepare() noexcept {
       if (type == Type::WIDGET) {
         assert(widget != nullptr);
         assert(window == nullptr);
@@ -176,99 +191,82 @@ class RowFormWidget : public WindowWidget {
       }
     }
 
-    /**
-     * Delete the #Widget or #Window object.
-     */
-    void Delete() {
-      Unprepare();
-
-      if (type == Type::WIDGET) {
-        assert(widget != nullptr);
-        assert(window == nullptr);
-        assert(!shown);
-        assert(!prepared);
-
-        delete widget;
-        return;
-      }
-
-      delete window;
-    }
-
-    gcc_pure
-    Widget &GetWidget() {
+    [[gnu::pure]]
+    Widget &GetWidget() noexcept {
       assert(widget != nullptr);
       assert(window == nullptr);
 
       return *widget;
     }
 
-    gcc_pure
-    const Widget &GetWidget() const {
+    [[gnu::pure]]
+    const Widget &GetWidget() const noexcept {
       assert(widget != nullptr);
       assert(window == nullptr);
 
       return *widget;
     }
 
-    gcc_pure
-    Window &GetWindow() {
+    [[gnu::pure]]
+    Window &GetWindow() noexcept {
       assert(window != nullptr);
 
       return *window;
     }
 
-    gcc_pure
-    const Window &GetWindow() const {
+    [[gnu::pure]]
+    const Window &GetWindow() const noexcept {
       assert(window != nullptr);
 
       return *window;
     }
 
-    gcc_pure
-    WndProperty &GetControl() {
+    [[gnu::pure]]
+    WndProperty &GetControl() noexcept {
       assert(type == Type::EDIT);
       assert(window != nullptr);
 
-      return *(WndProperty *)window;
+      return (WndProperty &)*window;
     }
 
-    gcc_pure
-    const WndProperty &GetControl() const {
+    [[gnu::pure]]
+    const WndProperty &GetControl() const noexcept {
       assert(type == Type::EDIT);
       assert(window != nullptr);
 
-      return *(WndProperty *)window;
+      return (WndProperty &)*window;
     }
 
     /**
      * Will this row grow when there is excess screen space?
      */
-    bool IsElastic(const DialogLook &look, bool vertical) const {
+    bool IsElastic(const DialogLook &look, bool vertical) const noexcept {
       return GetMaximumHeight(look, vertical)
         > GetMinimumHeight(look, vertical);
     }
 
-    gcc_pure
-    unsigned GetMinimumHeight(const DialogLook &look, bool vertical) const;
+    [[gnu::pure]]
+    unsigned GetMinimumHeight(const DialogLook &look,
+                              bool vertical) const noexcept;
 
-    gcc_pure
-    unsigned GetMaximumHeight(const DialogLook &look, bool vertical) const;
+    [[gnu::pure]]
+    unsigned GetMaximumHeight(const DialogLook &look,
+                              bool vertical) const noexcept;
 
     void UpdateLayout(ContainerWindow &parent, const PixelRect &_position,
-                      int caption_width);
+                      int caption_width) noexcept;
 
-    void SetVisible(ContainerWindow &parent, bool _visible);
+    void SetVisible(ContainerWindow &parent, bool _visible) noexcept;
 
     /**
      * Show the Window/Widget, but do not update the #visible flag.
      */
-    void Show(ContainerWindow &parent);
+    void Show(ContainerWindow &parent) noexcept;
 
     /**
      * Hide the Window/Widget, but do not update the #visible flag.
      */
-    void Hide();
+    void Hide() noexcept;
   };
 
   const DialogLook &look;
@@ -279,21 +277,22 @@ class RowFormWidget : public WindowWidget {
    */
   const bool vertical;
 
-  StaticArray<Row, 32u> rows;
+  boost::container::static_vector<Row, 32u> rows;
 
 public:
-  RowFormWidget(const DialogLook &look, bool vertical=false);
-  virtual ~RowFormWidget();
+  RowFormWidget(const DialogLook &look, bool vertical=false) noexcept;
+  ~RowFormWidget() noexcept override;
 
 protected:
-  const DialogLook &GetLook() const {
+  const DialogLook &GetLook() const noexcept {
     return look;
   }
 
-  void Add(Row::Type type, Window *window);
+  Window &Add(Row::Type type, std::unique_ptr<Window> window) noexcept;
 
-  WndProperty *CreateEdit(const TCHAR *label, const TCHAR *help=nullptr,
-                          bool read_only=false);
+  std::unique_ptr<WndProperty> CreateEdit(const TCHAR *label,
+                                          const TCHAR *help=nullptr,
+                                          bool read_only=false) noexcept;
 
 public:
   /**
@@ -301,38 +300,40 @@ public:
    * zero.  This may be used to "reserve" a row index when a row is
    * not present in a certain instance of the form.
    */
-  void AddDummy() {
-    rows.push_back(Row::Type::DUMMY);
+  void AddDummy() noexcept {
+    rows.emplace_back(Row::Type::DUMMY);
   }
 
   /**
    * Add a #Widget row.  The object will be deleted automatically.
    */
-  void Add(Widget *widget) {
-    rows.push_back(widget);
+  Widget &Add(std::unique_ptr<Widget> widget) noexcept {
+    rows.emplace_back(std::move(widget));
+    return *rows.back().widget;
   }
 
-  void Add(Window *window) {
-    Add(Row::Type::GENERIC, window);
+  Window &Add(std::unique_ptr<Window> window) noexcept {
+    Add(Row::Type::GENERIC, std::move(window));
+    return *rows.back().window;
   }
 
   /**
    * Add a #Window that fills the remaining vertical space at the
    * bottom.  It must be the last row, and there can only be one.
    */
-  void AddRemaining(Window *window) {
-    Add(Row::Type::REMAINING, window);
+  void AddRemaining(std::unique_ptr<Window> window) noexcept {
+    Add(Row::Type::REMAINING, std::move(window));
   }
 
   WndProperty *Add(const TCHAR *label, const TCHAR *help=nullptr,
-                   bool read_only=false);
+                   bool read_only=false) noexcept;
 
   /**
    * Add a read-only control.  You can use SetText() to update its
    * text.
    */
   void AddReadOnly(const TCHAR *label, const TCHAR *help=nullptr,
-                   const TCHAR *text=nullptr);
+                   const TCHAR *text=nullptr) noexcept;
 
   /**
    * Add a read-only control displaying a floating-point value.  Use
@@ -340,7 +341,7 @@ public:
    */
   void AddReadOnly(const TCHAR *label, const TCHAR *help,
                    const TCHAR *display_format,
-                   double value);
+                   double value) noexcept;
 
   /**
    * Add a read-only control displaying a floating-point value.  Use
@@ -348,27 +349,27 @@ public:
    */
   void AddReadOnly(const TCHAR *label, const TCHAR *help,
                    const TCHAR *display_format,
-                   UnitGroup unit_group, double value);
+                   UnitGroup unit_group, double value) noexcept;
 
   /**
    * Add a read-only control displaying a boolean value.  Use
    * LoadValue() to update the displayed value.
    */
   void AddReadOnly(const TCHAR *label, const TCHAR *help,
-                   bool value);
+                   bool value) noexcept;
 
   WndProperty *Add(const TCHAR *label, const TCHAR *help,
-                   DataField *df);
+                   DataField *df) noexcept;
 
   WndProperty *AddBoolean(const TCHAR *label, const TCHAR *help,
                           bool value=false,
-                          DataFieldListener *listener=nullptr);
+                          DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddInteger(const TCHAR *label, const TCHAR *help,
                           const TCHAR *display_format,
                           const TCHAR *edit_format,
                           int min_value, int max_value, int step, int value,
-                          DataFieldListener *listener=nullptr);
+                          DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddFloat(const TCHAR *label, const TCHAR *help,
                         const TCHAR *display_format,
@@ -376,7 +377,7 @@ public:
                         double min_value, double max_value,
                         double step, bool fine,
                         double value,
-                        DataFieldListener *listener=nullptr);
+                        DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddFloat(const TCHAR *label, const TCHAR *help,
                         const TCHAR *display_format,
@@ -384,49 +385,49 @@ public:
                         double min_value, double max_value,
                         double step, bool fine,
                         UnitGroup unit_group, double value,
-                        DataFieldListener *listener=nullptr);
+                        DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddAngle(const TCHAR *label, const TCHAR *help,
                         Angle value, unsigned step, bool fine,
-                        DataFieldListener *listener=nullptr);
+                        DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddEnum(const TCHAR *label, const TCHAR *help,
                        const StaticEnumChoice *list, unsigned value=0,
-                       DataFieldListener *listener=nullptr);
+                       DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddEnum(const TCHAR *label, const TCHAR *help,
-                       DataFieldListener *listener=nullptr);
+                       DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddText(const TCHAR *label, const TCHAR *help,
                        const TCHAR *content,
-                       DataFieldListener *listener=nullptr);
+                       DataFieldListener *listener=nullptr) noexcept;
 
   /**
    * Add a password edit control.  The password is obfuscated while
    * not editing.
    */
   WndProperty *AddPassword(const TCHAR *label, const TCHAR *help,
-                           const TCHAR *content);
+                           const TCHAR *content) noexcept;
 
   WndProperty *AddTime(const TCHAR *label, const TCHAR *help,
                        int min_value, int max_value, unsigned step,
                        int value, unsigned max_tokens = 2,
-                       DataFieldListener *listener=nullptr);
+                       DataFieldListener *listener=nullptr) noexcept;
 
   WndProperty *AddRoughTime(const TCHAR *label, const TCHAR *help,
                             RoughTime value, RoughTimeDelta time_zone,
-                            DataFieldListener *listener=nullptr);
+                            DataFieldListener *listener=nullptr) noexcept;
 
-  void AddSpacer();
+  void AddSpacer() noexcept;
 
   WndProperty *AddFile(const TCHAR *label, const TCHAR *help,
                        const char *profile_key, const TCHAR *filters,
                        FileType file_type,
-                       bool nullable = true);
+                       bool nullable = true) noexcept;
 
   WndProperty *AddFile(const TCHAR *label, const TCHAR *help,
                        const char *profile_key, const TCHAR *filters,
-                       bool nullable = true) {
+                       bool nullable = true) noexcept {
     return AddFile(label, help, profile_key, filters, FileType::UNKNOWN,
                    nullable);
   }
@@ -440,45 +441,45 @@ public:
    * Add a read-only multi-line control.  You can use
    * SetMultiLineText() to update its text.
    */
-  void AddMultiLine(const TCHAR *text=nullptr);
+  void AddMultiLine(const TCHAR *text=nullptr) noexcept;
 
-  Button *AddButton(const TCHAR *label, ActionListener &listener, int id);
+  Button *AddButton(const TCHAR *label, std::function<void()> callback) noexcept;
 
-  gcc_pure
-  Widget &GetRowWidget(unsigned i) {
+  [[gnu::pure]]
+  Widget &GetRowWidget(unsigned i) noexcept {
     return rows[i].GetWidget();
   }
 
-  gcc_pure
-  Window &GetRow(unsigned i) {
+  [[gnu::pure]]
+  Window &GetRow(unsigned i) noexcept {
     return rows[i].GetWindow();
   }
 
-  gcc_pure
-  const Window &GetRow(unsigned i) const {
+  [[gnu::pure]]
+  const Window &GetRow(unsigned i) const noexcept {
     return rows[i].GetWindow();
   }
 
-  void SetReadOnly(unsigned i, bool read_only=true) {
+  void SetReadOnly(unsigned i, bool read_only=true) noexcept {
     GetControl(i).SetReadOnly(read_only);
   }
 
-  void SetRowEnabled(unsigned i, bool enabled) {
+  void SetRowEnabled(unsigned i, bool enabled) noexcept {
     GetRow(i).SetEnabled(enabled);
   }
 
   /**
    * Modify the "available" flag on this row.
    */
-  void SetRowAvailable(unsigned i, bool available);
+  void SetRowAvailable(unsigned i, bool available) noexcept;
 
-  void SetRowVisible(unsigned i, bool visible);
+  void SetRowVisible(unsigned i, bool visible) noexcept;
 
-  void ShowRow(unsigned i) {
+  void ShowRow(unsigned i) noexcept {
     SetRowVisible(i, true);
   }
 
-  void HideRow(unsigned i) {
+  void HideRow(unsigned i) noexcept {
     SetRowVisible(i, false);
   }
 
@@ -487,27 +488,27 @@ public:
    * "expert" mode.  This must be called before the first Show()
    * invocation.
    */
-  void SetExpertRow(unsigned i);
+  void SetExpertRow(unsigned i) noexcept;
 
-  gcc_pure
-  Window &GetGeneric(unsigned i) {
+  [[gnu::pure]]
+  Window &GetGeneric(unsigned i) noexcept {
     return rows[i].GetWindow();
   }
 
-  gcc_pure
-  WndProperty &GetControl(unsigned i) {
+  [[gnu::pure]]
+  WndProperty &GetControl(unsigned i) noexcept {
     return rows[i].GetControl();
   }
 
-  gcc_pure
-  const WndProperty &GetControl(unsigned i) const {
+  [[gnu::pure]]
+  const WndProperty &GetControl(unsigned i) const noexcept {
     return rows[i].GetControl();
   }
 
   /**
    * Update the text of a multi line control.
    */
-  void SetText(unsigned i, const TCHAR *text) {
+  void SetText(unsigned i, const TCHAR *text) noexcept {
     assert(text != nullptr);
 
     WndProperty &control = GetControl(i);
@@ -515,24 +516,24 @@ public:
     control.SetText(text);
   }
 
-  void ClearText(unsigned i) {
+  void ClearText(unsigned i) noexcept {
     SetText(i, _T(""));
   }
 
   /**
    * Update the text of a multi line control.
    */
-  void SetMultiLineText(unsigned i, const TCHAR *text);
+  void SetMultiLineText(unsigned i, const TCHAR *text) noexcept;
 
-  gcc_pure
-  DataField &GetDataField(unsigned i) {
+  [[gnu::pure]]
+  DataField &GetDataField(unsigned i) noexcept {
     DataField *df = GetControl(i).GetDataField();
     assert(df != nullptr);
     return *df;
   }
 
-  gcc_pure
-  const DataField &GetDataField(unsigned i) const {
+  [[gnu::pure]]
+  const DataField &GetDataField(unsigned i) const noexcept {
     const DataField *df = GetControl(i).GetDataField();
     assert(df != nullptr);
     return *df;
@@ -542,117 +543,120 @@ public:
    * Compare a row's data field with the given reference (by their
    * addresses).
    */
-  gcc_pure
-  bool IsDataField(unsigned i, const DataField &df) const {
+  [[gnu::pure]]
+  bool IsDataField(unsigned i, const DataField &df) const noexcept {
     return &df == &GetDataField(i);
   }
 
-  void LoadValue(unsigned i, int value);
-  void LoadValue(unsigned i, bool value);
-  void LoadValueEnum(unsigned i, unsigned value);
+  void LoadValue(unsigned i, int value) noexcept;
+  void LoadValue(unsigned i, bool value) noexcept;
+  void LoadValueEnum(unsigned i, unsigned value) noexcept;
 
   template<typename T>
-  void LoadValueEnum(unsigned i, T value) {
+  void LoadValueEnum(unsigned i, T value) noexcept {
     LoadValueEnum(i, unsigned(value));
   }
 
-  void LoadValue(unsigned i, const TCHAR *value);
+  void LoadValue(unsigned i, const TCHAR *value) noexcept;
 
-  void LoadValue(unsigned i, double value);
-  void LoadValue(unsigned i, Angle value);
-  void LoadValue(unsigned i, double value, UnitGroup unit_group);
+  void LoadValue(unsigned i, double value) noexcept;
+  void LoadValue(unsigned i, Angle value) noexcept;
+  void LoadValue(unsigned i, double value, UnitGroup unit_group) noexcept;
 
-  void LoadValue(unsigned i, RoughTime value);
+  void LoadValue(unsigned i, RoughTime value) noexcept;
 
   /**
    * Load a value into a control created by AddTime().
    */
-  void LoadValueTime(unsigned i, int value);
+  void LoadValueTime(unsigned i, int value) noexcept;
 
   /**
    * Clear the value of the specified row.  This bypasses the
    * DataField which may be attached to the control.  Use this method
    * to indicate that there's no valid value currently.
    */
-  void ClearValue(unsigned i) {
+  void ClearValue(unsigned i) noexcept {
     GetControl(i).SetText(_T(""));
   }
 
-  gcc_pure
-  bool GetValueBoolean(unsigned i) const;
+  [[gnu::pure]]
+  bool GetValueBoolean(unsigned i) const noexcept;
 
-  gcc_pure
-  int GetValueInteger(unsigned i) const;
+  [[gnu::pure]]
+  int GetValueInteger(unsigned i) const noexcept;
 
-  gcc_pure
-  double GetValueFloat(unsigned i) const;
+  [[gnu::pure]]
+  double GetValueFloat(unsigned i) const noexcept;
 
-  gcc_pure
-  Angle GetValueAngle(unsigned i) const;
+  [[gnu::pure]]
+  Angle GetValueAngle(unsigned i) const noexcept;
 
-  gcc_pure
-  unsigned GetValueIntegerAngle(unsigned i) const;
+  [[gnu::pure]]
+  unsigned GetValueIntegerAngle(unsigned i) const noexcept;
 
-  gcc_pure
-  RoughTime GetValueRoughTime(unsigned i) const;
+  [[gnu::pure]]
+  RoughTime GetValueRoughTime(unsigned i) const noexcept;
 
-  gcc_pure
-  const TCHAR *GetValueString(unsigned i) const {
+  [[gnu::pure]]
+  const TCHAR *GetValueString(unsigned i) const noexcept {
     return GetDataField(i).GetAsString();
   }
 
-  bool SaveValue(unsigned i, bool &value, bool negated = false) const;
-  bool SaveValue(unsigned i, int &value) const;
-  bool SaveValue(unsigned i, uint8_t &value) const;
-  bool SaveValue(unsigned i, uint16_t &value) const;
-  bool SaveValue(unsigned i, double &value) const;
-  bool SaveValue(unsigned i, Angle &value_r) const;
-  bool SaveValue(unsigned i, RoughTime &value_r) const;
-  bool SaveValue(unsigned i, TCHAR *string, size_t max_size) const;
+  bool SaveValue(unsigned i, bool &value, bool negated = false) const noexcept;
+  bool SaveValue(unsigned i, int &value) const noexcept;
+  bool SaveValue(unsigned i, uint8_t &value) const noexcept;
+  bool SaveValue(unsigned i, uint16_t &value) const noexcept;
+  bool SaveValue(unsigned i, double &value) const noexcept;
+  bool SaveValue(unsigned i, Angle &value_r) const noexcept;
+  bool SaveValue(unsigned i, RoughTime &value_r) const noexcept;
+  bool SaveValue(unsigned i, TCHAR *string, size_t max_size) const noexcept;
 
   template<size_t max>
-  bool SaveValue(unsigned i, BasicStringBuffer<TCHAR, max> &value) const {
+  bool SaveValue(unsigned i, BasicStringBuffer<TCHAR, max> &value) const noexcept {
     return SaveValue(i, value.data(), value.capacity());
   }
 
-  bool SaveValue(unsigned i, const char *profile_key, TCHAR *string, size_t max_size) const;
+  bool SaveValue(unsigned i, const char *profile_key,
+                 TCHAR *string, size_t max_size) const noexcept;
 
   template<size_t max>
   bool SaveValue(unsigned i, const char *profile_key,
-                 BasicStringBuffer<TCHAR, max> &value) const {
+                 BasicStringBuffer<TCHAR, max> &value) const noexcept {
     return SaveValue(i, profile_key, value.data(), value.capacity());
   }
 
-  bool SaveValue(unsigned i, unsigned &value) const {
+  bool SaveValue(unsigned i, unsigned &value) const noexcept {
     return SaveValue(i, (int &)value);
   }
 
-  bool SaveValue(unsigned i, const char *profile_key, bool &value, bool negated = false) const;
-  bool SaveValue(unsigned i, const char *profile_key, int &value) const;
-  bool SaveValue(unsigned i, const char *profile_key, uint8_t &value) const;
-  bool SaveValue(unsigned i, const char *profile_key, uint16_t &value) const;
-  bool SaveValue(unsigned i, const char *profile_key, double &value) const;
+  bool SaveValue(unsigned i, const char *profile_key, bool &value,
+                 bool negated = false) const noexcept;
+  bool SaveValue(unsigned i, const char *profile_key, int &value) const noexcept;
+  bool SaveValue(unsigned i, const char *profile_key, uint8_t &value) const noexcept;
+  bool SaveValue(unsigned i, const char *profile_key, uint16_t &value) const noexcept;
+  bool SaveValue(unsigned i, const char *profile_key, double &value) const noexcept;
 
   bool SaveValue(unsigned i, const char *registry_key,
-                 unsigned &value) const {
+                 unsigned &value) const noexcept {
     return SaveValue(i, registry_key, (int &)value);
   }
 
-  bool SaveValue(unsigned i, UnitGroup unit_group, double &value) const;
+  bool SaveValue(unsigned i, UnitGroup unit_group, double &value) const noexcept;
 
   bool SaveValue(unsigned i, UnitGroup unit_group,
-                 const char *profile_key, double &value) const;
+                 const char *profile_key, double &value) const noexcept;
 
   bool SaveValue(unsigned i, UnitGroup unit_group,
-                 const char *profile_key, unsigned int &value) const;
+                 const char *profile_key, unsigned int &value) const noexcept;
 
   template<typename T>
-  bool SaveValueEnum(unsigned i, T &value) const {
+  bool SaveValueEnum(unsigned i, T &value) const noexcept {
     return SaveValue(i, EnumCast<T>()(value));
   }
 
   template<typename T>
-  bool SaveValueEnum(unsigned i, const char *registry_key, T &value) const {
+  bool SaveValueEnum(unsigned i, const char *registry_key,
+                     T &value) const noexcept {
     return SaveValue(i, registry_key, EnumCast<T>()(value));
   }
 
@@ -660,18 +664,18 @@ public:
   bool SaveValueMultiFileReader(unsigned i, const char *profile_key);
 
 protected:
-  gcc_pure
-  unsigned GetRecommendedCaptionWidth() const;
+  [[gnu::pure]]
+  unsigned GetRecommendedCaptionWidth() const noexcept;
 
-  void NextControlRect(PixelRect &rc, unsigned height) {
+  void NextControlRect(PixelRect &rc, unsigned height) noexcept {
     assert(IsDefined());
 
     rc.top = rc.bottom;
     rc.bottom = rc.top + height;
   }
 
-  gcc_pure
-  PixelRect InitialControlRect(unsigned height) {
+  [[gnu::pure]]
+  PixelRect InitialControlRect(unsigned height) noexcept {
     assert(IsDefined());
 
     PixelRect rc = GetWindow().GetClientRect();
@@ -682,17 +686,17 @@ protected:
   /**
    * Recalculate all button positions.
    */
-  void UpdateLayout();
+  void UpdateLayout() noexcept;
 
 public:
   /* virtual methods from Widget */
-  PixelSize GetMinimumSize() const override;
-  PixelSize GetMaximumSize() const override;
-  void Initialise(ContainerWindow &parent, const PixelRect &rc) override;
-  void Unprepare() override;
-  void Show(const PixelRect &rc) override;
-  void Move(const PixelRect &rc) override;
-  bool SetFocus() override;
+  PixelSize GetMinimumSize() const noexcept override;
+  PixelSize GetMaximumSize() const noexcept override;
+  void Initialise(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  void Unprepare() noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Move(const PixelRect &rc) noexcept override;
+  bool SetFocus() noexcept override;
 };
 
 #endif

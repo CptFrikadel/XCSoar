@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -60,7 +60,7 @@ TaskStatusPanel::OnModified(DataField &df)
 }
 
 void
-TaskStatusPanel::Refresh()
+TaskStatusPanel::Refresh() noexcept
 {
   if (protected_task_manager == nullptr)
     return;
@@ -135,7 +135,7 @@ TaskStatusPanel::Refresh()
 }
 
 void
-TaskStatusPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+TaskStatusPanel::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   AddReadOnly(_("Assigned task time"));
   AddReadOnly(_("Estimated task time"));

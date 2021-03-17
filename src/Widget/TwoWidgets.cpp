@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -24,25 +24,20 @@ Copyright_License {
 #include "TwoWidgets.hpp"
 
 #include <algorithm>
-
-TwoWidgets::~TwoWidgets()
-{
-  delete second;
-  delete first;
-}
+#include <cassert>
 
 void
-TwoWidgets::UpdateLayout()
+TwoWidgets::UpdateLayout() noexcept
 {
   const auto layout = CalculateLayout(rc);
   first->Move(layout.first);
   second->Move(layout.second);
 }
 
-gcc_const
+[[gnu::const]]
 static int
 CalculateSplit(int top, int bottom, unsigned min_a,
-               unsigned min_b, unsigned max_b)
+               unsigned min_b, unsigned max_b) noexcept
 {
   assert(bottom >= top);
   assert(min_b <= max_b);
@@ -69,21 +64,21 @@ CalculateSplit(int top, int bottom, unsigned min_a,
 }
 
 int
-TwoWidgets::CalculateSplit(const PixelRect &rc) const
+TwoWidgets::CalculateSplit(const PixelRect &rc) const noexcept
 {
   const PixelSize min_a = first->GetMinimumSize();
   const PixelSize min_b = second->GetMinimumSize();
   const PixelSize max_b = second->GetMaximumSize();
 
   return vertical
-    ? ::CalculateSplit(rc.top, rc.bottom, min_a.cy,
-                       min_b.cy, max_b.cy)
-    : ::CalculateSplit(rc.left, rc.right, min_a.cx,
-                       min_b.cx, max_b.cx);
+    ? ::CalculateSplit(rc.top, rc.bottom, min_a.height,
+                       min_b.height, max_b.height)
+    : ::CalculateSplit(rc.left, rc.right, min_a.width,
+                       min_b.width, max_b.width);
 }
 
 std::pair<PixelRect,PixelRect>
-TwoWidgets::CalculateLayout(const PixelRect &rc) const
+TwoWidgets::CalculateLayout(const PixelRect &rc) const noexcept
 {
   PixelRect a = rc, b = rc;
   if (vertical)
@@ -94,25 +89,25 @@ TwoWidgets::CalculateLayout(const PixelRect &rc) const
 }
 
 PixelSize
-TwoWidgets::GetMinimumSize() const
+TwoWidgets::GetMinimumSize() const noexcept
 {
   const PixelSize a = first->GetMinimumSize();
   const PixelSize b = second->GetMinimumSize();
 
   return vertical
-    ? PixelSize{ std::max(a.cx, b.cx), a.cy + b.cy }
-    : PixelSize{ a.cx + b.cx, std::max(a.cy, b.cy) };
+    ? PixelSize{ std::max(a.width, b.width), a.height + b.height }
+    : PixelSize{ a.width + b.width, std::max(a.height, b.height) };
 }
 
 PixelSize
-TwoWidgets::GetMaximumSize() const
+TwoWidgets::GetMaximumSize() const noexcept
 {
   const PixelSize a = first->GetMaximumSize();
   const PixelSize b = second->GetMaximumSize();
 
   return vertical
-    ? PixelSize{ std::max(a.cx, b.cx), a.cy + b.cy }
-    : PixelSize{ a.cx + b.cx, std::max(a.cy, b.cy) };
+    ? PixelSize{ std::max(a.width, b.width), a.height + b.height }
+    : PixelSize{ a.width + b.width, std::max(a.height, b.height) };
 }
 
 /**
@@ -120,9 +115,9 @@ TwoWidgets::GetMaximumSize() const
  * TwoWidgets::Initialise() and TwoWidgets::Prepare(), we are not
  * allowed to call Widget::GetMinimumSize() yet.
  */
-gcc_const
+[[gnu::const]]
 static std::pair<PixelRect,PixelRect>
-DummyLayout(const PixelRect rc, bool vertical)
+DummyLayout(const PixelRect rc, bool vertical) noexcept
 {
   PixelRect a = rc, b = rc;
   if (vertical)
@@ -133,7 +128,7 @@ DummyLayout(const PixelRect rc, bool vertical)
 }
 
 void
-TwoWidgets::Initialise(ContainerWindow &parent, const PixelRect &rc)
+TwoWidgets::Initialise(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   this->rc = rc;
   const auto layout = DummyLayout(rc, vertical);
@@ -142,7 +137,7 @@ TwoWidgets::Initialise(ContainerWindow &parent, const PixelRect &rc)
 }
 
 void
-TwoWidgets::Prepare(ContainerWindow &parent, const PixelRect &rc)
+TwoWidgets::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   this->rc = rc;
   const auto layout = DummyLayout(rc, vertical);
@@ -151,33 +146,33 @@ TwoWidgets::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 void
-TwoWidgets::Unprepare()
+TwoWidgets::Unprepare() noexcept
 {
   first->Unprepare();
   second->Unprepare();
 }
 
 bool
-TwoWidgets::Save(bool &changed)
+TwoWidgets::Save(bool &changed) noexcept
 {
   return first->Save(changed) && second->Save(changed);
 }
 
 bool
-TwoWidgets::Click()
+TwoWidgets::Click() noexcept
 {
   return first->Click() || second->Click();
 }
 
 void
-TwoWidgets::ReClick()
+TwoWidgets::ReClick() noexcept
 {
   first->ReClick();
   second->ReClick();
 }
 
 void
-TwoWidgets::Show(const PixelRect &rc)
+TwoWidgets::Show(const PixelRect &rc) noexcept
 {
   this->rc = rc;
   const auto layout = CalculateLayout(rc);
@@ -186,20 +181,20 @@ TwoWidgets::Show(const PixelRect &rc)
 }
 
 bool
-TwoWidgets::Leave()
+TwoWidgets::Leave() noexcept
 {
   return first->Leave() && second->Leave();
 }
 
 void
-TwoWidgets::Hide()
+TwoWidgets::Hide() noexcept
 {
   first->Hide();
   second->Hide();
 }
 
 void
-TwoWidgets::Move(const PixelRect &rc)
+TwoWidgets::Move(const PixelRect &rc) noexcept
 {
   this->rc = rc;
   const auto layout = CalculateLayout(rc);
@@ -208,13 +203,13 @@ TwoWidgets::Move(const PixelRect &rc)
 }
 
 bool
-TwoWidgets::SetFocus()
+TwoWidgets::SetFocus() noexcept
 {
   return first->SetFocus() || second->SetFocus();
 }
 
 bool
-TwoWidgets::KeyPress(unsigned key_code)
+TwoWidgets::KeyPress(unsigned key_code) noexcept
 {
   return first->KeyPress(key_code) || second->KeyPress(key_code);
 }

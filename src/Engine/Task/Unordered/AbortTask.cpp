@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -29,8 +29,8 @@
 #include "GlideSolvers/GlidePolar.hpp"
 #include "Waypoint/Waypoints.hpp"
 #include "Waypoint/WaypointVisitor.hpp"
-#include "Util/ReservablePriorityQueue.hpp"
-#include "Util/Clamp.hpp"
+#include "util/ReservablePriorityQueue.hpp"
+#include "util/Clamp.hpp"
 
 /** min search range in m */
 static constexpr double min_search_range = 50000;
@@ -58,7 +58,7 @@ AbortTask::SetTaskBehaviour(const TaskBehaviour &tb)
 }
 
 void 
-AbortTask::SetActiveTaskPoint(unsigned index)
+AbortTask::SetActiveTaskPoint(unsigned index) noexcept
 {
   if (index == active_task_point)
     return;
@@ -72,7 +72,7 @@ AbortTask::SetActiveTaskPoint(unsigned index)
 }
 
 TaskWaypoint*
-AbortTask::GetActiveTaskPoint() const
+AbortTask::GetActiveTaskPoint() const noexcept
 {
   if (active_task_point < task_points.size())
     // XXX eliminate this deconst hack
@@ -82,14 +82,14 @@ AbortTask::GetActiveTaskPoint() const
 }
 
 bool
-AbortTask::IsValidTaskPoint(int index_offset) const
+AbortTask::IsValidTaskPoint(int index_offset) const noexcept
 {
   unsigned index = active_task_point + index_offset;
   return (index < task_points.size());
 }
 
 unsigned
-AbortTask::TaskSize() const
+AbortTask::TaskSize() const noexcept
 {
   return task_points.size();
 }

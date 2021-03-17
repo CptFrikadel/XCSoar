@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -52,8 +52,8 @@ public:
   void ShowReachControls(bool show);
 
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 
 private:
   /* methods from DataFieldListener */
@@ -91,7 +91,8 @@ RouteConfigPanel::OnModified(DataField &df)
 }
 
 void
-RouteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+RouteConfigPanel::Prepare(ContainerWindow &parent,
+                          const PixelRect &rc) noexcept
 {
   const ComputerSettings &settings_computer = CommonInterface::GetComputerSettings();
   const RoutePlannerConfig &route_planner = settings_computer.task.route_planner;
@@ -180,7 +181,7 @@ RouteConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 }
 
 bool
-RouteConfigPanel::Save(bool &_changed)
+RouteConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
   ComputerSettings &settings_computer = CommonInterface::SetComputerSettings();
@@ -208,8 +209,8 @@ RouteConfigPanel::Save(bool &_changed)
   return true;
 }
 
-Widget *
+std::unique_ptr<Widget>
 CreateRouteConfigPanel()
 {
-  return new RouteConfigPanel();
+  return std::make_unique<RouteConfigPanel>();
 }

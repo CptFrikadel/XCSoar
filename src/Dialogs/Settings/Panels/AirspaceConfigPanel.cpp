@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,7 +23,6 @@ Copyright_License {
 
 #include "AirspaceConfigPanel.hpp"
 #include "ConfigPanel.hpp"
-#include "Form/ActionListener.hpp"
 #include "Form/DataField/Enum.hpp"
 #include "Form/DataField/Boolean.hpp"
 #include "Form/DataField/Listener.hpp"
@@ -87,13 +86,7 @@ static constexpr StaticEnumChoice as_label_selection_list[] = {
 };
 
 class AirspaceConfigPanel final
-  : public RowFormWidget, DataFieldListener, ActionListener {
-
-  enum Button {
-    COLOURS,
-    FILTER,
-  };
-
+  : public RowFormWidget, DataFieldListener {
 public:
   AirspaceConfigPanel()
     :RowFormWidget(UIGlobals::GetDialogLook()) {}
@@ -102,27 +95,14 @@ public:
   void ShowWarningControls(bool visible);
 
   /* methods from Widget */
-  virtual void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  virtual bool Save(bool &changed) override;
-  virtual void Show(const PixelRect &rc) override;
-  virtual void Hide() override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
+  void Show(const PixelRect &rc) noexcept override;
+  void Hide() noexcept override;
 
 private:
   /* methods from DataFieldListener */
   virtual void OnModified(DataField &df) override;
-
-  /* methods from ActionListener */
-  void OnAction(int id) noexcept override {
-    switch (id) {
-    case COLOURS:
-      dlgAirspaceShowModal(true);
-      break;
-
-    case FILTER:
-      dlgAirspaceShowModal(false);
-      break;
-    }
-  }
 };
 
 void
@@ -146,15 +126,21 @@ AirspaceConfigPanel::ShowWarningControls(bool visible)
 }
 
 void
-AirspaceConfigPanel::Show(const PixelRect &rc)
+AirspaceConfigPanel::Show(const PixelRect &rc) noexcept
 {
-  ConfigPanel::BorrowExtraButton(1, _("Colours"), *this, COLOURS);
-  ConfigPanel::BorrowExtraButton(2, _("Filter"), *this, FILTER);
+  ConfigPanel::BorrowExtraButton(1, _("Colours"), [](){
+    dlgAirspaceShowModal(true);
+  });
+
+  ConfigPanel::BorrowExtraButton(2, _("Filter"), [](){
+    dlgAirspaceShowModal(false);
+  });
+
   RowFormWidget::Show(rc);
 }
 
 void
-AirspaceConfigPanel::Hide()
+AirspaceConfigPanel::Hide() noexcept
 {
   RowFormWidget::Hide();
   ConfigPanel::ReturnExtraButton(1);
@@ -175,7 +161,8 @@ AirspaceConfigPanel::OnModified(DataField &df)
 }
 
 void
-AirspaceConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
+AirspaceConfigPanel::Prepare(ContainerWindow &parent,
+                             const PixelRect &rc) noexcept
 {
   const AirspaceComputerSettings &computer =
     CommonInterface::GetComputerSettings().airspace;
@@ -250,7 +237,7 @@ AirspaceConfigPanel::Prepare(ContainerWindow &parent, const PixelRect &rc)
 
 
 bool
-AirspaceConfigPanel::Save(bool &_changed)
+AirspaceConfigPanel::Save(bool &_changed) noexcept
 {
   bool changed = false;
 
@@ -301,10 +288,9 @@ AirspaceConfigPanel::Save(bool &_changed)
   return true;
 }
 
-
-Widget *
+std::unique_ptr<Widget>
 CreateAirspaceConfigPanel()
 {
-  return new AirspaceConfigPanel();
+  return std::make_unique<AirspaceConfigPanel>();
 }
 

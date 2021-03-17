@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -26,14 +26,14 @@ Copyright_License {
 #include "NMEA/MoreData.hpp"
 #include "NMEA/Derived.hpp"
 #include "Computer/Settings.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "Look/ThermalBandLook.hpp"
 #include "Units/Units.hpp"
 #include "Screen/Layout.hpp"
 #include "Math/LeastSquares.hpp"
 
 #ifdef ENABLE_OPENGL
-#include "Screen/OpenGL/Scope.hpp"
+#include "ui/canvas/opengl/Scope.hpp"
 #endif
 
 #include <algorithm>
@@ -109,9 +109,11 @@ ThermalBandRenderer::DrawThermalProfile(const ThermalBand &thermal_band,
 #ifdef ENABLE_OPENGL
     const ScopeAlphaBlend alpha_blend;
 #endif
-    chart.DrawFilledY(thermal_profile, brush, pen);
+    chart.DrawFilledY({thermal_profile.data(), thermal_profile.size()},
+                      brush, pen);
   } else {
-    chart.DrawFilledY(thermal_profile, brush, pen);
+    chart.DrawFilledY({thermal_profile.data(), thermal_profile.size()},
+                      brush, pen);
   }
 }
 
@@ -241,6 +243,12 @@ ThermalBandRenderer::DrawThermalBand(const MoreData &basic,
                                      const OrderedTaskSettings *ordered_props) const
 {
   ChartRenderer chart(chart_look, canvas, rc, !is_map);
+  if (!is_map) {
+    chart.SetXLabel(_T("w"), Units::GetVerticalSpeedName());
+    chart.SetYLabel(_T("h AGL"), Units::GetAltitudeName());
+  }
+
+  chart.Begin();
 
   if (!is_map && (calculated.common_stats.height_max_working <= 0)) {
     // no climbs recorded
@@ -253,9 +261,9 @@ ThermalBandRenderer::DrawThermalBand(const MoreData &basic,
   if (!is_map) {
     chart.DrawXGrid(Units::ToSysVSpeed(1), 1, ChartRenderer::UnitFormat::NUMERIC);
     chart.DrawYGrid(Units::ToSysAltitude(1000), 1000, ChartRenderer::UnitFormat::NUMERIC);
-    chart.DrawXLabel(_T("w"), Units::GetVerticalSpeedName());
-    chart.DrawYLabel(_T("h AGL"), Units::GetAltitudeName());
   }
+
+  chart.Finish();
 }
 
 void
@@ -267,8 +275,12 @@ ThermalBandRenderer::DrawThermalBandSpark(const MoreData &basic,
                                           const TaskBehaviour &task_props) const
 {
   ChartRenderer chart(chart_look, canvas, rc, false);
+  chart.Begin();
+
   _DrawThermalBand(basic, calculated, settings_computer,
                    chart, task_props, true, false, nullptr);
+
+  chart.Finish();
 }
 
 void

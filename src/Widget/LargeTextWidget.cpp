@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,40 +23,34 @@ Copyright_License {
 
 #include "LargeTextWidget.hpp"
 #include "Screen/LargeTextWindow.hpp"
-#include "Event/KeyCode.hpp"
+#include "ui/event/KeyCode.hpp"
 #include "Look/DialogLook.hpp"
 
 void
-LargeTextWidget::SetText(const TCHAR *text)
+LargeTextWidget::SetText(const TCHAR *text) noexcept
 {
   LargeTextWindow &w = (LargeTextWindow &)GetWindow();
   w.SetText(text);
 }
 
 void
-LargeTextWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
+LargeTextWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   LargeTextWindowStyle style;
   style.Hide();
   style.TabStop();
 
-  LargeTextWindow *w = new LargeTextWindow();
+  auto w = std::make_unique<LargeTextWindow>();
   w->Create(parent, rc, style);
   w->SetFont(look.text_font);
   if (text != nullptr)
     w->SetText(text);
 
-  SetWindow(w);
-}
-
-void
-LargeTextWidget::Unprepare()
-{
-  DeleteWindow();
+  SetWindow(std::move(w));
 }
 
 bool
-LargeTextWidget::KeyPress(unsigned key_code)
+LargeTextWidget::KeyPress(unsigned key_code) noexcept
 {
   switch (key_code) {
   case KEY_UP:

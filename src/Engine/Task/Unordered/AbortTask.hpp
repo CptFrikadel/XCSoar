@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -65,7 +65,7 @@ protected:
       :point(std::move(waypoint), tb), solution(_solution) {}
   };
 
-  typedef std::vector<AlternateTaskPoint> AlternateTaskVector;
+  using AlternateTaskVector = std::vector<AlternateTaskPoint>;
   AlternateTaskVector task_points;
 
   /** whether the AbortTask is the master or running in background */
@@ -209,10 +209,10 @@ public:
 
 public:
   /* virtual methods from class TaskInterface */
-  virtual unsigned TaskSize() const override;
-  virtual void SetActiveTaskPoint(unsigned index) override;
-  virtual TaskWaypoint *GetActiveTaskPoint() const override;
-  virtual bool IsValidTaskPoint(int index_offset) const override;
+  unsigned TaskSize() const noexcept override;
+  void SetActiveTaskPoint(unsigned index) noexcept override;
+  TaskWaypoint *GetActiveTaskPoint() const noexcept override;
+  bool IsValidTaskPoint(int index_offset) const noexcept override;
 
   /* virtual methods from class AbstractTask */
   virtual void Reset() override;

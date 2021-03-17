@@ -1,7 +1,7 @@
 /* Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -46,7 +46,7 @@ Deserialise(GeoPoint &data, const ConstDataNode &node)
 static WaypointPtr
 DeserialiseWaypoint(const ConstDataNode &node, const Waypoints *waypoints)
 {
-  std::unique_ptr<ConstDataNode> loc_node(node.GetChildNamed(_T("Location")));
+  auto loc_node = node.GetChildNamed(_T("Location"));
   if (!loc_node)
     return nullptr;
 
@@ -93,7 +93,7 @@ DeserialiseWaypoint(const ConstDataNode &node, const Waypoints *waypoints)
   return WaypointPtr(wp);
 }
 
-static ObservationZonePoint *
+static std::unique_ptr<ObservationZonePoint>
 DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
 {
   const TCHAR *type = node.GetAttribute(_T("type"));
@@ -101,7 +101,7 @@ DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
     return nullptr;
 
   if (StringIsEqual(type, _T("Line"))) {
-    LineSectorZone *ls = new LineSectorZone(wp.location);
+    auto ls = std::make_unique<LineSectorZone>(wp.location);
 
     double length;
     if (node.GetAttribute(_T("length"), length) && length > 0)
@@ -109,7 +109,7 @@ DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
 
     return ls;
   } else if (StringIsEqual(type, _T("Cylinder"))) {
-    CylinderZone *ls = new CylinderZone(wp.location);
+    auto ls = std::make_unique<CylinderZone>(wp.location);
 
     double radius;
     if (node.GetAttribute(_T("radius"), radius) && radius > 0)
@@ -122,14 +122,14 @@ DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
 
     double radius, inner_radius;
     Angle start, end;
-    SectorZone *ls;
+    std::unique_ptr<SectorZone> ls;
 
     if (node.GetAttribute(_T("inner_radius"), inner_radius)) {
-      AnnularSectorZone *als = new AnnularSectorZone(wp.location);
+      auto als = std::make_unique<AnnularSectorZone>(wp.location);
       als->SetInnerRadius(inner_radius);
-      ls = als;
+      ls = std::move(als);
     } else
-      ls = new SectorZone(wp.location);
+      ls = std::make_unique<SectorZone>(wp.location);
 
     if (node.GetAttribute(_T("radius"), radius) && radius > 0)
       ls->SetRadius(radius);
@@ -145,7 +145,7 @@ DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
     double radius = 10000;
     node.GetAttribute(_T("radius"), radius);
 
-    return new SymmetricSectorZone(wp.location, radius);
+    return std::make_unique<SymmetricSectorZone>(wp.location, radius);
   } else if (StringIsEqual(type, _T("Keyhole")))
     return KeyholeZone::CreateDAeCKeyholeZone(wp.location);
   else if (StringIsEqual(type, _T("CustomKeyhole"))) {
@@ -156,7 +156,7 @@ DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
     node.GetAttribute(_T("inner_radius"), inner_radius);
     node.GetAttribute(_T("angle"), angle);
 
-    KeyholeZone *keyhole =
+    auto keyhole =
       KeyholeZone::CreateCustomKeyholeZone(wp.location, radius, angle);
     keyhole->SetInnerRadius(inner_radius);
     return keyhole;
@@ -171,14 +171,14 @@ DeserialiseOZ(const Waypoint &wp, const ConstDataNode &node, bool is_turnpoint)
 }
 
 static void
-DeserialiseTaskpoint(OrderedTask &data, const ConstDataNode &node,
+DeserialiseTaskpoint(AbstractTaskFactory &fact, const ConstDataNode &node,
                      const Waypoints *waypoints)
 {
   const TCHAR *type = node.GetAttribute(_T("type"));
   if (type == nullptr)
     return;
 
-  std::unique_ptr<ConstDataNode> wp_node(node.GetChildNamed(_T("Waypoint")));
+  auto wp_node = node.GetChildNamed(_T("Waypoint"));
   if (!wp_node)
     return;
 
@@ -186,14 +186,10 @@ DeserialiseTaskpoint(OrderedTask &data, const ConstDataNode &node,
   if (!wp)
     return;
 
-  std::unique_ptr<ConstDataNode> oz_node(node.GetChildNamed(_T("ObservationZone")));
-
-  AbstractTaskFactory &fact = data.GetFactory();
-
-  ObservationZonePoint* oz = nullptr;
+  std::unique_ptr<ObservationZonePoint> oz;
   std::unique_ptr<OrderedTaskPoint> pt;
 
-  if (oz_node) {
+  if (auto oz_node = node.GetChildNamed(_T("ObservationZone"))) {
     bool is_turnpoint = StringIsEqual(type, _T("Turn")) ||
       StringIsEqual(type, _T("Area"));
 
@@ -201,33 +197,33 @@ DeserialiseTaskpoint(OrderedTask &data, const ConstDataNode &node,
   }
 
   if (StringIsEqual(type, _T("Start"))) {
-    pt.reset(oz != nullptr
-             ? fact.CreateStart(oz, std::move(wp))
-             : fact.CreateStart(std::move(wp)));
+    pt = oz != nullptr
+      ? fact.CreateStart(std::move(oz), std::move(wp))
+      : fact.CreateStart(std::move(wp));
 
   } else if (StringIsEqual(type, _T("OptionalStart"))) {
-    pt.reset(oz != nullptr
-             ? fact.CreateStart(oz, std::move(wp))
-             : fact.CreateStart(std::move(wp)));
+    pt = oz != nullptr
+      ? fact.CreateStart(std::move(oz), std::move(wp))
+      : fact.CreateStart(std::move(wp));
     fact.AppendOptionalStart(*pt);
 
     // don't let generic code below add it
     pt.reset();
 
   } else if (StringIsEqual(type, _T("Turn"))) {
-    pt.reset(oz != nullptr
-             ? fact.CreateASTPoint(oz, std::move(wp))
-             : fact.CreateIntermediate(std::move(wp)));
+    pt = oz != nullptr
+      ? fact.CreateASTPoint(std::move(oz), std::move(wp))
+      : fact.CreateIntermediate(std::move(wp));
 
   } else if (StringIsEqual(type, _T("Area"))) {
-    pt.reset(oz != nullptr
-             ? fact.CreateAATPoint(oz, std::move(wp))
-             : fact.CreateIntermediate(std::move(wp)));
+    pt = oz != nullptr
+      ? fact.CreateAATPoint(std::move(oz), std::move(wp))
+      : fact.CreateIntermediate(std::move(wp));
 
   } else if (StringIsEqual(type, _T("Finish"))) {
-    pt.reset(oz != nullptr
-             ? fact.CreateFinish(oz, std::move(wp))
-             : fact.CreateFinish(std::move(wp)));
+    pt = oz != nullptr
+      ? fact.CreateFinish(std::move(oz), std::move(wp))
+      : fact.CreateFinish(std::move(wp));
   } 
 
   if (!pt)
@@ -316,9 +312,10 @@ LoadTask(OrderedTask &task, const ConstDataNode &node,
   Deserialise(beh, node);
   task.SetOrderedTaskSettings(beh);
 
+  auto &fact = task.GetFactory();
+
   const auto children = node.ListChildrenNamed(_T("Point"));
   for (const auto &i : children) {
-    std::unique_ptr<ConstDataNode> point_node(i);
-    DeserialiseTaskpoint(task, *point_node, waypoints);
+    DeserialiseTaskpoint(fact, *i, waypoints);
   }
 }

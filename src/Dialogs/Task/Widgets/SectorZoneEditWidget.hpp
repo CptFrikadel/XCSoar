@@ -2,7 +2,7 @@
   Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -30,21 +30,21 @@ class SectorZone;
 
 class SectorZoneEditWidget : public ObservationZoneEditWidget {
 public:
-  SectorZoneEditWidget(SectorZone &_oz);
+  explicit SectorZoneEditWidget(SectorZone &_oz) noexcept;
 
 protected:
-  const SectorZone &GetObject() const {
+  const SectorZone &GetObject() const noexcept {
     return (const SectorZone &)ObservationZoneEditWidget::GetObject();
   }
 
-  SectorZone &GetObject() {
+  SectorZone &GetObject() noexcept {
     return (SectorZone &)ObservationZoneEditWidget::GetObject();
   }
 
 public:
   /* virtual methods from class Widget */
-  void Prepare(ContainerWindow &parent, const PixelRect &rc) override;
-  bool Save(bool &changed) override;
+  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
+  bool Save(bool &changed) noexcept override;
 };
 
 #endif

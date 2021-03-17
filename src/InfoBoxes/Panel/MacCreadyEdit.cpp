@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -31,25 +31,24 @@ Copyright_License {
 
 class MacCreadyOffsetButtons final : public OffsetButtonsWidget {
 public:
-  template<typename... Args>
-  MacCreadyOffsetButtons(Args&&... args):OffsetButtonsWidget(args...) {}
+  using OffsetButtonsWidget::OffsetButtonsWidget;
 
 protected:
   /* virtual methods from OffsetButtonsWidget */
-  virtual void OnOffset(double offset) override;
+  void OnOffset(double offset) noexcept override;
 };
 
 void
-MacCreadyOffsetButtons::OnOffset(double offset)
+MacCreadyOffsetButtons::OnOffset(double offset) noexcept
 {
   ActionInterface::OffsetManualMacCready(Units::ToSysVSpeed(offset));
 }
 
-Widget *
+std::unique_ptr<Widget>
 LoadMacCreadyEditPanel(unsigned id)
 {
   const auto step = GetUserVerticalSpeedStep();
-  return new MacCreadyOffsetButtons(UIGlobals::GetDialogLook().button,
-                                    GetUserVerticalSpeedFormat(false, true),
-                                    step, 5 * step);
+  return std::make_unique<MacCreadyOffsetButtons>(UIGlobals::GetDialogLook().button,
+                                                  GetUserVerticalSpeedFormat(false, true),
+                                                  step, 5 * step);
 }

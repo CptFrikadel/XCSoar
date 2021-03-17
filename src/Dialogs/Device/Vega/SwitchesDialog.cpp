@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -110,7 +110,9 @@ public:
 class SwitchesDialog : public TwoWidgets, private NullBlackboardListener {
 public:
   SwitchesDialog(const DialogLook &look)
-    :TwoWidgets(new SwitchesLeft(look), new SwitchesRight(look), false) {}
+    :TwoWidgets(std::make_unique<SwitchesLeft>(look),
+                std::make_unique<SwitchesRight>(look),
+                false) {}
 
   void Update(const SwitchState &switches) {
     ((SwitchesLeft &)GetFirst()).Update(switches);
@@ -118,21 +120,21 @@ public:
   }
 
   /* virtual methods from Widget */
-  virtual void Prepare(ContainerWindow &parent,
-                       const PixelRect &rc) override {
+  void Prepare(ContainerWindow &parent,
+               const PixelRect &rc) noexcept override {
     ((SwitchesLeft &)GetFirst()).Create();
     ((SwitchesRight &)GetSecond()).Create();
 
     TwoWidgets::Prepare(parent, rc);
   }
 
-  virtual void Show(const PixelRect &rc) override {
+  void Show(const PixelRect &rc) noexcept override {
     Update(CommonInterface::Basic().switch_state);
     TwoWidgets::Show(rc);
     CommonInterface::GetLiveBlackboard().AddListener(*this);
   }
 
-  virtual void Hide() override {
+  void Hide() noexcept override {
     CommonInterface::GetLiveBlackboard().RemoveListener(*this);
     TwoWidgets::Hide();
   }

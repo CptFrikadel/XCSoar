@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -23,14 +23,14 @@ Copyright_License {
 */
 
 #include "Gauge/GaugeFLARM.hpp"
-#include "Screen/Canvas.hpp"
+#include "ui/canvas/Canvas.hpp"
 #include "FlarmTrafficWindow.hpp"
 #include "Blackboard/LiveBlackboard.hpp"
 #include "Computer/Settings.hpp"
 #include "PageActions.hpp"
 
 #ifdef ENABLE_OPENGL
-#include "Screen/OpenGL/Scope.hpp"
+#include "ui/canvas/opengl/Scope.hpp"
 #endif
 
 class SmallTrafficWindow : public FlarmTrafficWindow {
@@ -39,12 +39,13 @@ class SmallTrafficWindow : public FlarmTrafficWindow {
 public:
   SmallTrafficWindow(ContainerWindow &parent, const PixelRect &rc,
                      const FlarmTrafficLook &look,
-                     const WindowStyle style=WindowStyle());
+                     const WindowStyle style=WindowStyle()) noexcept;
 
-  void Update(const NMEAInfo &gps_info, const TeamCodeSettings &settings);
+  void Update(const NMEAInfo &gps_info,
+              const TeamCodeSettings &settings) noexcept;
 
 private:
-  void SetPressed(bool _pressed) {
+  void SetPressed(bool _pressed) noexcept {
     if (_pressed == pressed)
       return;
 
@@ -63,7 +64,7 @@ protected:
 SmallTrafficWindow::SmallTrafficWindow(ContainerWindow &parent,
                                        const PixelRect &rc,
                                        const FlarmTrafficLook &look,
-                                       const WindowStyle style)
+                                       const WindowStyle style) noexcept
   :FlarmTrafficWindow(look, 1, 1, true),
    dragging(false), pressed(false)
 {
@@ -72,7 +73,7 @@ SmallTrafficWindow::SmallTrafficWindow(ContainerWindow &parent,
 
 void
 SmallTrafficWindow::Update(const NMEAInfo &gps_info,
-                           const TeamCodeSettings &settings)
+                           const TeamCodeSettings &settings) noexcept
 {
   FlarmTrafficWindow::Update(gps_info.track, gps_info.flarm.traffic, settings);
 }
@@ -144,8 +145,7 @@ SmallTrafficWindow::OnPaint(Canvas &canvas)
   if (pressed) {
 #ifdef ENABLE_OPENGL
     const ScopeAlphaBlend alpha_blend;
-    canvas.DrawFilledRectangle(0, 0, canvas.GetWidth(), canvas.GetHeight(),
-                               COLOR_YELLOW.WithAlpha(80));
+    canvas.Clear(COLOR_YELLOW.WithAlpha(80));
 #else
     canvas.InvertRectangle(GetClientRect());
 #endif
@@ -153,23 +153,16 @@ SmallTrafficWindow::OnPaint(Canvas &canvas)
 }
 
 void
-GaugeFLARM::Prepare(ContainerWindow &parent, const PixelRect &rc)
+GaugeFLARM::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
 {
   WindowStyle style;
   style.Hide();
 
-  SetWindow(new SmallTrafficWindow(parent, rc, look, style));
+  SetWindow(std::make_unique<SmallTrafficWindow>(parent, rc, look, style));
 }
 
 void
-GaugeFLARM::Unprepare()
-{
-  DeleteWindow();
-  OverlappedWidget::Unprepare();
-}
-
-void
-GaugeFLARM::Show(const PixelRect &rc)
+GaugeFLARM::Show(const PixelRect &rc) noexcept
 {
   Update(blackboard.Basic());
 
@@ -179,7 +172,7 @@ GaugeFLARM::Show(const PixelRect &rc)
 }
 
 void
-GaugeFLARM::Hide()
+GaugeFLARM::Hide() noexcept
 {
   blackboard.RemoveListener(*this);
   OverlappedWidget::Hide();
@@ -192,7 +185,7 @@ GaugeFLARM::OnGPSUpdate(const MoreData &basic)
 }
 
 void
-GaugeFLARM::Update(const NMEAInfo &basic)
+GaugeFLARM::Update(const NMEAInfo &basic) noexcept
 {
   SmallTrafficWindow &window = (SmallTrafficWindow &)GetWindow();
   window.Update(basic, blackboard.GetComputerSettings().team_code);

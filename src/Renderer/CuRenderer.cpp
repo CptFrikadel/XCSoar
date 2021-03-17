@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2016 The XCSoar Project
+  Copyright (C) 2000-2021 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@ Copyright_License {
 #include "Atmosphere/Temperature.hpp"
 #include "Units/Units.hpp"
 #include "Language/Language.hpp"
-#include "Util/StringFormat.hpp"
+#include "util/StringFormat.hpp"
 
 #include <algorithm>
 
@@ -40,6 +40,9 @@ RenderTemperatureChart(Canvas &canvas, const PixelRect rc,
                        const CuSonde &cu_sonde)
 {
   ChartRenderer chart(chart_look, canvas, rc);
+  chart.SetXLabel(_T("T"), Units::GetTemperatureName());
+  chart.SetYLabel(_T("h"), Units::GetAltitudeName());
+  chart.Begin();
 
   int hmin = 10000;
   int hmax = -10000;
@@ -133,8 +136,7 @@ RenderTemperatureChart(Canvas &canvas, const PixelRect rc,
     }
   }
 
-  chart.DrawXLabel(_T("T"), Units::GetTemperatureName());
-  chart.DrawYLabel(_T("h"), Units::GetAltitudeName());
+  chart.Finish();
 }
 
 void
