@@ -3,6 +3,7 @@
 
 #include "DataField.hpp"
 #include "FilePicker.hpp"
+#include "MultiFilePicker.hpp"
 #include "Form/DataField/GeoPoint.hpp"
 #include "Form/DataField/RoughTime.hpp"
 #include "Form/DataField/Prefix.hpp"
@@ -30,6 +31,8 @@ EditDataFieldDialog(const TCHAR *caption, DataField &df,
   const auto type = df.GetType();
   if (type == DataField::Type::FILE) {
     return FilePicker(caption, (FileDataField &)df, help_text);
+  } else if (df.GetType() == DataField::Type::MULTI_FILE) {
+	return MultiFilePicker(caption, (MultiFileDataField&) df, help_text);
   } else if (df.SupportsCombolist()) {
     return ComboPicker(caption, df, help_text);
   } else if (type == DataField::Type::ROUGH_TIME) {
