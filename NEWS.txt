@@ -1,5 +1,6 @@
 Version 7.40 - not yet released
 * user interface
+  - change selection of airspace files to a list instead of "Airspace File" and "Additional Airspace File"
   - Added infobox that combines ETA with AAT dT
   - FLARM: Add 100m zoom option.
   - hide mouse cursor after 10 seconds of inactivity
