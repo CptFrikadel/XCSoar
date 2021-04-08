@@ -1,6 +1,7 @@
 LLVM ?= n
 CLANG ?= $(LLVM)
 IWYU ?= n
+FUZZER ?= n
 
 # shall we paint with some eye candy?
 EYE_CANDY ?= $(call bool_not,$(TARGET_IS_KOBO))
@@ -9,7 +10,11 @@ TARGET_CPPFLAGS += -DEYE_CANDY
 WINDRESFLAGS += -DEYE_CANDY
 endif
 
-ICF ?= n
+ifeq ($(DEBUG)$(HAVE_WIN32)$(TARGET_IS_DARWIN),nnn)
+  ICF ?= y
+else
+  ICF ?= n
+endif
 
 # enable gcc/clang sanitizers?
 SANITIZE ?= n
