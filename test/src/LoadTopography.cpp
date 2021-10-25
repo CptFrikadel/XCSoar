@@ -29,10 +29,10 @@ Copyright_License {
 #include "Topography/TopographyStore.hpp"
 #include "Topography/TopographyFile.hpp"
 #include "Topography/XShape.hpp"
+#include "Operation/ConsoleOperationEnvironment.hpp"
 #include "system/Args.hpp"
 #include "io/ZipArchive.hpp"
 #include "io/ZipLineReader.hpp"
-#include "Operation/Operation.hpp"
 #include "util/PrintException.hxx"
 
 #include <stdio.h>
@@ -40,16 +40,18 @@ Copyright_License {
 
 #ifdef ENABLE_OPENGL
 
-static void
+static const uint16_t *
 TriangulateAll(const TopographyFile &file)
 {
   const std::lock_guard<Mutex> lock(file.mutex);
 
-  const unsigned short *count;
+  const uint16_t *dummy;
   for (const XShape &shape : file)
     if (shape.get_type() == MS_SHAPE_POLYGON)
       for (unsigned i = 0; i < 4; ++i)
-        shape.GetIndices(i, 1, count);
+        dummy = shape.GetIndices(i, 1).indices;
+
+  return dummy;
 }
 
 static void
@@ -72,8 +74,11 @@ try {
   ZipLineReaderA reader(archive.get(), "topology.tpl");
 
   TopographyStore topography;
-  NullOperationEnvironment operation;
-  topography.Load(operation, reader, NULL, archive.get());
+
+  {
+    ConsoleOperationEnvironment operation;
+    topography.Load(operation, reader, NULL, archive.get());
+  }
 
   topography.LoadAll();
 

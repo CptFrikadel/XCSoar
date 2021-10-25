@@ -31,6 +31,8 @@ Copyright_License {
 #include "UIGlobals.hpp"
 #include "UtilsSettings.hpp"
 
+using namespace std::chrono;
+
 enum ControlIndex {
   AutoMcMode,
   BlockSTF,
@@ -63,7 +65,7 @@ GlideComputerConfigPanel::Prepare(ContainerWindow &parent,
 
   static constexpr StaticEnumChoice auto_mc_list[] = {
     { (unsigned)TaskBehaviour::AutoMCMode::FINALGLIDE, N_("Final glide"),
-      N_("Adjusts MC for fastest arrival.  For OLC sprint tasks, the MacCready is adjusted in "
+      N_("Adjusts MC for fastest arrival.  For contest sprint tasks, the MacCready is adjusted in "
           "order to cover the greatest distance in the remaining time and reach the finish height.") },
     { (unsigned)TaskBehaviour::AutoMCMode::CLIMBAVERAGE, N_("Trending average climb"),
       N_("Sets MC to the trending average climb rate based on all climbs.") },
@@ -120,20 +122,16 @@ GlideComputerConfigPanel::Prepare(ContainerWindow &parent,
   AddBoolean(_("Wave assistant"), nullptr,
              settings_computer.wave.enabled);
 
-  AddFloat(_("Cruise/Circling period"),
-             _("How many seconds of turning before changing from cruise to circling mode."),
-             _T("%.0f s"), _T("%.0f"),
-             2, 30,
-             1, false,
-             settings_computer.circling.cruise_to_circling_mode_switch_threshold, nullptr);
+  AddDuration(_("Cruise/Circling period"),
+              _("How many seconds of turning before changing from cruise to circling mode."),
+              seconds{2}, seconds{30}, seconds{1},
+              settings_computer.circling.cruise_to_circling_mode_switch_threshold);
   SetExpertRow(CruiseToCirclingModeSwitchThreshold);
 
-  AddFloat(_("Circling/Cruise period"),
-             _("How many seconds of flying straight before changing from circling to cruise mode."),
-             _T("%.0f s"), _T("%.0f"),
-             2, 30,
-             1, false,
-             settings_computer.circling.circling_to_cruise_mode_switch_threshold, nullptr);
+  AddDuration(_("Circling/Cruise period"),
+              _("How many seconds of flying straight before changing from circling to cruise mode."),
+              seconds{2}, seconds{30}, seconds{1},
+              settings_computer.circling.circling_to_cruise_mode_switch_threshold);
   SetExpertRow(CirclingToCruiseModeSwitchThreshold);
 }
 

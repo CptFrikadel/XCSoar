@@ -22,6 +22,7 @@ Copyright_License {
 */
 
 #include "Descriptor.hpp"
+#include "DataEditor.hpp"
 #include "Driver.hpp"
 #include "Parser.hpp"
 #include "Util/NMEAWriter.hpp"
@@ -48,20 +49,26 @@ Copyright_License {
 
 #ifdef ANDROID
 #include "java/Object.hxx"
+#include "java/Closeable.hxx"
 #include "java/Global.hxx"
+#include "Android/BluetoothHelper.hpp"
 #include "Android/InternalSensors.hpp"
 #include "Android/GliderLink.hpp"
 #include "Android/Main.hpp"
 #include "Android/Product.hpp"
 #include "Android/IOIOHelper.hpp"
-#include "Android/BMP085Device.hpp"
 #include "Android/I2CbaroDevice.hpp"
 #include "Android/NunchuckDevice.hpp"
 #include "Android/VoltageDevice.hpp"
+#include "Android/Sensor.hpp"
 #endif
 
 #ifdef __APPLE__
 #include "Apple/InternalSensors.hpp"
+#endif
+
+#ifdef _UNICODE
+#include <stringapiset.h> // for WideCharToMultiByte()
 #endif
 
 #include <cassert>
@@ -93,7 +100,7 @@ public:
   OpenDeviceJob(DeviceDescriptor &_device):device(_device) {}
 
   /* virtual methods from class Job */
-  virtual void Run(OperationEnvironment &env) {
+  void Run(OperationEnvironment &env) override {
     device.DoOpen(env);
   };
 };
@@ -103,28 +110,9 @@ DeviceDescriptor::DeviceDescriptor(EventLoop &_event_loop,
                                    unsigned _index,
                                    PortListener *_port_listener)
   :event_loop(_event_loop), cares(_cares), index(_index),
-   port_listener(_port_listener),
-   open_job(nullptr),
-   port(nullptr), monitor(nullptr), dispatcher(nullptr),
-   driver(nullptr), device(nullptr), second_device(nullptr),
-#ifdef HAVE_INTERNAL_GPS
-   internal_sensors(nullptr),
-#endif
-#ifdef ANDROID
-   droidsoar_v2(nullptr),
-   nunchuck(nullptr),
-   voltage(nullptr),
-   glider_link(nullptr),
-#endif
-   n_failures(0u),
-   ticker(false), borrowed(false)
+   port_listener(_port_listener)
 {
   config.Clear();
-
-#ifdef ANDROID
-  for (unsigned i=0; i<sizeof i2cbaro/sizeof i2cbaro[0]; i++)
-    i2cbaro[i] = nullptr;
-#endif
 }
 
 DeviceDescriptor::~DeviceDescriptor() noexcept
@@ -162,32 +150,18 @@ DeviceDescriptor::ClearConfig()
 PortState
 DeviceDescriptor::GetState() const
 {
+  if (has_failed)
+    return PortState::FAILED;
+
   if (open_job != nullptr)
     return PortState::LIMBO;
 
   if (port != nullptr)
     return port->GetState();
 
-#ifdef HAVE_INTERNAL_GPS
-  if (internal_sensors != nullptr)
-    return PortState::READY;
-#endif
-
 #ifdef ANDROID
-  if (droidsoar_v2 != nullptr)
-    return PortState::READY;
-
-  if (i2cbaro[0] != nullptr)
-    return PortState::READY;
-
-  if (nunchuck != nullptr)
-    return PortState::READY;
-
-  if (voltage != nullptr)
-    return PortState::READY;
-
-  if (glider_link != nullptr)
-    return PortState::READY;
+  if (java_sensor != nullptr)
+    return AndroidSensor::GetState(Java::GetEnv(), *java_sensor);
 #endif
 
   return PortState::FAILED;
@@ -254,9 +228,9 @@ DeviceDescriptor::OpenOnPort(std::unique_ptr<DumpPort> &&_port, OperationEnviron
   reopen_clock.Update();
 
   {
-    const std::lock_guard<Mutex> lock(device_blackboard->mutex);
-    device_blackboard->SetRealState(index).Reset();
-    device_blackboard->ScheduleMerge();
+    const auto e = BeginEdit();
+    e->Reset();
+    e.Commit();
   }
 
   settings_sent.Clear();
@@ -305,14 +279,15 @@ DeviceDescriptor::OpenInternalSensors()
 
 #ifdef ANDROID
   internal_sensors =
-      InternalSensors::create(Java::GetEnv(), context, GetIndex());
+      InternalSensors::create(Java::GetEnv(), context, *this);
   if (internal_sensors) {
     // TODO: Allow user to specify whether they want certain sensors.
     internal_sensors->subscribeToSensor(InternalSensors::TYPE_PRESSURE);
+    internal_sensors->subscribeToSensor(InternalSensors::TYPE_ACCELEROMETER);
     return true;
   }
 #elif defined(__APPLE__)
-  internal_sensors = InternalSensors::Create(GetIndex());
+  internal_sensors = new InternalSensors(*this);
   return (internal_sensors != nullptr);
 #endif
 #endif
@@ -329,28 +304,31 @@ DeviceDescriptor::OpenDroidSoarV2()
   if (ioio_helper == nullptr)
     return false;
 
-  if (i2cbaro[0] == nullptr) {
-    i2cbaro[0] = new I2CbaroDevice(GetIndex(), Java::GetEnv(),
-                       ioio_helper->GetHolder(),
-                       DeviceConfig::PressureUse::STATIC_WITH_VARIO,
-                       config.sensor_offset,
-                       2 + (0x77 << 8) + (27 << 16), 0,	// bus, address
-                       5,                               // update freq.
-                       0);                              // flags
+  /* we use different values for the I2C Kalman filter */
+  kalman_filter = {KF_I2C_MAX_DT, KF_I2C_VAR_ACCEL};
 
-    i2cbaro[1] = new I2CbaroDevice(GetIndex(), Java::GetEnv(),
-                       ioio_helper->GetHolder(),
-                       // needs calibration ?
-                       config.sensor_factor == 0
-                       ? DeviceConfig::PressureUse::PITOT_ZERO
-                       : DeviceConfig::PressureUse::PITOT,
-                       config.sensor_offset, 1 + (0x77 << 8) + (46 << 16), 0 ,
-                       5,
-                       0);
-    return true;
-  }
-#endif
+  auto i2c = I2CbaroDevice::Create(Java::GetEnv(),
+                                   ioio_helper->GetHolder(),
+                                   0,
+                                   2 + (0x77 << 8) + (27 << 16), 0,	// bus, address
+                                   5,                               // update freq.
+                                   0,                               // flags
+                                   *this);
+  java_sensor = new Java::GlobalCloseable(i2c);
+
+  i2c = I2CbaroDevice::Create(Java::GetEnv(),
+                              ioio_helper->GetHolder(),
+                              1,
+                              1 + (0x77 << 8) + (46 << 16), 0 ,
+                              5,
+                              0,
+                              *this);
+  second_java_sensor = new Java::GlobalCloseable(i2c);
+
+  return true;
+#else
   return false;
+#endif
 }
 
 bool
@@ -363,23 +341,22 @@ DeviceDescriptor::OpenI2Cbaro()
   if (ioio_helper == nullptr)
     return false;
 
-  for (unsigned i=0; i<sizeof i2cbaro/sizeof i2cbaro[0]; i++) {
-    if (i2cbaro[i] == nullptr) {
-      i2cbaro[i] = new I2CbaroDevice(GetIndex(), Java::GetEnv(),
-                       ioio_helper->GetHolder(),
-                       // needs calibration ?
-                       config.sensor_factor == 0 && config.press_use == DeviceConfig::PressureUse::PITOT
-                       ? DeviceConfig::PressureUse::PITOT_ZERO
-                       : config.press_use,
-                       config.sensor_offset,
-                       config.i2c_bus, config.i2c_addr,
-                       config.press_use == DeviceConfig::PressureUse::TEK_PRESSURE ? 20 : 5,
-                       0); // called flags, actually reserved for future use.
-      return true;
-    }
-  }
-#endif
+  /* we use different values for the I2C Kalman filter */
+  kalman_filter = {KF_I2C_MAX_DT, KF_I2C_VAR_ACCEL};
+
+  auto i2c = I2CbaroDevice::Create(Java::GetEnv(),
+                                   ioio_helper->GetHolder(),
+                                   0,
+                                   config.i2c_bus, config.i2c_addr,
+                                   config.press_use == DeviceConfig::PressureUse::TEK_PRESSURE ? 20 : 5,
+                                   0, // called flags, actually reserved for future use.
+                                   *this);
+  java_sensor = new Java::GlobalCloseable(i2c);
+
+  return true;
+#else
   return false;
+#endif
 }
 
 bool
@@ -392,9 +369,13 @@ DeviceDescriptor::OpenNunchuck()
   if (ioio_helper == nullptr)
     return false;
 
-  nunchuck = new NunchuckDevice(GetIndex(), Java::GetEnv(),
-                                  ioio_helper->GetHolder(),
-                                  config.i2c_bus, 5); // twi, sample_rate
+  joy_state_x = joy_state_y = 0;
+
+  auto nunchuk = NunchuckDevice::Create(Java::GetEnv(),
+                                        ioio_helper->GetHolder(),
+                                        config.i2c_bus, 5, // twi, sample_rate
+                                        *this);
+  java_sensor = new Java::GlobalCloseable(nunchuk);
   return true;
 #else
   return false;
@@ -411,10 +392,18 @@ DeviceDescriptor::OpenVoltage()
   if (ioio_helper == nullptr)
     return false;
 
-  voltage = new VoltageDevice(GetIndex(), Java::GetEnv(),
-                                  ioio_helper->GetHolder(),
-                                  config.sensor_offset, config.sensor_factor,
-                                  60); // sample_rate per minute
+  voltage_offset = config.sensor_offset;
+  voltage_factor = config.sensor_factor;
+
+  for (auto &i : voltage_filter)
+    i.Reset();
+  temperature_filter.Reset();
+
+  auto voltage = VoltageDevice::Create(Java::GetEnv(),
+                                       ioio_helper->GetHolder(),
+                                       60, // sample_rate per minute
+                                       *this);
+  java_sensor = new Java::GlobalCloseable(voltage);
   return true;
 #else
   return false;
@@ -428,14 +417,35 @@ DeviceDescriptor::OpenGliderLink()
   if (is_simulator())
     return true;
 
-  glider_link = GliderLink::create(Java::GetEnv(), context, GetIndex());
-
+  java_sensor = new Java::GlobalCloseable(GliderLink::Create(Java::GetEnv(),
+                                                             *context, *this));
   return true;
 #else
   return false;
 #endif
 }
 
+inline bool
+DeviceDescriptor::OpenBluetoothSensor()
+{
+#ifdef ANDROID
+  if (is_simulator())
+    return true;
+
+  if (bluetooth_helper == nullptr)
+    throw std::runtime_error("Bluetooth not available");
+
+  if (config.bluetooth_mac.empty())
+    throw std::runtime_error("No Bluetooth MAC configured");
+
+  java_sensor = new Java::GlobalCloseable(bluetooth_helper->connectSensor(Java::GetEnv(),
+                                                                          config.bluetooth_mac,
+                                                                          *this));
+  return true;
+#else
+  return false;
+#endif
+}
 
 bool
 DeviceDescriptor::DoOpen(OperationEnvironment &env) noexcept
@@ -465,6 +475,9 @@ try {
   if (config.port_type == DeviceConfig::PortType::GLIDER_LINK)
     return OpenGliderLink();
 
+  if (config.port_type == DeviceConfig::PortType::BLE_SENSOR)
+    return OpenBluetoothSensor();
+
   reopen_clock.Update();
 
   std::unique_ptr<Port> port;
@@ -480,7 +493,8 @@ try {
 
     StaticString<256> msg;
 
-    const UTF8ToWideConverter what(GetFullMessage(e).c_str());
+    const auto _msg = GetFullMessage(e);
+    const UTF8ToWideConverter what(_msg.c_str());
     if (what.IsValid()) {
       std::lock_guard<Mutex> lock(mutex);
       error_message = what;
@@ -523,7 +537,8 @@ try {
   ResetFailureCounter();
   return true;
 } catch (...) {
-  const UTF8ToWideConverter msg(GetFullMessage(std::current_exception()).c_str());
+  const auto _msg = GetFullMessage(std::current_exception());
+  const UTF8ToWideConverter msg(_msg.c_str());
   env.SetErrorMessage(msg);
   return false;
 }
@@ -535,6 +550,7 @@ DeviceDescriptor::Open(OperationEnvironment &env)
   assert(port == nullptr);
   assert(device == nullptr);
   assert(second_device == nullptr);
+  assert(!has_failed);
   assert(!ticker);
   assert(!IsBorrowed());
 
@@ -549,8 +565,15 @@ DeviceDescriptor::Open(OperationEnvironment &env)
   TCHAR buffer[64];
   LogFormat(_T("Opening device %s"), config.GetPortName(buffer, 64));
 
+#ifdef ANDROID
+  /* reset the Kalman filter */
+  kalman_filter = {KF_MAX_DT, KF_VAR_ACCEL};
+#endif
+
   open_job = new OpenDeviceJob(*this);
   async.Start(open_job, env, &job_finished_notify);
+
+  PortStateChanged();
 }
 
 void
@@ -567,21 +590,11 @@ DeviceDescriptor::Close()
 #endif
 
 #ifdef ANDROID
-  delete droidsoar_v2;
-  droidsoar_v2 = nullptr;
+  delete second_java_sensor;
+  second_java_sensor = nullptr;
 
-  for (unsigned i=0; i<sizeof i2cbaro/sizeof i2cbaro[0]; i++) {
-    delete i2cbaro[i];
-    i2cbaro[i] = nullptr;
-  }
-  delete nunchuck;
-  nunchuck = nullptr;
-
-  delete voltage;
-  voltage = nullptr;
-
-  delete glider_link;
-  glider_link = nullptr;
+  delete java_sensor;
+  java_sensor = nullptr;
 #endif
 
   /* safely delete the Device object */
@@ -602,12 +615,13 @@ DeviceDescriptor::Close()
 
   port.reset();
 
+  has_failed = false;
   ticker = false;
 
   {
-    const std::lock_guard<Mutex> lock(device_blackboard->mutex);
-    device_blackboard->SetRealState(index).Reset();
-    device_blackboard->ScheduleMerge();
+    const auto e = BeginEdit();
+    e->Reset();
+    e.Commit();
   }
 
   settings_sent.Clear();
@@ -705,9 +719,17 @@ DeviceDescriptor::IsManageable() const
 
     if (StringIsEqual(driver->name, _T("LX")) && device != nullptr) {
       const LXDevice &lx = *(const LXDevice *)device;
-      return lx.IsV7() || lx.IsNano() || lx.IsLX16xx();
+      return lx.IsManageable();
     }
   }
+
+#ifdef ANDROID
+  if (config.port_type == DeviceConfig::PortType::I2CPRESSURESENSOR)
+      return config.press_use == DeviceConfig::PressureUse::PITOT;
+
+  if (config.port_type == DeviceConfig::PortType::DROIDSOAR_V2)
+    return true;
+#endif
 
   return false;
 }
@@ -745,6 +767,27 @@ DeviceDescriptor::IsAlive() const
 {
   std::lock_guard<Mutex> lock(device_blackboard->mutex);
   return device_blackboard->RealState(index).alive;
+}
+
+TimeStamp
+DeviceDescriptor::GetClock() const noexcept
+{
+  const std::lock_guard<Mutex> lock(device_blackboard->mutex);
+  const NMEAInfo &basic = device_blackboard->RealState(index);
+  return basic.clock;
+}
+
+NMEAInfo
+DeviceDescriptor::GetData() const noexcept
+{
+  const std::lock_guard<Mutex> lock(device_blackboard->mutex);
+  return device_blackboard->RealState(index);
+}
+
+DeviceDataEditor
+DeviceDescriptor::BeginEdit() noexcept
+{
+  return {*device_blackboard, index};
 }
 
 bool
@@ -840,10 +883,8 @@ DeviceDescriptor::PutMacCready(double value, OperationEnvironment &env)
   if (!device->PutMacCready(value, env))
     return false;
 
-  std::lock_guard<Mutex> lock(device_blackboard->mutex);
-  NMEAInfo &basic = device_blackboard->SetRealState(index);
   settings_sent.mac_cready = value;
-  settings_sent.mac_cready_available.Update(basic.clock);
+  settings_sent.mac_cready_available.Update(GetClock());
 
   return true;
 }
@@ -865,10 +906,8 @@ DeviceDescriptor::PutBugs(double value, OperationEnvironment &env)
   if (!device->PutBugs(value, env))
     return false;
 
-  std::lock_guard<Mutex> lock(device_blackboard->mutex);
-  NMEAInfo &basic = device_blackboard->SetRealState(index);
   settings_sent.bugs = value;
-  settings_sent.bugs_available.Update(basic.clock);
+  settings_sent.bugs_available.Update(GetClock());
 
   return true;
 }
@@ -892,12 +931,11 @@ DeviceDescriptor::PutBallast(double fraction, double overload,
   if (!device->PutBallast(fraction, overload, env))
     return false;
 
-  std::lock_guard<Mutex> lock(device_blackboard->mutex);
-  NMEAInfo &basic = device_blackboard->SetRealState(index);
+  const auto clock = GetClock();
   settings_sent.ballast_fraction = fraction;
-  settings_sent.ballast_fraction_available.Update(basic.clock);
+  settings_sent.ballast_fraction_available.Update(clock);
   settings_sent.ballast_overload = overload;
-  settings_sent.ballast_overload_available.Update(basic.clock);
+  settings_sent.ballast_overload_available.Update(clock);
 
   return true;
 }
@@ -916,6 +954,22 @@ DeviceDescriptor::PutVolume(unsigned volume, OperationEnvironment &env)
 
   ScopeReturnDevice restore(*this, env);
   return device->PutVolume(volume, env);
+}
+
+bool
+DeviceDescriptor::PutPilotEvent(OperationEnvironment &env)
+{
+  assert(InMainThread());
+
+  if (device == nullptr || !config.sync_to_device)
+    return true;
+
+  if (!Borrow())
+    /* TODO: postpone until the borrowed device has been returned */
+    return false;
+
+  ScopeReturnDevice restore(*this, env);
+  return device->PutPilotEvent(env);
 }
 
 bool
@@ -972,10 +1026,8 @@ DeviceDescriptor::PutQNH(const AtmosphericPressure &value,
   if (!device->PutQNH(value, env))
     return false;
 
-  std::lock_guard<Mutex> lock(device_blackboard->mutex);
-  NMEAInfo &basic = device_blackboard->SetRealState(index);
   settings_sent.qnh = value;
-  settings_sent.qnh_available.Update(basic.clock);
+  settings_sent.qnh_available.Update(GetClock());
 
   return true;
 }
@@ -1112,7 +1164,16 @@ DeviceDescriptor::OnSysTicker()
 {
   assert(InMainThread());
 
-  if (port != nullptr && port->GetState() == PortState::FAILED && !IsOccupied())
+  if (port != nullptr && port->GetState() == PortState::FAILED)
+    has_failed = true;
+
+#ifdef ANDROID
+  if (java_sensor != nullptr &&
+      AndroidSensor::GetState(Java::GetEnv(), *java_sensor) == PortState::FAILED)
+    has_failed = true;
+#endif
+
+  if (has_failed && !IsOccupied())
     Close();
 
   if (device == nullptr)
@@ -1159,15 +1220,6 @@ DeviceDescriptor::OnCalculatedUpdate(const MoreData &basic,
     device->OnCalculatedUpdate(basic, calculated);
 }
 
-bool
-DeviceDescriptor::ParseLine(const char *line)
-{
-  std::lock_guard<Mutex> lock(device_blackboard->mutex);
-  NMEAInfo &basic = device_blackboard->SetRealState(index);
-  basic.UpdateClock();
-  return ParseNMEA(line, basic);
-}
-
 void
 DeviceDescriptor::OnJobFinished() noexcept
 {
@@ -1184,6 +1236,8 @@ DeviceDescriptor::OnJobFinished() noexcept
 
   delete open_job;
   open_job = nullptr;
+
+  PortStateChanged();
 }
 
 void
@@ -1209,6 +1263,8 @@ DeviceDescriptor::PortError(const char *msg) noexcept
       error_message = tmsg;
     }
   }
+
+  has_failed = true;
 
   if (port_listener != nullptr)
     port_listener->PortError(msg);
@@ -1252,8 +1308,10 @@ DeviceDescriptor::LineReceived(const char *line) noexcept
   if (dispatcher != nullptr)
     dispatcher->LineReceived(line);
 
-  if (ParseLine(line))
-    device_blackboard->ScheduleMerge();
+  const auto e = BeginEdit();
+  e->UpdateClock();
+  ParseNMEA(line, *e);
+  e.Commit();
 
   return true;
 }

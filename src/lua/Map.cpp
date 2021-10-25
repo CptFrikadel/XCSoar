@@ -23,6 +23,7 @@ Copyright_License {
 
 #include "Map.hpp"
 #include "Geo.hpp"
+#include "MetaTable.hxx"
 #include "Util.hxx"
 #include "util/StringAPI.hxx"
 #include "UIGlobals.hpp"
@@ -34,8 +35,8 @@ Copyright_License {
 #include "Interface.hpp"
 #include "Profile/Profile.hpp"
 #include "Profile/ProfileKeys.hpp"
+#include "Math/Constants.hpp"
 #include "util/Clamp.hpp"
-
 
 extern "C" {
 #include <lauxlib.h>
@@ -114,7 +115,7 @@ l_map_panto(lua_State *L)
 
   GeoPoint location = GeoPoint(Angle::Degrees(luaL_checknumber(L, 2)),
                   Angle::Degrees(luaL_checknumber(L, 1)));
- 
+
   PanTo(location);
   return 0;
 }
@@ -181,8 +182,6 @@ l_map_zoom(lua_State *L)
   }
 
   MapSettings &settings_map = CommonInterface::SetMapSettings();
-  if (map_window == NULL)
-    return 0;
 
   const DisplayMode displayMode = CommonInterface::GetUIState().display_mode;
   if (settings_map.auto_zoom_enabled &&
@@ -192,7 +191,7 @@ l_map_zoom(lua_State *L)
     Profile::Set(ProfileKeys::AutoZoom, false);
     Message::AddMessage(_("Auto. zoom off"));
   }
- 
+
   auto vmin = CommonInterface::GetComputerSettings().polar.glide_polar_task.GetVMin();
   auto scale_2min_distance = vmin * 12;
   constexpr double scale_100m = 10;
@@ -248,9 +247,7 @@ Lua::InitMap(lua_State *L)
 
   lua_newtable(L);
 
-  lua_newtable(L);
-  SetField(L, -2, "__index", l_map_index);
-  lua_setmetatable(L, -2);
+  MakeIndexMetaTableFor(L, RelativeStackIndex{-1}, l_map_index);
 
   luaL_setfuncs(L, map_funcs, 0);
 

@@ -31,74 +31,74 @@ Copyright_License {
 static bool DataFieldKeyUp = false;
 
 int
-DataFieldFloat::GetAsInteger() const
+DataFieldFloat::GetAsInteger() const noexcept
 {
   return iround(mValue);
 }
 
 const TCHAR *
-DataFieldFloat::GetAsString() const
+DataFieldFloat::GetAsString() const noexcept
 {
   _stprintf(mOutBuf, edit_format, (double)mValue);
   return mOutBuf;
 }
 
 const TCHAR *
-DataFieldFloat::GetAsDisplayString() const
+DataFieldFloat::GetAsDisplayString() const noexcept
 {
   _stprintf(mOutBuf, display_format, (double)mValue, unit.c_str());
   return mOutBuf;
 }
 
 void
-DataFieldFloat::SetAsInteger(int Value)
+DataFieldFloat::SetAsInteger(int Value) noexcept
 {
-  SetAsFloat(Value);
+  ModifyValue(Value);
 }
 
 void
-DataFieldFloat::SetAsFloat(double Value)
+DataFieldFloat::ModifyValue(double Value) noexcept
 {
   if (Value < mMin)
     Value = mMin;
   if (Value > mMax)
     Value = mMax;
-  if (mValue != Value) {
-    mValue = Value;
+  if (Value != GetValue()) {
+    SetValue(Value);
     Modified();
   }
 }
 
 void
-DataFieldFloat::SetAsString(const TCHAR *Value)
+DataFieldFloat::SetAsString(const TCHAR *Value) noexcept
 {
-  SetAsFloat(ParseDouble(Value));
+  ModifyValue(ParseDouble(Value));
 }
 
 void
-DataFieldFloat::Inc()
+DataFieldFloat::Inc() noexcept
 {
   // no keypad, allow user to scroll small values
   if (mFine && mValue < 0.95 && mStep >= 0.5 &&
       mMin >= 0)
-    SetAsFloat(mValue + 0.1);
+    ModifyValue(mValue + 0.1);
   else
-    SetAsFloat(mValue + mStep * SpeedUp(true));
+    ModifyValue(mValue + mStep * SpeedUp(true));
 }
 
 void
-DataFieldFloat::Dec()
+DataFieldFloat::Dec() noexcept
 {
   // no keypad, allow user to scroll small values
   if (mFine && mValue <= 1 && mStep >= 0.5 &&
       mMin >= 0)
-    SetAsFloat(mValue - 0.1);
+    ModifyValue(mValue - 0.1);
   else
-    SetAsFloat(mValue - mStep * SpeedUp(false));
+    ModifyValue(mValue - mStep * SpeedUp(false));
 }
 
 double
-DataFieldFloat::SpeedUp(bool keyup)
+DataFieldFloat::SpeedUp(bool keyup) noexcept
 {
   if (keyup != DataFieldKeyUp) {
     mSpeedup = 0;
@@ -122,13 +122,14 @@ DataFieldFloat::SpeedUp(bool keyup)
 }
 
 void
-DataFieldFloat::SetFromCombo(int iDataFieldIndex, const TCHAR *sValue)
+DataFieldFloat::SetFromCombo(int iDataFieldIndex, const TCHAR *sValue) noexcept
 {
   SetAsString(sValue);
 }
 
 void
-DataFieldFloat::AppendComboValue(ComboList &combo_list, double value) const
+DataFieldFloat::AppendComboValue(ComboList &combo_list,
+                                 double value) const noexcept
 {
   TCHAR a[decltype(edit_format)::capacity()], b[decltype(display_format)::capacity()];
   _stprintf(a, edit_format, (double)value);
@@ -137,7 +138,7 @@ DataFieldFloat::AppendComboValue(ComboList &combo_list, double value) const
 }
 
 ComboList
-DataFieldFloat::CreateComboList(const TCHAR *reference_string) const
+DataFieldFloat::CreateComboList(const TCHAR *reference_string) const noexcept
 {
   const auto reference = reference_string != nullptr
     ? ParseDouble(reference_string)

@@ -24,7 +24,10 @@
 
 #include "Geo/GeoPoint.hpp"
 #include "Geo/SpeedVector.hpp"
+#include "time/FloatDuration.hxx"
+#include "time/Stamp.hpp"
 
+#include <chrono>
 #include <type_traits>
 
 /**
@@ -61,7 +64,7 @@ struct SpeedState
    */
   double true_airspeed;
 
-  void Reset() {
+  void Reset() noexcept {
     ground_speed = true_airspeed = 0;
   }
 };
@@ -84,7 +87,7 @@ struct AltitudeState
   /** Altitude over terrain */
   double altitude_agl;
 
-  void Reset();
+  void Reset() noexcept;
 };
 
 /**
@@ -104,7 +107,7 @@ struct VarioState
    */
   double netto_vario;
 
-  void Reset(){
+  void Reset() noexcept {
     vario = netto_vario = 0;
   }
 };
@@ -125,7 +128,7 @@ struct AircraftState:
    * Global time (seconds after UTC midnight).  A negative value means
    * "no time available", e.g. if no GPS fix was obtained yet.
    */
-  double time;
+  TimeStamp time;
 
   //################
   //   Navigation
@@ -153,6 +156,14 @@ struct AircraftState:
 
   bool flying;
 
+  constexpr bool HasTime() const noexcept {
+    return time.IsDefined();
+  }
+
+  void ResetTime() noexcept {
+    time = TimeStamp::Undefined();
+  }
+
   /**
    * Calculate predicted state in future.
    * Assumes aircraft will continue along current TrackBearing and Speed with
@@ -161,9 +172,9 @@ struct AircraftState:
    * @return Predicted aircraft state in in_time seconds
    */
   [[gnu::pure]]
-  AircraftState GetPredictedState(double in_time) const;
+  AircraftState GetPredictedState(FloatDuration in_time) const noexcept;
 
-  void Reset();
+  void Reset() noexcept;
 };
 
 static_assert(std::is_trivial<AircraftState>::value, "type is not trivial");

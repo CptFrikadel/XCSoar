@@ -24,16 +24,20 @@ Copyright_License {
 #include "NMEA/MoreData.hpp"
 
 void
-TraceHistory::append(const MoreData &basic)
+TraceHistory::append(const MoreData &basic) noexcept
 {
   BruttoVario.push(basic.brutto_vario);
   NettoVario.push(basic.netto_vario);
+  vario_available.Update(basic.clock);
 }
 
 void
-TraceHistory::clear()
+TraceHistory::clear() noexcept
 {
   BruttoVario.clear();
   NettoVario.clear();
   CirclingAverage.clear();
+
+  vario_available.Clear();
+  circling_available.Clear();
 }

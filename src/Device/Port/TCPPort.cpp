@@ -40,6 +40,10 @@ TCPPort::TCPPort(EventLoop &event_loop,
   if (!s.Create(AF_INET, SOCK_STREAM, 0))
     throw MakeSocketError("Failed to create socket");
 
+  /* always set SO_REUSEADDR for TCP sockets to allow quick
+     restarts */
+  s.SetReuseAddress(true);
+
   if (!s.Bind(address))
     throw MakeSocketError("Failed to bind socket");
 
@@ -55,14 +59,10 @@ TCPPort::TCPPort(EventLoop &event_loop,
 
 TCPPort::~TCPPort()
 {
-  BufferedPort::BeginClose();
-
   BlockingCall(GetEventLoop(), [this](){
     connection.Close();
     listener.Close();
   });
-
-  BufferedPort::EndClose();
 }
 
 PortState

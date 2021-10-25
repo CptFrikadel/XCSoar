@@ -211,6 +211,7 @@ DBFHandle msDBFOpen(struct zzip_dir *zdir,  const char * pszFilename, const char
   pabyBuf = (uchar *) msSmallMalloc(500);
   if( zzip_fread( pabyBuf, 32, 1, psDBF->fp ) != 1 )
   {
+    zzip_close(psDBF->fp);
     msFree(psDBF);
     msFree(pabyBuf);
     return( NULL );
@@ -221,6 +222,13 @@ DBFHandle msDBFOpen(struct zzip_dir *zdir,  const char * pszFilename, const char
 
   psDBF->nHeaderLength = nHeadLen = pabyBuf[8] + pabyBuf[9]*256;
   psDBF->nRecordLength = nRecLen = pabyBuf[10] + pabyBuf[11]*256;
+
+  if (nHeadLen <= 32) {
+    zzip_close(psDBF->fp);
+    msFree(psDBF);
+    msFree(pabyBuf);
+    return( NULL );
+  }
 
   psDBF->nFields = nFields = (nHeadLen - 32) / 32;
 
@@ -236,6 +244,7 @@ DBFHandle msDBFOpen(struct zzip_dir *zdir,  const char * pszFilename, const char
   if( zzip_fread( pabyBuf, nHeadLen - 32, 1, psDBF->fp ) != 1 )
   {
     msFree(psDBF->pszCurrentRecord);
+    zzip_close(psDBF->fp);
     msFree(psDBF);
     msFree(pabyBuf);
     return( NULL );
@@ -312,7 +321,7 @@ void  msDBFClose(DBFHandle psDBF)
   /* -------------------------------------------------------------------- */
   /*      Close, and free resources.                                      */
   /* -------------------------------------------------------------------- */
-  zzip_file_close( psDBF->fp );
+  zzip_close( psDBF->fp );
 
   if( psDBF->panFieldOffset != NULL ) {
     free( psDBF->panFieldOffset );
@@ -713,7 +722,7 @@ DBFFieldType msDBFGetFieldInfo( DBFHandle psDBF, int iField, char * pszFieldName
 static int msDBFWriteAttribute(DBFHandle psDBF, int hEntity, int iField, void * pValue )
 {
   unsigned int          nRecordOffset;
-  int  i, len;
+  int  len;
   uchar *pabyRec;
   char  szSField[40];
 
@@ -733,7 +742,7 @@ static int msDBFWriteAttribute(DBFHandle psDBF, int hEntity, int iField, void * 
     flushRecord( psDBF );
 
     psDBF->nRecords++;
-    for( i = 0; i < psDBF->nRecordLength; i++ )
+    for( unsigned i = 0; i < psDBF->nRecordLength; i++ )
       psDBF->pszCurrentRecord[i] = ' ';
 
     psDBF->nCurrentRecord = hEntity;

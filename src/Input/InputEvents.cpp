@@ -72,38 +72,50 @@ doc/html/advanced/input/ALL		http://xcsoar.sourceforge.net/advanced/input/
 #include <stdio.h>
 #include <memory>
 
-namespace InputEvents
-{
-  static const TCHAR *flavour;
+namespace InputEvents {
 
-  static Mode current_mode = InputEvents::MODE_DEFAULT;
+static const TCHAR *flavour;
 
-  /**
-   * A mode that overrides the #current_mode.  Only if a value does
-   * not exist in this mode, it will be taken from the #current_mode.
-   * The special value #MODE_DEFAULT means there is no overlay mode.
-   */
-  static Mode overlay_mode = MODE_DEFAULT;
+static Mode current_mode = InputEvents::MODE_DEFAULT;
 
-  static unsigned MenuTimeOut = 0;
+/**
+ * A mode that overrides the #current_mode.  Only if a value does
+ * not exist in this mode, it will be taken from the #current_mode.
+ * The special value #MODE_DEFAULT means there is no overlay mode.
+ */
+static Mode overlay_mode = MODE_DEFAULT;
 
-  gcc_pure
-  static Mode getModeID();
+static std::chrono::duration<unsigned> MenuTimeOut{};
 
-  static void UpdateOverlayMode();
+/**
+ * True if a full menu update was postponed by drawButtons().
+ */
+static bool menu_dirty = false;
 
-  gcc_pure
-  static unsigned gesture_to_event(const TCHAR *data);
+gcc_pure
+static Mode
+getModeID() noexcept;
 
-  /**
-   * @param full if false, update only the dynamic labels
-   */
-  static void drawButtons(Mode mode, bool full=false);
+static void
+UpdateOverlayMode() noexcept;
 
-  static void ProcessMenuTimer();
+gcc_pure
+static unsigned
+gesture_to_event(const TCHAR *data) noexcept;
 
-  static void processGo(unsigned event_id);
-};
+/**
+ * @param full if false, update only the dynamic labels
+ */
+static void
+drawButtons(Mode mode, bool full=false) noexcept;
+
+static void
+ProcessMenuTimer() noexcept;
+
+static void
+processGo(unsigned event_id) noexcept;
+
+} // namespace InputEvents
 
 static InputConfig input_config;
 
@@ -125,7 +137,7 @@ InputEvents::readFile()
 }
 
 void
-InputEvents::setMode(Mode mode)
+InputEvents::setMode(Mode mode) noexcept
 {
   assert((unsigned)mode < input_config.modes.size());
 
@@ -139,7 +151,7 @@ InputEvents::setMode(Mode mode)
 }
 
 void
-InputEvents::setMode(const TCHAR *mode)
+InputEvents::setMode(const TCHAR *mode) noexcept
 {
   int m = input_config.LookupMode(mode);
   if (m >= 0)
@@ -147,13 +159,13 @@ InputEvents::setMode(const TCHAR *mode)
 }
 
 void
-InputEvents::UpdatePan()
+InputEvents::UpdatePan() noexcept
 {
   drawButtons(getModeID(), true);
 }
 
 void
-InputEvents::SetFlavour(const TCHAR *_flavour)
+InputEvents::SetFlavour(const TCHAR *_flavour) noexcept
 {
   if (flavour == NULL && _flavour == NULL)
     /* optimised default case */
@@ -170,7 +182,7 @@ InputEvents::SetFlavour(const TCHAR *_flavour)
 }
 
 bool
-InputEvents::IsFlavour(const TCHAR *_flavour)
+InputEvents::IsFlavour(const TCHAR *_flavour) noexcept
 {
   if (flavour == NULL)
     return _flavour == NULL;
@@ -182,17 +194,27 @@ InputEvents::IsFlavour(const TCHAR *_flavour)
 }
 
 bool
-InputEvents::IsDefault()
+InputEvents::IsDefault() noexcept
 {
   return current_mode == MODE_DEFAULT;
 }
 
-
 void
-InputEvents::drawButtons(Mode mode, bool full)
+InputEvents::drawButtons(Mode mode, bool full) noexcept
 {
   if (!global_running)
     return;
+
+  if (CommonInterface::main_window->HasDialog()) {
+    /* don't activate the menu if a modal dialog is visible; the menu
+       buttons would be put above the dialog, but would not be
+       accessible; instead, postpone */
+    if (full)
+      menu_dirty = true;
+    return;
+  }
+
+  full |= std::exchange(menu_dirty, false);
 
   const Menu &menu = input_config.menus[mode];
   const Menu *const overlay_menu = overlay_mode != MODE_DEFAULT
@@ -213,7 +235,7 @@ InputEvents::drawButtons(Mode mode, bool full)
 }
 
 InputEvents::Mode
-InputEvents::getModeID()
+InputEvents::getModeID() noexcept
 {
   if (current_mode == MODE_DEFAULT && IsPanning())
     return MODE_PAN;
@@ -222,7 +244,7 @@ InputEvents::getModeID()
 }
 
 void
-InputEvents::UpdateOverlayMode()
+InputEvents::UpdateOverlayMode() noexcept
 {
   if (flavour != NULL) {
     /* build the "flavoured" mode name from the current "major" mode
@@ -251,7 +273,7 @@ InputEvents::UpdateOverlayMode()
 gcc_pure
 static int
 FindMenuItemByEvent(InputEvents::Mode mode, InputEvents::Mode overlay_mode,
-                    unsigned event_id)
+                    unsigned event_id) noexcept
 {
   const Menu *const overlay_menu = overlay_mode != InputEvents::MODE_DEFAULT
     ? &input_config.menus[overlay_mode]
@@ -272,7 +294,7 @@ FindMenuItemByEvent(InputEvents::Mode mode, InputEvents::Mode overlay_mode,
 }
 
 void
-InputEvents::ProcessEvent(unsigned event_id)
+InputEvents::ProcessEvent(unsigned event_id) noexcept
 {
   assert(event_id != 0);
 
@@ -293,7 +315,7 @@ InputEvents::ProcessEvent(unsigned event_id)
  */
 gcc_pure
 static unsigned
-key_to_event(InputEvents::Mode mode, unsigned key_code)
+key_to_event(InputEvents::Mode mode, unsigned key_code) noexcept
 {
   return input_config.GetKeyEvent(mode, key_code);
 }
@@ -301,7 +323,7 @@ key_to_event(InputEvents::Mode mode, unsigned key_code)
 gcc_pure
 static unsigned
 key_to_event(InputEvents::Mode mode, InputEvents::Mode overlay_mode,
-             unsigned key_code)
+             unsigned key_code) noexcept
 {
   if (overlay_mode != InputEvents::MODE_DEFAULT) {
     unsigned event_id = key_to_event(overlay_mode, key_code);
@@ -313,7 +335,7 @@ key_to_event(InputEvents::Mode mode, InputEvents::Mode overlay_mode,
 }
 
 bool
-InputEvents::ProcessKey(Mode mode, unsigned key_code)
+InputEvents::ProcessKey(Mode mode, unsigned key_code) noexcept
 {
   if (!global_running)
     return false;
@@ -348,43 +370,47 @@ InputEvents::ProcessKey(Mode mode, unsigned key_code)
   Return = We had a valid key (even if nothing happens because of Bounce)
 */
 bool
-InputEvents::processKey(unsigned key_code)
+InputEvents::processKey(unsigned key_code) noexcept
 {
   return ProcessKey(getModeID(), key_code);
 }
 
 unsigned
-InputEvents::gesture_to_event(const TCHAR *data)
+InputEvents::gesture_to_event(const TCHAR *data) noexcept
 {
   return input_config.Gesture2Event.Get(data, 0);
 }
 
 bool
-InputEvents::IsGesture(const TCHAR *data)
+InputEvents::IsGesture(const TCHAR *data) noexcept
 {
   return (Lua::IsGesture(data)) || (gesture_to_event(data) != 0);
 }
 
 bool
-InputEvents::processGesture(const TCHAR *data)
+InputEvents::processGesture(const TCHAR *data) noexcept
 {
+  // start with lua event if available!
+  if (Lua::FireGesture(data))
+    return true;
+
   // get current mode
   unsigned event_id = gesture_to_event(data);
-  if (event_id)
-  {
+  if (event_id) {
     InputEvents::processGo(event_id);
     return true;
   }
-  return Lua::FireGesture(data);
+
+  return false;
 }
 
 /*
-  InputEvent::processNmea(TCHAR* data)
+  InputEvent::processNmea(TCHAR *data)
   Take hard coded inputs from NMEA processor.
   Return = TRUE if we have a valid key match
 */
 bool
-InputEvents::processNmea_real(unsigned ne_id)
+InputEvents::processNmea_real(unsigned ne_id) noexcept
 {
   if (!global_running)
     return false;
@@ -408,7 +434,7 @@ InputEvents::processNmea_real(unsigned ne_id)
   Take virtual inputs from a Glide Computer to do special events
 */
 bool
-InputEvents::processGlideComputer_real(unsigned gce_id)
+InputEvents::processGlideComputer_real(unsigned gce_id) noexcept
 {
   if (!global_running)
     return false;
@@ -431,7 +457,7 @@ InputEvents::processGlideComputer_real(unsigned gce_id)
 
 // EXECUTE an Event - lookup event handler and call back - no return
 void
-InputEvents::processGo(unsigned eventid)
+InputEvents::processGo(unsigned eventid) noexcept
 {
   /* eventid 0 is special for "noop" */
 
@@ -439,7 +465,7 @@ InputEvents::processGo(unsigned eventid)
     const InputConfig::Event &event = input_config.events[eventid];
     if (event.event != NULL) {
       event.event(event.misc);
-      MenuTimeOut = 0;
+      MenuTimeOut = {};
     }
 
     eventid = event.next;
@@ -447,21 +473,21 @@ InputEvents::processGo(unsigned eventid)
 }
 
 void
-InputEvents::HideMenu()
+InputEvents::HideMenu() noexcept
 {
   setMode(MODE_DEFAULT);
 }
 
 void
-InputEvents::ShowMenu()
+InputEvents::ShowMenu() noexcept
 {
   setMode(MODE_MENU);
-  MenuTimeOut = 0;
+  MenuTimeOut = {};
   ProcessMenuTimer();
 }
 
 Menu *
-InputEvents::GetMenu(const TCHAR *mode)
+InputEvents::GetMenu(const TCHAR *mode) noexcept
 {
  int m = input_config.LookupMode(mode);
  if (m >= 0)
@@ -471,7 +497,7 @@ InputEvents::GetMenu(const TCHAR *mode)
 }
 
 void
-InputEvents::ProcessMenuTimer()
+InputEvents::ProcessMenuTimer() noexcept
 {
   if (CommonInterface::main_window->HasDialog())
     /* no menu updates while a dialog is visible */
@@ -483,11 +509,11 @@ InputEvents::ProcessMenuTimer()
   // refresh visible buttons if still visible
   drawButtons(getModeID());
 
-  MenuTimeOut++;
+  MenuTimeOut += std::chrono::seconds{1};
 }
 
 void
-InputEvents::ProcessTimer()
+InputEvents::ProcessTimer() noexcept
 {
   DoQueuedEvents();
   ProcessMenuTimer();

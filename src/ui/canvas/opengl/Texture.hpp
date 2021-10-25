@@ -36,10 +36,6 @@ Copyright_License {
 #include <SDL_video.h>
 #endif
 
-#ifndef NDEBUG
-extern unsigned num_textures;
-#endif
-
 /**
  * This class represents an OpenGL texture.
  */
@@ -66,8 +62,6 @@ public:
 #ifndef NDEBUG
     assert(allocated_size.width >= size.width);
     assert(allocated_size.height >= size.height);
-
-    ++num_textures;
 #endif
   }
 #endif
@@ -83,11 +77,6 @@ public:
 
   ~GLTexture() noexcept {
     glDeleteTextures(1, &id);
-
-#ifndef NDEBUG
-    assert(num_textures > 0);
-    --num_textures;
-#endif
   }
 
   /**
@@ -144,11 +133,6 @@ protected:
   void Initialise() noexcept;
 
   static void Configure() noexcept;
-
-#ifdef HAVE_OES_DRAW_TEXTURE
-private:
-  void DrawOES(PixelRect dest, PixelRect src) const noexcept;
-#endif
 
 public:
   void Bind() noexcept {

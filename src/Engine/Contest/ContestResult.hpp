@@ -23,24 +23,26 @@
 #ifndef CONTEST_RESULT_HPP
 #define CONTEST_RESULT_HPP
 
+#include "time/FloatDuration.hxx"
+
 #include <type_traits>
 
 struct ContestResult
 {
-  /** Score (pts) according to OLC rule */
+  /** Score (pts) according to contest rule */
   double score;
-  /** Optimum distance (m) travelled according to OLC rule */
+  /** Optimum distance (m) travelled according to contest rule */
   double distance;
   /** Time (s) of optimised OLC path */
-  double time;
+  FloatDuration time;
 
-  void Reset() {
+  constexpr void Reset() noexcept {
     score = 0;
     distance = 0;
-    time = 0;
+    time = {};
   }
 
-  constexpr bool IsDefined() const {
+  constexpr bool IsDefined() const noexcept {
     return score > 0;
   }
 
@@ -48,9 +50,9 @@ struct ContestResult
    * Returns the average speed on the optimised path [m/s].  Returns
    * zero if the result is invalid.
    */
-  constexpr double GetSpeed() const {
-    return time > 0
-      ? distance / time
+  constexpr double GetSpeed() const noexcept {
+    return time.count() > 0
+      ? distance / time.count()
       : 0.;
   }
 };

@@ -39,24 +39,22 @@
 #include "Engine/Task/Factory/AbstractTaskFactory.hpp"
 #include "Operation/Operation.hpp"
 #include "Units/System.hpp"
+#include "time/BrokenTime.hpp"
 
 #include <stdlib.h>
 
 struct SeeYouTaskInformation {
   /** True = RT, False = AAT */
-  bool wp_dis;
+  bool wp_dis = true;
   /** AAT task time in seconds */
-  double task_time;
+  std::chrono::duration<unsigned> task_time{};
   /** MaxAltStart in meters */
-  double max_start_altitude;
-
-  SeeYouTaskInformation():
-    wp_dis(true), task_time(0), max_start_altitude(0) {}
+  double max_start_altitude = 0;
 };
 
 struct SeeYouTurnpointInformation {
   /** CUP file contained info for this OZ */
-  bool valid;
+  bool valid = false;
 
   enum Style {
     FIXED,
@@ -64,24 +62,16 @@ struct SeeYouTurnpointInformation {
     TO_NEXT_POINT,
     TO_PREVIOUS_POINT,
     TO_START_POINT,
-  } style;
+  } style = SYMMETRICAL;
 
-  bool is_line;
-  bool reduce;
+  bool is_line = false;
+  bool reduce = false;
 
-  double radius1, radius2, max_altitude;
-  Angle angle1, angle2, angle12;
-
-  SeeYouTurnpointInformation():
-    valid(false), style(SYMMETRICAL), is_line(false), reduce(false),
-    radius1(500), radius2(500),
-    max_altitude(0),
-    angle1(Angle::Zero()),
-    angle2(Angle::Zero()),
-    angle12(Angle::Zero()) {}
+  double radius1 = 500, radius2 = 200, max_altitude = 0;
+  Angle angle1{}, angle2{}, angle12{};
 };
 
-static double
+static std::chrono::duration<unsigned>
 ParseTaskTime(const TCHAR* str)
 {
   int hh = 0, mm = 0, ss = 0;
@@ -92,7 +82,7 @@ ParseTaskTime(const TCHAR* str)
     if (str != end && _tcslen(str + 3) > 3 && str[5] == _T(':'))
       ss = _tcstol(str + 6, nullptr, 10);
   }
-  return ss + mm * 60 + hh * 3600;
+  return BrokenTime(hh, mm, ss).DurationSinceMidnight();
 }
 
 static SeeYouTurnpointInformation::Style
@@ -578,20 +568,18 @@ try {
       fact.Append(*pt, false);
   }
   return task;
-} catch (const std::runtime_error &e) {
+} catch (...) {
   return nullptr;
 }
 
-unsigned
-TaskFileSeeYou::Count() noexcept
-try {
-  // Reset internal task name memory
-  namesuffixes.clear();
+std::vector<tstring>
+TaskFileSeeYou::GetList() const
+{
+  std::vector<tstring> result;
 
   // Open the CUP file
   FileLineReader reader(path, Charset::AUTO);
 
-  unsigned count = 0;
   bool in_task_section = false;
   TCHAR *line;
   while ((line = reader.ReadLine()) != nullptr) {
@@ -599,34 +587,25 @@ try {
       // If the line starts with a string or "nothing" followed
       // by a comma it is a new task definition line
       if (line[0] == _T('\"') || line[0] == _T(',')) {
-        // If we still have space in the task name list
-        if (count < namesuffixes.capacity()) {
-          // If the task doesn't have a name inside the file
-          if (line[0] == _T(','))
-            namesuffixes.append(nullptr);
-          else {
-            // Ignore starting quote (")
+        // If the task doesn't have a name inside the file
+        if (line[0] == _T(','))
+          result.emplace_back();
+        else {
+          // Ignore starting quote (")
+          line++;
+
+          // Save pointer to first character
+          TCHAR *name = line;
+          // Skip characters until next quote (") or end of string
+          while (line[0] != _T('\"') && line[0] != _T('\0'))
             line++;
 
-            // Save pointer to first character
-            TCHAR *name = line;
-            // Skip characters until next quote (") or end of string
-            while (line[0] != _T('\"') && line[0] != _T('\0'))
-              line++;
+          // Replace quote (") by end of string (null)
+          line[0] = _T('\0');
 
-            // Replace quote (") by end of string (null)
-            line[0] = _T('\0');
-
-            // Append task name to the list
-            if (_tcslen(name) > 0)
-              namesuffixes.append(_tcsdup(name));
-            else
-              namesuffixes.append(nullptr);
-          }
+          // Append task name to the list
+          result.emplace_back(name);
         }
-
-        // Increase the task counter
-        count++;
       }
     } else if (StringIsEqualIgnoreCase(line, _T("-----Related Tasks-----"))) {
       // Found the marker -> all following lines are task lines
@@ -634,8 +613,5 @@ try {
     }
   }
 
-  // Return number of tasks found in the CUP file
-  return count;
-} catch (const std::runtime_error &e) {
-  return 0;
+  return result;
 }

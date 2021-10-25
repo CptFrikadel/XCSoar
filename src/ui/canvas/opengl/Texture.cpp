@@ -29,24 +29,14 @@ Copyright_License {
 #include "Asset.hpp"
 #include "Scope.hpp"
 #include "util/Compiler.h"
-#include "Shaders.hpp"
-#include "Program.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
-
-#ifdef HAVE_OES_DRAW_TEXTURE
-#include <GLES/glext.h>
-#endif
 
 #ifdef ENABLE_SDL
 #include <SDL.h>
 #endif
 
 #include <cassert>
-
-#ifndef NDEBUG
-unsigned num_textures;
-#endif
 
 static constexpr unsigned
 NextPowerOfTwo(unsigned i) noexcept
@@ -138,10 +128,6 @@ GLTexture::ResizeDiscard(PixelSize new_size) noexcept
 void
 GLTexture::Initialise() noexcept
 {
-#ifndef NDEBUG
-  ++num_textures;
-#endif
-
   glGenTextures(1, &id);
   Bind();
   Configure();
@@ -167,39 +153,9 @@ GLTexture::EnableInterpolation() noexcept
   }
 }
 
-#ifdef HAVE_OES_DRAW_TEXTURE
-
-inline void
-GLTexture::DrawOES(PixelRect dest, PixelRect src) const noexcept
-{
-  const GLint rect[4] = {
-    src.left,
-    flipped ? src.top : src.bottom,
-    GLint(src.GetWidth()),
-    flipped ? (GLint)src.GetHeight() : -(GLint)src.GetHeight()
-  };
-
-  glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, rect);
-
-  /* glDrawTexiOES() circumvents the projection settings, thus we must
-     roll our own translation */
-  glDrawTexiOES(OpenGL::translate.x + dest.left,
-                OpenGL::viewport_size.y - OpenGL::translate.y - dest.bottom,
-                0, dest.GetWidth(), dest.GetHeight());
-}
-
-#endif
-
 void
 GLTexture::Draw(PixelRect dest, PixelRect src) const noexcept
 {
-#ifdef HAVE_OES_DRAW_TEXTURE
-  if (OpenGL::oes_draw_texture) {
-    DrawOES(dest, src);
-    return;
-  }
-#endif
-
   const BulkPixelPoint vertices[] = {
     dest.GetTopLeft(),
     dest.GetTopRight(),
@@ -229,5 +185,4 @@ GLTexture::Draw(PixelRect dest, PixelRect src) const noexcept
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
   glDisableVertexAttribArray(OpenGL::Attribute::TEXCOORD);
-  OpenGL::solid_shader->Use();
 }

@@ -25,10 +25,14 @@ Copyright_License {
 #define XCSOAR_SCREEN_PEN_HPP
 
 #include "ui/canvas/Color.hpp"
-#include "Screen/Features.hpp"
+#include "ui/canvas/Features.hpp"
 #include "Screen/Debug.hpp"
 
 #include <cassert>
+
+#ifdef USE_GDI
+#include <wingdi.h>
+#endif
 
 /**
  * A pen draws lines and borders.
@@ -187,11 +191,7 @@ public:
 #ifdef ENABLE_OPENGL
 private:
   void BindStyle() const {
-#if defined(HAVE_GLES) && !defined(HAVE_GLES2)
-    glLineWidthx(width << 16);
-#else
     glLineWidth(width);
-#endif
 
 #ifndef HAVE_GLES
     if (style == DASH1) {

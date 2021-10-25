@@ -23,10 +23,9 @@ Copyright_License {
 
 #include "GeoPoint.hpp"
 #include "Formatter/GeoPointFormatter.hpp"
-#include "util/Macros.hpp"
 
 void
-GeoPointDataField::ModifyValue(GeoPoint _value)
+GeoPointDataField::ModifyValue(GeoPoint _value) noexcept
 {
   if (_value == value)
     return;
@@ -36,11 +35,11 @@ GeoPointDataField::ModifyValue(GeoPoint _value)
 }
 
 const TCHAR *
-GeoPointDataField::GetAsString() const
+GeoPointDataField::GetAsString() const noexcept
 {
   if (!value.IsValid())
     return _T("");
 
-  static TCHAR buffer[64];
-  return FormatGeoPoint(value, buffer, ARRAY_SIZE(buffer), format);
+  return FormatGeoPoint(value, string_buffer, std::size(string_buffer),
+                        format);
 }

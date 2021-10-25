@@ -30,7 +30,6 @@ Copyright_License {
 #include "Geo/GeoBounds.hpp"
 
 #ifdef ENABLE_OPENGL
-#include "ui/canvas/opengl/Surface.hpp"
 #else
 #include "ui/canvas/Brush.hpp"
 #include "Topography/ShapeRenderer.hpp"
@@ -51,9 +50,6 @@ struct TopographyLook;
  * Class used to manage and render vector topography layers
  */
 class TopographyFileRenderer final
-#ifdef ENABLE_OPENGL
-  : GLSurfaceListener
-#endif
 {
   const TopographyFile &file;
 
@@ -76,6 +72,8 @@ class TopographyFileRenderer final
 
   std::vector<const XShape *> visible_shapes, visible_labels;
 
+  std::vector<GeoPoint> visible_points;
+
 #ifdef ENABLE_OPENGL
   GLArrayBuffer *array_buffer;
   Serial array_buffer_serial;
@@ -83,11 +81,11 @@ class TopographyFileRenderer final
 
 public:
   TopographyFileRenderer(const TopographyFile &file,
-                         const TopographyLook &look);
+                         const TopographyLook &look) noexcept;
 
   TopographyFileRenderer(const TopographyFileRenderer &) = delete;
 
-  ~TopographyFileRenderer();
+  ~TopographyFileRenderer() noexcept;
 
   /**
    * Paints the polygons, lines and points/icons in the TopographyFile
@@ -95,7 +93,7 @@ public:
    * @param bitmap_canvas Temporary canvas for the icon
    * @param projection
    */
-  void Paint(Canvas &canvas, const WindowProjection &projection);
+  void Paint(Canvas &canvas, const WindowProjection &projection) noexcept;
 
   /**
    * Paints a topography label if the space is available in the LabelBlock
@@ -104,25 +102,17 @@ public:
    * @param label_block The LabelBlock class to use for decluttering
    * @param settings_map
    */
-  void PaintLabels(Canvas &canvas,
-                   const WindowProjection &projection, LabelBlock &label_block);
+  void PaintLabels(Canvas &canvas, const WindowProjection &projection,
+                   LabelBlock &label_block) noexcept;
 
 private:
-  void UpdateVisibleShapes(const WindowProjection &projection);
+  void UpdateVisibleShapes(const WindowProjection &projection) noexcept;
 
 #ifdef ENABLE_OPENGL
-  void UpdateArrayBuffer();
-
-  void PaintPoint(Canvas &canvas, const WindowProjection &projection,
-                  const XShape &shape, const float *opengl_matrix) const;
-
-  virtual void SurfaceCreated() override;
-  virtual void SurfaceDestroyed() override;
-#else
-  void PaintPoint(Canvas &canvas, const WindowProjection &projection,
-                  const unsigned short *lines, const unsigned short *end_lines,
-                  const GeoPoint *points) const;
+  void UpdateArrayBuffer() noexcept;
 #endif
+
+  void PaintPoints(Canvas &canvas, const WindowProjection &projection) noexcept;
 };
 
 #endif

@@ -24,6 +24,7 @@ Copyright_License {
 #define TRACEHISTORY_HPP
 
 #include "util/OverwritingRingBuffer.hpp"
+#include "NMEA/Validity.hpp"
 
 #include <type_traits>
 
@@ -37,8 +38,14 @@ public:
   TraceVariableHistory NettoVario;
   TraceVariableHistory CirclingAverage;
 
-  void append(const MoreData &basic);
-  void clear();
+  /**
+   * Just time stamps describing when the fields above were last
+   * modified.
+   */
+  Validity vario_available, circling_available;
+
+  void append(const MoreData &basic) noexcept;
+  void clear() noexcept;
 };
 
 static_assert(std::is_trivial<TraceHistory>::value, "type is not trivial");

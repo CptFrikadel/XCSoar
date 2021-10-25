@@ -32,10 +32,12 @@ Copyright_License {
 #include "Language/Language.hpp"
 #include "Airspace/AirspaceComputerSettings.hpp"
 #include "Renderer/AirspaceRendererSettings.hpp"
+#include "ui/canvas/Features.hpp"
 #include "Interface.hpp"
 #include "UIGlobals.hpp"
 #include "UtilsSettings.hpp"
-#include "Screen/Features.hpp"
+
+using namespace std::chrono;
 
 enum ControlIndex {
   AirspaceDisplay,
@@ -102,7 +104,7 @@ public:
 
 private:
   /* methods from DataFieldListener */
-  virtual void OnModified(DataField &df) override;
+  void OnModified(DataField &df) noexcept override;
 };
 
 void
@@ -148,7 +150,7 @@ AirspaceConfigPanel::Hide() noexcept
 }
 
 void
-AirspaceConfigPanel::OnModified(DataField &df)
+AirspaceConfigPanel::OnModified(DataField &df) noexcept
 {
   if (IsDataField(AirspaceDisplay, df)) {
     const DataFieldEnum &dfe = (const DataFieldEnum &)df;
@@ -156,7 +158,7 @@ AirspaceConfigPanel::OnModified(DataField &df)
     ShowDisplayControls(mode);
   } else if (IsDataField(AirspaceWarnings, df)) {
     const DataFieldBoolean &dfb = (const DataFieldBoolean &)df;
-    ShowWarningControls(dfb.GetAsBoolean());
+    ShowWarningControls(dfb.GetValue());
   }
 }
 
@@ -200,9 +202,10 @@ AirspaceConfigPanel::Prepare(ContainerWindow &parent,
              ui_settings.enable_airspace_warning_dialog, this);
   SetExpertRow(WarningDialog);
 
-  AddTime(_("Warning time"),
-          _("This is the time before an airspace incursion is estimated at which the system will warn the pilot."),
-          10, 1000, 5, computer.warnings.warning_time);
+  AddDuration(_("Warning time"),
+              _("This is the time before an airspace incursion is estimated at which the system will warn the pilot."),
+              seconds{10}, seconds{1000}, seconds{5},
+              computer.warnings.warning_time);
   SetExpertRow(WarningTime);
 
   AddBoolean(_("Repetitive sound"),
@@ -210,9 +213,10 @@ AirspaceConfigPanel::Prepare(ContainerWindow &parent,
              computer.warnings.repetitive_sound, this);
   SetExpertRow(RepetitiveSound);
 
-  AddTime(_("Acknowledge time"),
-          _("This is the time period in which an acknowledged airspace warning will not be repeated."),
-          10, 1000, 5, computer.warnings.acknowledgement_time);
+  AddDuration(_("Acknowledge time"),
+              _("This is the time period in which an acknowledged airspace warning will not be repeated."),
+              seconds{10}, seconds{1000}, seconds{5},
+              computer.warnings.acknowledgement_time);
   SetExpertRow(AcknowledgeTime);
 
   AddBoolean(_("Use black outline"),

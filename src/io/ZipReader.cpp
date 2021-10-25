@@ -45,7 +45,7 @@ ZipReader::ZipReader(struct zzip_dir *dir, const char *path)
 ZipReader::~ZipReader()
 {
   if (file != nullptr)
-    zzip_file_close(file);
+    zzip_close(file);
 }
 
 uint64_t
@@ -63,8 +63,8 @@ ZipReader::GetPosition() const
   return zzip_tell(file);
 }
 
-size_t
-ZipReader::Read(void *data, size_t size)
+std::size_t
+ZipReader::Read(void *data, std::size_t size)
 {
   zzip_ssize_t nbytes = zzip_file_read(file, data, size);
   if (nbytes < 0)

@@ -37,22 +37,25 @@ static constexpr unsigned char geometry_counts[] = {
   12, 9, 8, 4, 4, 4, 4,
   8, 16, 15, 10, 10, 10,
   12, // 3 rows X 4 boxes
+  15, // 3 rows X 5 boxes
 };
 
-namespace InfoBoxLayout
-{
-  gcc_const
-  static InfoBoxSettings::Geometry
-  ValidateGeometry(InfoBoxSettings::Geometry geometry, PixelSize screen_size);
+namespace InfoBoxLayout {
 
-  static void
-  CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
-                   InfoBoxSettings::Geometry geometry);
-}
+gcc_const
+static InfoBoxSettings::Geometry
+ValidateGeometry(InfoBoxSettings::Geometry geometry,
+                 PixelSize screen_size) noexcept;
+
+static void
+CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
+                 InfoBoxSettings::Geometry geometry) noexcept;
+
+} // namespace InfoBoxLayout
 
 static int
 MakeTopRow(const InfoBoxLayout::Layout &layout,
-           PixelRect *p, unsigned n, int left, int right, int top)
+           PixelRect *p, unsigned n, int left, int right, int top) noexcept
 {
   PixelRect *const end = p + n;
   const int bottom = top + layout.control_size.height;
@@ -74,7 +77,8 @@ MakeTopRow(const InfoBoxLayout::Layout &layout,
 
 static int
 MakeBottomRow(const InfoBoxLayout::Layout &layout,
-              PixelRect *p, unsigned n, int left, int right, int bottom)
+              PixelRect *p, unsigned n,
+              int left, int right, int bottom) noexcept
 {
   int top = bottom - layout.control_size.height;
   MakeTopRow(layout, p, n, left, right, top);
@@ -83,7 +87,8 @@ MakeBottomRow(const InfoBoxLayout::Layout &layout,
 
 static int
 MakeLeftColumn(const InfoBoxLayout::Layout &layout,
-               PixelRect *p, unsigned n, int left, int top, int bottom)
+               PixelRect *p, unsigned n,
+               int left, int top, int bottom) noexcept
 {
   PixelRect *const end = p + n;
   const int right = left + layout.control_size.width;
@@ -105,7 +110,8 @@ MakeLeftColumn(const InfoBoxLayout::Layout &layout,
 
 static int
 MakeRightColumn(const InfoBoxLayout::Layout &layout,
-                PixelRect *p, unsigned n, int right, int top, int bottom)
+                PixelRect *p, unsigned n,
+                int right, int top, int bottom) noexcept
 {
   int left = right - layout.control_size.width;
   MakeLeftColumn(layout, p, n, left, top, bottom);
@@ -113,7 +119,7 @@ MakeRightColumn(const InfoBoxLayout::Layout &layout,
 }
 
 InfoBoxLayout::Layout
-InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry)
+InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry) noexcept
 {
   const PixelSize screen_size = rc.GetSize();
 
@@ -323,6 +329,24 @@ InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry)
     }
     break;
 
+  case InfoBoxSettings::Geometry::SPLIT_3X5:
+    if (layout.landscape) {
+      rc.left = MakeLeftColumn(layout, layout.positions, 5,
+                               rc.left, rc.top, rc.bottom);
+      rc.left = MakeLeftColumn(layout, layout.positions + 5, 5,
+                               rc.left, rc.top, rc.bottom);
+      rc.right = MakeRightColumn(layout, layout.positions + 10, 5,
+                               rc.right, rc.top, rc.bottom);
+    } else {
+      rc.top = MakeTopRow(layout, layout.positions, 5,
+                          rc.left, rc.right, rc.top);
+      rc.top = MakeTopRow(layout, layout.positions + 5, 5,
+                          rc.left, rc.right, rc.top);
+      rc.bottom = MakeBottomRow(layout, layout.positions + 10, 5,
+                          rc.left, rc.right, rc.bottom);
+    }
+    break;
+
   case InfoBoxSettings::Geometry::RIGHT_16:
     rc.right = MakeRightColumn(layout, layout.positions + 8, 8,
                                rc.right, rc.top, rc.bottom);
@@ -331,12 +355,21 @@ InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry)
     break;
 
   case InfoBoxSettings::Geometry::RIGHT_24:
-    rc.right = MakeRightColumn(layout, layout.positions + 16, 8,
-                               rc.right, rc.top, rc.bottom);
-    rc.right = MakeRightColumn(layout, layout.positions + 8, 8,
-                               rc.right, rc.top, rc.bottom);
-    rc.right = MakeRightColumn(layout, layout.positions, 8,
-                               rc.right, rc.top, rc.bottom);
+    if (layout.landscape) {
+      rc.right = MakeRightColumn(layout, layout.positions + 16, 8,
+                                 rc.right, rc.top, rc.bottom);
+      rc.right = MakeRightColumn(layout, layout.positions + 8, 8,
+                                 rc.right, rc.top, rc.bottom);
+      rc.right = MakeRightColumn(layout, layout.positions, 8,
+                                 rc.right, rc.top, rc.bottom);
+    } else {
+      rc.bottom = MakeBottomRow(layout, layout.positions + 16, 8,
+                                rc.left, rc.right, rc.bottom);
+      rc.bottom = MakeBottomRow(layout, layout.positions + 8, 8,
+                                rc.left, rc.right, rc.bottom);
+      rc.bottom = MakeBottomRow(layout, layout.positions, 8,
+                                rc.left, rc.right, rc.bottom);
+    }
     break;
 
   case InfoBoxSettings::Geometry::RIGHT_9_VARIO:
@@ -384,7 +417,7 @@ InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry)
 
 static InfoBoxSettings::Geometry
 InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
-                                PixelSize screen_size)
+                                PixelSize screen_size) noexcept
 {
   if ((unsigned)geometry >= ARRAY_SIZE(geometry_counts))
     /* out of range */
@@ -397,6 +430,7 @@ InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
     case InfoBoxSettings::Geometry::SPLIT_8:
     case InfoBoxSettings::Geometry::SPLIT_10:
     case InfoBoxSettings::Geometry::SPLIT_3X4:
+    case InfoBoxSettings::Geometry::SPLIT_3X5:
     case InfoBoxSettings::Geometry::BOTTOM_RIGHT_8:
     case InfoBoxSettings::Geometry::TOP_LEFT_8:
     case InfoBoxSettings::Geometry::OBSOLETE_SPLIT_8:
@@ -434,11 +468,13 @@ InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
     case InfoBoxSettings::Geometry::SPLIT_8:
     case InfoBoxSettings::Geometry::SPLIT_10:
     case InfoBoxSettings::Geometry::SPLIT_3X4:
+    case InfoBoxSettings::Geometry::SPLIT_3X5:
     case InfoBoxSettings::Geometry::BOTTOM_RIGHT_8:
     case InfoBoxSettings::Geometry::TOP_LEFT_8:
     case InfoBoxSettings::Geometry::OBSOLETE_SPLIT_8:
     case InfoBoxSettings::Geometry::OBSOLETE_TOP_LEFT_8:
     case InfoBoxSettings::Geometry::OBSOLETE_BOTTOM_RIGHT_8:
+    case InfoBoxSettings::Geometry::RIGHT_24:
       break;
 
     case InfoBoxSettings::Geometry::RIGHT_9_VARIO:
@@ -450,9 +486,6 @@ InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
       break;
 
     case InfoBoxSettings::Geometry::RIGHT_16:
-      return InfoBoxSettings::Geometry::BOTTOM_RIGHT_12;
-
-    case InfoBoxSettings::Geometry::RIGHT_24:
       return InfoBoxSettings::Geometry::BOTTOM_RIGHT_12;
 
     case InfoBoxSettings::Geometry::OBSOLETE_BOTTOM_RIGHT_12:
@@ -480,7 +513,8 @@ InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
 }
 
 static constexpr unsigned
-CalculateInfoBoxRowHeight(unsigned screen_height, unsigned control_width)
+CalculateInfoBoxRowHeight(unsigned screen_height,
+                          unsigned control_width) noexcept
 {
   return Clamp(unsigned(screen_height / CONTROLHEIGHTRATIO),
                control_width * 5 / 7,
@@ -488,7 +522,8 @@ CalculateInfoBoxRowHeight(unsigned screen_height, unsigned control_width)
 }
 
 static constexpr unsigned
-CalculateInfoBoxColumnWidth(unsigned screen_width, unsigned control_height)
+CalculateInfoBoxColumnWidth(unsigned screen_width,
+                            unsigned control_height) noexcept
 {
   return Clamp(unsigned(screen_width / CONTROLHEIGHTRATIO * 1.3),
                control_height,
@@ -497,7 +532,7 @@ CalculateInfoBoxColumnWidth(unsigned screen_width, unsigned control_height)
 
 void
 InfoBoxLayout::CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
-                                InfoBoxSettings::Geometry geometry)
+                                InfoBoxSettings::Geometry geometry) noexcept
 {
   const bool landscape = screen_size.width > screen_size.height;
 
@@ -523,6 +558,7 @@ InfoBoxLayout::CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
     break;
 
   case InfoBoxSettings::Geometry::SPLIT_3X4:
+  case InfoBoxSettings::Geometry::SPLIT_3X5:
     if (landscape) {
       layout.control_size.height = 3 * screen_size.height / layout.count;
       layout.control_size.width = CalculateInfoBoxColumnWidth(screen_size.width,
@@ -590,8 +626,14 @@ InfoBoxLayout::CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
     break;
 
   case InfoBoxSettings::Geometry::RIGHT_24:
-    layout.control_size.height = screen_size.height / 8;
-    layout.control_size.width = layout.control_size.height * 1.44;
+    if (landscape) {
+      layout.control_size.height = screen_size.height / 8;
+      layout.control_size.width = layout.control_size.height * 1.44;
+    } else {
+      layout.control_size.width = 3 * screen_size.width / layout.count;
+      layout.control_size.height = CalculateInfoBoxRowHeight(screen_size.height,
+                                                             layout.control_size.width);
+    }
     break;
 
   case InfoBoxSettings::Geometry::OBSOLETE_SPLIT_8:
@@ -606,7 +648,7 @@ InfoBoxLayout::CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
 
 int
 InfoBoxLayout::GetBorder(InfoBoxSettings::Geometry geometry, bool landscape,
-                         unsigned i)
+                         unsigned i) noexcept
 {
   unsigned border = 0;
 
@@ -648,6 +690,27 @@ InfoBoxLayout::GetBorder(InfoBoxSettings::Geometry geometry, bool landscape,
         border |= BORDERTOP;
 
       if (i != 3 && i != 7 && i != 11)
+        border |= BORDERRIGHT;
+    }
+
+    break;
+
+  case InfoBoxSettings::Geometry::SPLIT_3X5:
+    if (landscape) {
+      if (i != 4 && i != 9 && i != 14)
+        border |= BORDERBOTTOM;
+
+      if (i < 10)
+        border |= BORDERRIGHT;
+      else
+        border |= BORDERLEFT;
+    } else {
+      if (i < 10)
+        border |= BORDERBOTTOM;
+      else
+        border |= BORDERTOP;
+
+      if (i != 4 && i != 9 && i != 14)
         border |= BORDERRIGHT;
     }
 
@@ -808,9 +871,16 @@ InfoBoxLayout::GetBorder(InfoBoxSettings::Geometry geometry, bool landscape,
     break;
 
   case InfoBoxSettings::Geometry::RIGHT_24:
-    if (i % 8 != 0)
+    if (landscape) {
+      if (i % 8 != 0)
+        border |= BORDERTOP;
+      border |= BORDERLEFT;
+    } else {
       border |= BORDERTOP;
-    border |= BORDERLEFT;
+
+      if (i != 7 && i != 15 && i != 23)
+        border |= BORDERRIGHT;
+    }
     break;
 
   case InfoBoxSettings::Geometry::OBSOLETE_SPLIT_8:

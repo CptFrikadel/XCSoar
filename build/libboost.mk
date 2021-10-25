@@ -1,6 +1,6 @@
-BOOST_URL = https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2
-BOOST_ALTERNATIVE_URL = https://sourceforge.net/projects/boost/files/boost/1.75.0/boost_1_75_0.tar.bz2/download
-BOOST_MD5 = 953db31e016db7bb207f11432bef7df100516eeb746843fa0486a222e3fd49cb
+BOOST_URL = https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.bz2
+BOOST_ALTERNATIVE_URL = https://sourceforge.net/projects/boost/files/boost/1.77.0/boost_1_77_0.tar.bz2/download
+BOOST_MD5 = fc9f85fc030e233142908241af7a846e60630aa7388de9a5fafb1f3a26840854
 
 BOOST_TARBALL_NAME = $(notdir $(BOOST_URL))
 BOOST_TARBALL = $(DOWNLOAD_DIR)/$(BOOST_TARBALL_NAME)

@@ -83,15 +83,19 @@ Canvas::InvertRectangle(PixelRect r)
 }
 
 static TStringView
-ClipText(TStringView text, int x, unsigned canvas_width) noexcept
+ClipText(const Font &font, TStringView text,
+         int x, unsigned canvas_width) noexcept
 {
   if (text.empty() || x >= int(canvas_width))
     return nullptr;
 
-  unsigned max_width = canvas_width - x;
-  unsigned max_chars = max_width / 8u; // TODO: use real font width?
+  /* this is an approximation, just good enough for clipping */
+  unsigned font_width = std::max(font.GetHeight() / 4U, 1U);
 
-  text.size = TruncateStringUTF8(text.data, max_chars, text.size);
+  unsigned max_width = canvas_width - x;
+  unsigned max_chars = max_width / font_width;
+
+  text.size = TruncateStringUTF8(text, max_chars);
   return text;
 }
 
@@ -576,7 +580,7 @@ Canvas::DrawText(PixelPoint p, BasicStringView<TCHAR> text) noexcept
   if (font == nullptr)
     return;
 
-  const StringView text3 = ClipText(text2, p.x, size.width);
+  const StringView text3 = ClipText(*font, text2, p.x, size.width);
   if (text3.empty())
     return;
 
@@ -613,7 +617,7 @@ Canvas::DrawTransparentText(PixelPoint p, BasicStringView<TCHAR> text) noexcept
   if (font == nullptr)
     return;
 
-  const StringView text3 = ClipText(text2, p.x, size.width);
+  const StringView text3 = ClipText(*font, text2, p.x, size.width);
   if (text3.empty())
     return;
 
@@ -648,7 +652,7 @@ Canvas::DrawClippedText(PixelPoint p, PixelSize size,
   if (font == nullptr)
     return;
 
-  const StringView text3 = ClipText(text2, 0, size.width);
+  const StringView text3 = ClipText(*font, text2, 0, size.width);
   if (text3.empty())
     return;
 
@@ -763,8 +767,7 @@ Canvas::StretchMono(PixelPoint dest_position, PixelSize dest_size,
      implementation will be faster when erasing the background
      again */
 
-  OpenGL::alpha_shader->Use();
-  fg_color.Bind();
+  PrepareColoredAlphaTexture(fg_color);
 
   const ScopeAlphaBlend alpha_blend;
 

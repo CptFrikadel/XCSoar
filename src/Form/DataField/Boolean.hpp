@@ -37,38 +37,38 @@ private:
 public:
   DataFieldBoolean(bool _value,
                    const TCHAR *_true_text, const TCHAR *_false_text,
-                   DataFieldListener *listener=nullptr)
+                   DataFieldListener *listener=nullptr) noexcept
     :DataField(Type::BOOLEAN, true, listener),
      mValue(_value),
      true_text(_true_text), false_text(_false_text) {}
 
-  void Set(bool Value);
-
-  bool GetAsBoolean() const {
+  bool GetValue() const noexcept {
     return mValue;
   }
 
-  void SetAsBoolean(bool Value);
+  void SetValue(bool new_value) noexcept {
+    mValue = new_value;
+  }
 
-  void Set(int Value) {
-    if (Value > 0)
-      Set(true);
-    else
-      Set(false);
+  void ModifyValue(bool new_value) noexcept {
+    if (new_value != GetValue()) {
+      SetValue(new_value);
+      Modified();
+    }
   }
 
   /* virtual methods from class DataField */
-  void Inc() override;
-  void Dec() override;
-  int GetAsInteger() const override;
-  const TCHAR *GetAsString() const override;
-  void SetAsInteger(int Value) override;
-  void SetAsString(const TCHAR *Value) override;
-  ComboList CreateComboList(const TCHAR *reference) const override;
+  void Inc() noexcept override;
+  void Dec() noexcept override;
+  int GetAsInteger() const noexcept override;
+  const TCHAR *GetAsString() const noexcept override;
+  void SetAsInteger(int Value) noexcept override;
+  void SetAsString(const TCHAR *Value) noexcept override;
+  ComboList CreateComboList(const TCHAR *reference) const noexcept override;
 
 private:
-  gcc_pure
-  bool ParseString(const TCHAR *s) const;
+  [[gnu::pure]]
+  bool ParseString(const TCHAR *s) const noexcept;
 };
 
 #endif

@@ -39,14 +39,14 @@ public:
 private:
   DeviceConfig config;
 
-  Listener *listener;
+  Listener *listener = nullptr;
 
 public:
   DeviceEditWidget(const DeviceConfig &_config) noexcept;
 
   void SetListener(Listener *_listener) noexcept {
-    assert(listener == NULL);
-    assert(_listener != NULL);
+    assert(listener == nullptr);
+    assert(_listener != nullptr);
 
     listener = _listener;
   }
@@ -68,7 +68,7 @@ public:
 
 private:
   /* virtual methods from DataFieldListener */
-  virtual void OnModified(DataField &df) override;
+  void OnModified(DataField &df) noexcept override;
 };
 
 #endif

@@ -24,14 +24,15 @@ Copyright_License {
 #ifndef XCSOAR_SCREEN_WINDOW_HPP
 #define XCSOAR_SCREEN_WINDOW_HPP
 
+#include "Features.hpp"
 #include "ui/dim/Rect.hpp"
-#include "Screen/Features.hpp"
 #include "util/Compiler.h"
 
 #include <cassert>
 
 #ifdef USE_WINUSER
-#include <windows.h>
+#include <windef.h> // for HWND (needed by winuser.h)
+#include <winuser.h>
 #else
 #include <boost/intrusive/list_hook.hpp>
 #endif

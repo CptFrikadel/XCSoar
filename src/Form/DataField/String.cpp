@@ -24,23 +24,29 @@ Copyright_License {
 #include "String.hpp"
 
 void
-DataFieldString::SetAsString(const TCHAR *Value)
+DataFieldString::ModifyValue(const TCHAR *new_value) noexcept
 {
-  if (mValue == Value)
+  if (new_value == mValue)
     return;
 
-  mValue = Value;
+  SetValue(new_value);
   Modified();
 }
 
 void
-DataFieldString::Set(const TCHAR *Value)
+DataFieldString::SetAsString(const TCHAR *Value) noexcept
+{
+  ModifyValue(Value);
+}
+
+void
+DataFieldString::SetValue(const TCHAR *Value) noexcept
 {
   mValue = Value;
 }
 
 const TCHAR *
-DataFieldString::GetAsString() const
+DataFieldString::GetAsString() const noexcept
 {
-  return mValue;
+  return GetValue();
 }

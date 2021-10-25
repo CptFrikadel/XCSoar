@@ -20,7 +20,7 @@ ifeq ($(HOST_IS_PI)$(TARGET_IS_PI),ny)
   PKG_CONFIG := PKG_CONFIG_LIBDIR=$(PI)/usr/lib/arm-linux-gnueabihf/pkgconfig $(PKG_CONFIG) --define-variable=prefix=$(PI)/usr
 endif
 
-ifeq ($(HOST_IS_ARM)$(TARGET_HAS_MALI),ny)
+ifeq ($(HOST_IS_ARM)$(TARGET_IS_CUBIE),ny)
   PKG_CONFIG := PKG_CONFIG_LIBDIR=$(CUBIE)/usr/lib/arm-linux-gnueabihf/pkgconfig $(PKG_CONFIG) --define-variable=prefix=$(CUBIE)/usr
 endif
 
@@ -30,7 +30,13 @@ define assign-check-error
 $(1) = $$($(2))$$(if $$(filter ERROR,$$($(2))),$$(error $(3)))
 endef
 
+ifeq ($(TARGET_IS_KOBO),y)
+# No -isystem on the Kobo because it may break our Musl sysroot
+pkg-config-cppflags-filter = $(1)
+else
 pkg-config-cppflags-filter = $(patsubst -I%,-isystem %,$(1))
+endif
+
 pkg-config-ldlibs-filter = $(1)
 
 # Generates a pkg-config lookup for a library.

@@ -26,16 +26,15 @@ Copyright_License {
 
 #include <type_traits>
 #include <cmath>
-#include <cstdlib>
 
 template<typename T, typename PT=T>
 struct Point2D {
-  typedef T scalar_type;
+  using scalar_type = T;
 
   /**
    * Type to be used by vector math.
    */
-  typedef PT product_type;
+  using product_type = PT;
 
   scalar_type x, y;
 
@@ -43,6 +42,15 @@ struct Point2D {
 
   constexpr Point2D(scalar_type _x, scalar_type _y) noexcept
     :x(_x), y(_y) {}
+
+  /**
+   * This constructor allows casting from a different Point2D
+   * template instantiation.
+   */
+  template<typename OT, typename OPT>
+  explicit constexpr Point2D(const Point2D<OT, OPT> &src) noexcept
+    :x(static_cast<scalar_type>(src.x)),
+     y(static_cast<scalar_type>(src.y)) {}
 
   constexpr bool operator==(const Point2D<T, PT> &other) const noexcept {
     return x == other.x && y == other.y;
@@ -72,6 +80,10 @@ struct Point2D {
     return *this;
   }
 
+  constexpr product_type Area() const noexcept {
+    return product_type(x) * product_type(y);
+  }
+
   constexpr product_type MagnitudeSquared() const noexcept {
     return PT(x) * PT(x) + PT(y) * PT(y);
   }
@@ -87,12 +99,7 @@ struct UnsignedPoint2D : Point2D<unsigned> {
 
 static_assert(std::is_trivial<UnsignedPoint2D>::value, "type is not trivial");
 
-struct IntPoint2D : Point2D<int> {
-  IntPoint2D() = default;
-  using Point2D::Point2D;
-};
-
-static_assert(std::is_trivial<IntPoint2D>::value, "type is not trivial");
+using IntPoint2D = Point2D<int>;
 
 struct DoublePoint2D : Point2D<double> {
   DoublePoint2D() = default;
@@ -185,7 +192,13 @@ template<typename P, typename RT=typename P::scalar_type,
 constexpr RT
 ManhattanDistance(P a, P b) noexcept
 {
-  return std::abs(a.x - b.x) + std::abs(a.y - b.y);
+  /* this function is similar to std::abs(), but is constexpr and
+     works with unsigned types */
+  auto AbsoluteDifference = [](RT a, RT b) -> RT {
+    return a < b ? b - a : a - b;
+  };
+
+  return AbsoluteDifference(a.x, b.x) + AbsoluteDifference(a.y, b.y);
 }
 
 #endif

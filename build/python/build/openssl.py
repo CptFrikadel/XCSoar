@@ -17,7 +17,13 @@ class OpenSSLProject(MakeProject):
             'build_libs',
         ]
 
-    def build(self, toolchain):
+    def get_make_install_args(self, toolchain):
+        # OpenSSL's Makefile runs "ranlib" during installation
+        return MakeProject.get_make_install_args(self, toolchain) + [
+            'RANLIB=' + toolchain.ranlib,
+        ]
+
+    def _build(self, toolchain):
         src = self.unpack(toolchain, out_of_tree=False)
 
         # OpenSSL has a weird target architecture scheme with lots of
@@ -28,7 +34,7 @@ class OpenSSLProject(MakeProject):
             # to know where the SDK is, but our own build scripts
             # prepared everything already to look like a regular Linux
             # build
-            'arm-linux-androideabi': 'linux-generic32',
+            'armv7a-linux-androideabi': 'linux-generic32',
             'aarch64-linux-android': 'linux-aarch64',
             'i686-linux-android': 'linux-x86-clang',
             'x86_64-linux-android': 'linux-x86_64-clang',
@@ -39,9 +45,13 @@ class OpenSSLProject(MakeProject):
             # Windows
             'i686-w64-mingw32': 'mingw',
             'x86_64-w64-mingw32': 'mingw64',
+
+            # Apple
+            'x86_64-apple-darwin': 'darwin64-x86_64-cc',
         }
 
         openssl_arch = openssl_archs[toolchain.toolchain_arch]
+        cross_compile_prefix = toolchain.toolchain_arch + '-'
 
         subprocess.check_call(['./Configure',
                                'no-shared',
@@ -50,6 +60,8 @@ class OpenSSLProject(MakeProject):
                                'no-tests',
                                'no-asm', # "asm" causes build failures on Windows
                                openssl_arch,
+                               '--cross-compile-prefix=' + cross_compile_prefix,
+                               '--libdir=lib', # no "lib64" on amd64, please
                                '--prefix=' + toolchain.install_prefix],
                               cwd=src, env=toolchain.env)
-        MakeProject.build(self, toolchain, src)
+        self.build_make(toolchain, src)

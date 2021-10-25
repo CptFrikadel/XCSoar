@@ -1,25 +1,27 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 export DEBIAN_FRONTEND=noninteractive
-APTOPTS="--assume-yes --no-install-recommends"
+declare -A APTOPTS
+APTOPTS[1]="--assume-yes"
+APTOPTS[2]="--no-install-recommends"
 
 echo Updating Repositories
 apt-get update
 
 echo Installing base dependencies...
-apt-get install $APTOPTS make \
+apt-get install ${APTOPTS[*]} make \
   librsvg2-bin xsltproc \
   imagemagick gettext ffmpeg \
   git quilt zip \
   m4 automake wget \
   ttf-bitstream-vera fakeroot \
-  pkg-config cmake ninja-build
+  pkg-config cmake ninja-build ccache
 echo
 
 echo Installing Manual dependencies...
-apt-get install $APTOPTS texlive \
+apt-get install ${APTOPTS[*]} texlive \
   texlive-latex-extra \
   texlive-luatex \
   texlive-lang-french \
@@ -30,7 +32,7 @@ apt-get install $APTOPTS texlive \
 echo
 
 echo Installing dependencies for the Linux target...
-apt-get install $APTOPTS make g++ \
+apt-get install ${APTOPTS[*]} make g++ \
   zlib1g-dev \
   libsodium-dev \
   libfreetype6-dev \
@@ -38,7 +40,7 @@ apt-get install $APTOPTS make g++ \
   libtiff5-dev libgeotiff-dev \
   libcurl4-openssl-dev \
   libc-ares-dev \
-  liblua5.2-dev lua5.2-dev \
+  liblua5.4-dev \
   libxml-parser-perl \
   libasound2-dev \
   libsdl2-dev \
@@ -49,24 +51,35 @@ apt-get install $APTOPTS make g++ \
   xz-utils
 echo
 
+echo Installing dependencies for creating Debian package
+  apt-get install ${APTOPTS[*]} dpkg-dev \
+    debhelper \
+    texlive-lang-english \
+    libio-captureoutput-perl \
+    build-essential 
+echo
+
 echo Installing dependencies for compiling with LLVM / Clang...
-apt-get install $APTOPTS llvm clang libc++-dev
+apt-get install ${APTOPTS[*]} llvm clang libc++-dev
 echo
 
 echo Installing dependencies for compiling targets which need libinput or GBM...
-apt-get install $APTOPTS libinput-dev libgbm-dev
+apt-get install ${APTOPTS[*]} libinput-dev libgbm-dev
 echo
 
 echo Installing dependencies for ARM Linux targets...
-apt-get install $APTOPTS g++-arm-linux-gnueabihf
+apt-get install ${APTOPTS[*]} g++-arm-linux-gnueabihf \
+  libmpc-dev \
+  gmpc-dev \
+  meson
 echo
 
 echo Installing PC/WIN64 dependencies...
-apt-get install $APTOPTS g++-mingw-w64
+apt-get install ${APTOPTS[*]} g++-mingw-w64
 echo
 
 echo Installing dependencies for the Android target, not including SDK / NDK...
-apt-get install $APTOPTS openjdk-8-jdk-headless vorbis-tools adb libtool unzip
+apt-get install ${APTOPTS[*]} openjdk-11-jdk-headless vorbis-tools adb libtool unzip
 echo
 
 echo Clean up downloaded resources in order to free space

@@ -29,41 +29,36 @@ Copyright_License {
 #include <cassert>
 
 void
-RasterMap::UpdateProjection()
+RasterMap::UpdateProjection() noexcept
 {
-  projection.Set(GetBounds(),
-                 raster_tile_cache.GetFineWidth(),
-                 raster_tile_cache.GetFineHeight());
+  projection.Set(GetBounds(), raster_tile_cache.GetFineSize());
 }
 
-bool
-RasterMap::LoadCache(FILE *file)
+void
+RasterMap::LoadCache(BufferedReader &r)
 {
-  bool success = raster_tile_cache.LoadCache(file);
-  if (success)
-    UpdateProjection();
-
-  return success;
+  raster_tile_cache.LoadCache(r);
+  UpdateProjection();
 }
 
 TerrainHeight
-RasterMap::GetHeight(const GeoPoint &location) const
+RasterMap::GetHeight(const GeoPoint &location) const noexcept
 {
   const auto pt = projection.ProjectCoarse(location);
-  return raster_tile_cache.GetHeight(pt.x, pt.y);
+  return raster_tile_cache.GetHeight(pt);
 }
 
 TerrainHeight
-RasterMap::GetInterpolatedHeight(const GeoPoint &location) const
+RasterMap::GetInterpolatedHeight(const GeoPoint &location) const noexcept
 {
   const auto pt = projection.ProjectFine(location);
-  return raster_tile_cache.GetInterpolatedHeight(pt.x, pt.y);
+  return raster_tile_cache.GetInterpolatedHeight(pt);
 }
 
 void
 RasterMap::ScanLine(const GeoPoint &start, const GeoPoint &end,
                     TerrainHeight *buffer, unsigned size,
-                    bool interpolate) const
+                    bool interpolate) const noexcept
 {
   assert(buffer != nullptr);
   assert(size > 0);
@@ -113,20 +108,19 @@ RasterMap::ScanLine(const GeoPoint &start, const GeoPoint &end,
 
   /* now scan the middle part which is within the map */
 
-  const unsigned max_x = raster_tile_cache.GetFineWidth();
-  const unsigned max_y = raster_tile_cache.GetFineHeight();
+  const auto fine_size = raster_tile_cache.GetFineSize();
 
   RasterLocation raster_start = projection.ProjectFine(clipped_start);
-  if (raster_start.x >= max_x)
-    raster_start.x = max_x - 1;
-  if (raster_start.y >= max_y)
-    raster_start.y = max_y - 1;
+  if (raster_start.x >= fine_size.x)
+    raster_start.x = fine_size.x - 1;
+  if (raster_start.y >= fine_size.y)
+    raster_start.y = fine_size.y - 1;
 
   RasterLocation raster_end = projection.ProjectFine(clipped_end);
-  if (raster_end.x >= max_x)
-    raster_end.x = max_x - 1;
-  if (raster_end.y >= max_y)
-    raster_end.y = max_y - 1;
+  if (raster_end.x >= fine_size.x)
+    raster_end.x = fine_size.x - 1;
+  if (raster_end.y >= fine_size.y)
+    raster_end.y = fine_size.y - 1;
 
   raster_tile_cache.ScanLine(raster_start, raster_end,
                              buffer + clipped_start_offset,
@@ -139,7 +133,7 @@ RasterMap::FirstIntersection(const GeoPoint &origin, const int h_origin,
                              const GeoPoint &destination, const int h_destination,
                              const int h_virt, const int h_ceiling,
                              const int h_safety,
-                             GeoPoint &intx, int &h) const
+                             GeoPoint &intx, int &h) const noexcept
 {
   const auto c_origin = projection.ProjectCoarseRound(origin);
   const auto c_destination = projection.ProjectCoarseRound(destination);
@@ -178,7 +172,7 @@ GeoPoint
 RasterMap::Intersection(const GeoPoint& origin,
                         const int h_origin, const int h_glide,
                         const GeoPoint& destination,
-                        const int height_floor) const
+                        const int height_floor) const noexcept
 {
   const auto c_origin = projection.ProjectCoarseRound(origin);
   const auto c_destination = projection.ProjectCoarseRound(destination);

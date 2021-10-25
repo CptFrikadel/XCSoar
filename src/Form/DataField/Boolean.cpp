@@ -25,13 +25,13 @@ Copyright_License {
 #include "ComboList.hpp"
 
 bool
-DataFieldBoolean::ParseString(const TCHAR *s) const
+DataFieldBoolean::ParseString(const TCHAR *s) const noexcept
 {
   return true_text.equals(s);
 }
 
 ComboList
-DataFieldBoolean::CreateComboList(const TCHAR *reference) const
+DataFieldBoolean::CreateComboList(const TCHAR *reference) const noexcept
 {
   ComboList combo_list;
   combo_list.Append(false, false_text);
@@ -42,7 +42,7 @@ DataFieldBoolean::CreateComboList(const TCHAR *reference) const
 }
 
 int
-DataFieldBoolean::GetAsInteger() const
+DataFieldBoolean::GetAsInteger() const noexcept
 {
   if (mValue)
     return 1;
@@ -51,48 +51,31 @@ DataFieldBoolean::GetAsInteger() const
 }
 
 const TCHAR *
-DataFieldBoolean::GetAsString() const
+DataFieldBoolean::GetAsString() const noexcept
 {
   return mValue ? true_text : false_text;
 }
 
 void
-DataFieldBoolean::Set(bool Value)
+DataFieldBoolean::SetAsInteger(int Value) noexcept
 {
-  mValue = Value;
+  ModifyValue(Value != 0);
 }
 
 void
-DataFieldBoolean::SetAsBoolean(bool Value)
+DataFieldBoolean::SetAsString(const TCHAR *Value) noexcept
 {
-  if (mValue != Value) {
-    mValue = Value;
-    Modified();
-  }
+  ModifyValue(ParseString(Value));
 }
 
 void
-DataFieldBoolean::SetAsInteger(int Value)
+DataFieldBoolean::Inc() noexcept
 {
-  if (GetAsInteger() != Value) {
-    SetAsBoolean(!(Value == 0));
-  }
+  ModifyValue(true);
 }
 
 void
-DataFieldBoolean::SetAsString(const TCHAR *Value)
+DataFieldBoolean::Dec() noexcept
 {
-  SetAsBoolean(ParseString(Value));
-}
-
-void
-DataFieldBoolean::Inc()
-{
-  SetAsBoolean(true);
-}
-
-void
-DataFieldBoolean::Dec()
-{
-  SetAsBoolean(false);
+  ModifyValue(false);
 }

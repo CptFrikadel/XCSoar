@@ -1,5 +1,11 @@
 FUZZER_SRC_DIR = $(topdir)/fuzzer/src
 
+FUZZ_IGC_PARSER_SOURCES = \
+	$(SRC)/IGC/IGCParser.cpp \
+	$(FUZZER_SRC_DIR)/FuzzIGCParser.cpp
+FUZZ_IGC_PARSER_DEPENDS = IO UTIL
+$(eval $(call link-program,FuzzIGCParser,FUZZ_IGC_PARSER))
+
 FUZZ_WAYPOINT_READER_SOURCES = \
 	$(SRC)/Waypoint/WaypointFileType.cpp \
 	$(SRC)/Waypoint/WaypointReaderBase.cpp \
@@ -32,4 +38,17 @@ FUZZ_AIRSPACE_PARSER_SOURCES = \
 FUZZ_AIRSPACE_PARSER_DEPENDS = IO OS AIRSPACE ZZIP GEO MATH UTIL
 $(eval $(call link-program,FuzzAirspaceParser,FUZZ_AIRSPACE_PARSER))
 
-OUTPUTS += $(FUZZ_WAYPOINT_READER_BIN) $(FUZZ_AIRSPACE_PARSER_BIN)
+FUZZ_TOPOGRAPHY_FILE_SOURCES = \
+	$(SRC)/Topography/TopographyFile.cpp \
+	$(SRC)/Topography/XShape.cpp \
+	$(SRC)/Projection/Projection.cpp \
+	$(SRC)/Projection/WindowProjection.cpp \
+	$(FUZZER_SRC_DIR)/FuzzTopographyFile.cpp
+FUZZ_TOPOGRAPHY_FILE_DEPENDS = SCREEN SHAPELIB ZZIP GEO MATH IO UTIL
+$(eval $(call link-program,FuzzTopographyFile,FUZZ_TOPOGRAPHY_FILE))
+
+OUTPUTS += \
+	$(FUZZ_IGC_PARSER_BIN) \
+	$(FUZZ_WAYPOINT_READER_BIN) \
+	$(FUZZ_AIRSPACE_PARSER_BIN) \
+	$(FUZZ_TOPOGRAPHY_FILE_BIN)

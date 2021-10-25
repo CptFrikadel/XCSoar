@@ -22,6 +22,7 @@ Copyright_License {
 */
 
 #include "ZzipStream.hpp"
+#include "util/RuntimeError.hxx"
 
 #include <zzip/util.h>
 
@@ -52,7 +53,7 @@ jas_zzip_close(jas_stream_obj_t *obj)
 {
   const auto f = (struct zzip_file *)obj;
 
-  return zzip_file_close(f);
+  return zzip_close(f);
 }
 
 static constexpr jas_stream_ops_t zzip_stream_ops = {
@@ -67,12 +68,12 @@ OpenJasperZzipStream(struct zzip_dir *dir, const char *path)
 {
   const auto f = zzip_open_rb(dir, path);
   if (f == nullptr)
-    return nullptr;
+    throw FormatRuntimeError("Failed to open '%s' from map file", path);
 
   jas_stream_t *stream = jas_stream_create();
   if (stream == nullptr) {
-    zzip_file_close(f);
-    return nullptr;
+    zzip_close(f);
+    throw std::runtime_error("jas_stream_create() failed");
   }
 
   stream->openmode_ = JAS_STREAM_READ|JAS_STREAM_BINARY;

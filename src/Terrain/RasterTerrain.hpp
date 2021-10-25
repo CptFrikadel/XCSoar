@@ -29,7 +29,8 @@ Copyright_License {
 #include "thread/Guard.hpp"
 #include "system/Path.hpp"
 #include "io/ZipArchive.hpp"
-#include "util/Compiler.h"
+
+#include <memory>
 
 class FileCache;
 class OperationEnvironment;
@@ -49,49 +50,67 @@ private:
 
   RasterMap map;
 
-private:
+public:
   /**
    * Constructor.  Returns uninitialised object.
    */
-  explicit RasterTerrain(ZipArchive &&_archive)
+  explicit RasterTerrain(ZipArchive &&_archive) noexcept
     :Guard<RasterMap>(map), archive(std::move(_archive)) {}
 
-public:
-  const Serial &GetSerial() const {
+  const Serial &GetSerial() const noexcept {
     return map.GetSerial();
   }
 
   /**
+   * Throws on error.
+   */
+  static std::unique_ptr<RasterTerrain> OpenTerrain(FileCache *cache,
+                                                    Path path,
+                                                    OperationEnvironment &operation);
+
+  /**
    * Load the terrain.  Determines the file to load from profile settings.
    */
-  static RasterTerrain *OpenTerrain(FileCache *cache,
-                                    OperationEnvironment &operation);
+  static std::unique_ptr<RasterTerrain> OpenTerrain(FileCache *cache,
+                                                    OperationEnvironment &operation);
 
-  gcc_pure
-  TerrainHeight GetTerrainHeight(const GeoPoint location) const {
+  [[gnu::pure]]
+  TerrainHeight GetTerrainHeight(const GeoPoint location) const noexcept {
     Lease lease(*this);
     return lease->GetHeight(location);
   }
 
-  GeoPoint GetTerrainCenter() const {
+  GeoPoint GetTerrainCenter() const noexcept {
     return map.GetMapCenter();
   }
 
   /**
    * @return true if the method shall be called again
    */
-  bool UpdateTiles(const GeoPoint &location, double radius);
+  bool UpdateTiles(const GeoPoint &location, double radius) noexcept;
 
 private:
+  /**
+   * Throws on error.
+   */
   bool LoadCache(FileCache &cache, Path path);
 
+  /**
+   * Throws on error.
+   */
   bool LoadCache(FileCache *cache, Path path) {
     return cache != nullptr && LoadCache(*cache, path);
   }
 
-  bool SaveCache(FileCache &cache, Path path) const;
+  /**
+   * Throws on error.
+   */
+  void SaveCache(FileCache &cache, Path path) const;
 
-  bool Load(Path path, FileCache *cache,
+  /**
+   * Throws on error.
+   */
+  void Load(Path path, FileCache *cache,
             OperationEnvironment &operation);
 };
 

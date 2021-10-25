@@ -36,28 +36,33 @@ class GeoPointDataField final : public DataField {
 
   const CoordinateFormat format;
 
+  /**
+   * For GetAsString().  Must be mutable because the method is const.
+   */
+  mutable TCHAR string_buffer[64];
+
 public:
   GeoPointDataField(GeoPoint _value, CoordinateFormat _format,
-                    DataFieldListener *listener=nullptr)
+                    DataFieldListener *listener=nullptr) noexcept
     :DataField(Type::GEOPOINT, false, listener),
      value(_value), format(_format) {}
 
-  CoordinateFormat GetFormat() const {
+  CoordinateFormat GetFormat() const noexcept {
     return format;
   }
 
-  GeoPoint GetValue() const {
+  GeoPoint GetValue() const noexcept {
     return value;
   }
 
-  void SetValue(GeoPoint _value) {
+  void SetValue(GeoPoint _value) noexcept {
     value = _value;
   }
 
-  void ModifyValue(GeoPoint _value);
+  void ModifyValue(GeoPoint _value) noexcept;
 
   /* virtual methods from class DataField */
-  const TCHAR *GetAsString() const override;
+  const TCHAR *GetAsString() const noexcept override;
 };
 
 #endif

@@ -25,6 +25,7 @@ Copyright_License {
 #include "ChartRenderer.hpp"
 #include "Look/MapLook.hpp"
 #include "Task/ProtectedTaskManager.hpp"
+#include "Engine/Waypoint/Waypoint.hpp"
 #include "Engine/Task/TaskManager.hpp"
 #include "Engine/Task/Ordered/OrderedTask.hpp"
 #include "ui/canvas/Canvas.hpp"
@@ -85,13 +86,13 @@ FlightStatisticsRenderer::DrawContestTriangle(Canvas &canvas, const Projection &
 }
 
 void
-FlightStatisticsRenderer::RenderOLC(Canvas &canvas, const PixelRect rc,
-                                    const NMEAInfo &nmea_info,
-                                    const ComputerSettings &settings_computer,
-                                    const MapSettings &settings_map,
-                                    const ContestStatistics &contest,
-                                    const TraceComputer &trace_computer,
-                                    const Retrospective &retrospective) const
+FlightStatisticsRenderer::RenderContest(Canvas &canvas, const PixelRect rc,
+                                        const NMEAInfo &nmea_info,
+                                        const ComputerSettings &settings_computer,
+                                        const MapSettings &settings_map,
+                                        const ContestStatistics &contest,
+                                        const TraceComputer &trace_computer,
+                                        const Retrospective &retrospective) const
 {
   ChartRenderer chart(chart_look, canvas, rc);
   chart.Begin();
@@ -162,6 +163,18 @@ FlightStatisticsRenderer::RenderOLC(Canvas &canvas, const PixelRect rc,
     DrawContestSolution(canvas, proj, contest, 0);
     DrawContestTriangle(canvas, proj, contest, 1);
     break;
+
+  case Contest::WEGLIDE_FREE:
+    DrawContestSolution(canvas, proj, contest, 0);
+    break;
+
+  case Contest::WEGLIDE_DISTANCE:
+  case Contest::WEGLIDE_FAI:
+
+  case Contest::WEGLIDE_OR:
+    DrawContestSolution(canvas, proj, contest, 0);
+    break;
+
   }
 
   RenderMapScale(canvas, proj, rc_chart, map_look.overlay);
@@ -170,9 +183,9 @@ FlightStatisticsRenderer::RenderOLC(Canvas &canvas, const PixelRect rc,
 }
 
 void
-FlightStatisticsRenderer::CaptionOLC(TCHAR *sTmp,
-                                     const ContestSettings &settings,
-                                     const DerivedInfo &derived)
+FlightStatisticsRenderer::CaptionContest(TCHAR *sTmp,
+                                         const ContestSettings &settings,
+                                         const DerivedInfo &derived)
 {
   if (settings.contest == Contest::OLC_PLUS) {
     const ContestResult& result =
@@ -193,7 +206,7 @@ FlightStatisticsRenderer::CaptionOLC(TCHAR *sTmp,
                        FormatUserDistanceSmart(result_fai.distance).c_str(),
                        _("Score"), (double)result.score, _("pts"),
                        _("Time"),
-                       FormatSignedTimeHHMM((int)result.time).c_str(),
+                       FormatSignedTimeHHMM(result.time).c_str(),
                        _("Speed"), FormatUserTaskSpeed(result.GetSpeed()).c_str());
   } else if (settings.contest == Contest::DHV_XC ||
              settings.contest == Contest::XCONTEST) {
@@ -212,7 +225,7 @@ FlightStatisticsRenderer::CaptionOLC(TCHAR *sTmp,
                        FormatUserDistanceSmart(result_triangle.distance).c_str(),
                        _("Score"), (double)result_free.score, _("pts"),
                        _("Time"),
-                       FormatSignedTimeHHMM((int)result_free.time).c_str(),
+                       FormatSignedTimeHHMM(result_free.time).c_str(),
                        _("Speed"),
                        FormatUserTaskSpeed(result_free.GetSpeed()).c_str());
   } else {
@@ -238,7 +251,7 @@ FlightStatisticsRenderer::CaptionOLC(TCHAR *sTmp,
                        FormatUserDistanceSmart(result_olc.distance).c_str(),
                        _("Score"), (double)result_olc.score, _("pts"),
                        _("Time"),
-                       FormatSignedTimeHHMM((int)result_olc.time).c_str(),
+                       FormatSignedTimeHHMM(result_olc.time).c_str(),
                        _("Speed"),
                        FormatUserTaskSpeed(result_olc.GetSpeed()).c_str());
   }
@@ -281,7 +294,7 @@ FlightStatisticsRenderer::RenderTask(Canvas &canvas, const PixelRect rc,
   }
 
   if (trace_computer != nullptr)
-    trail_renderer.Draw(canvas, *trace_computer, proj, 0);
+    trail_renderer.Draw(canvas, *trace_computer, proj);
 
   if (nmea_info.location_available) {
     auto aircraft_pos = proj.GeoToScreen(nmea_info.location);
@@ -306,8 +319,8 @@ FlightStatisticsRenderer::CaptionTask(TCHAR *sTmp, const DerivedInfo &derived)
   } else {
     const auto d_remaining = derived.task_stats.total.remaining.GetDistance();
     if (task_stats.has_targets) {
-      const auto timetext1 = FormatSignedTimeHHMM((int)task_stats.total.time_remaining_start);
-      const auto timetext2 = FormatSignedTimeHHMM((int)common.aat_time_remaining);
+      const auto timetext1 = FormatSignedTimeHHMM(task_stats.total.time_remaining_start);
+      const auto timetext2 = FormatSignedTimeHHMM(common.aat_time_remaining);
 
       if (Layout::landscape) {
         StringFormatUnsafe(sTmp,
@@ -334,7 +347,7 @@ FlightStatisticsRenderer::CaptionTask(TCHAR *sTmp, const DerivedInfo &derived)
     } else {
       StringFormatUnsafe(sTmp, _T("%s: %s\r\n%s: %5.0f %s\r\n"),
                          _("Task to go"),
-                         FormatSignedTimeHHMM((int)task_stats.total.time_remaining_now).c_str(),
+                         FormatSignedTimeHHMM(task_stats.total.time_remaining_now).c_str(),
                          _("Distance to go"),
                          (double)Units::ToUserDistance(d_remaining),
                          Units::GetDistanceName());

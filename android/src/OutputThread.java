@@ -45,7 +45,7 @@ class OutputThread extends Thread {
   int head, tail;
 
   OutputThread(String _name, OutputStream _os) {
-    super("InputThread " + _name);
+    super("OutputThread " + _name);
 
     name = _name;
     os = _os;
@@ -69,9 +69,16 @@ class OutputThread extends Thread {
   }
 
   synchronized boolean drain() {
+    final long TIMEOUT = 5000;
+    final long waitUntil = System.currentTimeMillis() + TIMEOUT;
+
     while (os != null && head < tail) {
+      final long timeToWait = waitUntil - System.currentTimeMillis();
+      if (timeToWait <= 0)
+        return false;
+
       try {
-        wait();
+        wait(timeToWait);
       } catch (InterruptedException e) {
         return false;
       }

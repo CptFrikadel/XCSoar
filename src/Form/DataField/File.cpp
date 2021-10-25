@@ -38,9 +38,9 @@ Copyright_License {
  * @param str The string to check
  * @return True if string equals a xcsoar internal file's filename
  */
-gcc_pure
+[[gnu::pure]]
 static bool
-IsInternalFile(const TCHAR* str)
+IsInternalFile(const TCHAR *str) noexcept
 {
   static const TCHAR *const ifiles[] = {
     _T("xcsoar-checklist.txt"),
@@ -67,7 +67,8 @@ private:
   FileDataField &datafield;
 
 public:
-  FileVisitor(FileDataField &_datafield) : datafield(_datafield) {}
+  explicit FileVisitor(FileDataField &_datafield) noexcept
+    : datafield(_datafield) {}
 
   void Visit(Path path, Path filename) override {
     if (!IsInternalFile(filename.c_str()))
@@ -76,7 +77,7 @@ public:
 };
 
 inline void
-FileDataField::Item::Set(Path _path)
+FileDataField::Item::Set(Path _path) noexcept
 {
   path = _path;
   filename = path.GetBase();
@@ -84,7 +85,7 @@ FileDataField::Item::Set(Path _path)
     filename = path;
 }
 
-FileDataField::FileDataField(DataFieldListener *listener)
+FileDataField::FileDataField(DataFieldListener *listener) noexcept
   :DataField(Type::FILE, true, listener),
    // Set selection to zero
    current_index(0),
@@ -92,22 +93,22 @@ FileDataField::FileDataField(DataFieldListener *listener)
    postponed_value(nullptr) {}
 
 int
-FileDataField::GetAsInteger() const
+FileDataField::GetAsInteger() const noexcept
 {
-  if (!postponed_value.IsNull())
+  if (postponed_value != nullptr)
     EnsureLoadedDeconst();
 
   return current_index;
 }
 
 void
-FileDataField::SetAsInteger(int new_value)
+FileDataField::SetAsInteger(int new_value) noexcept
 {
-  Set(new_value);
+  ModifyIndex(new_value);
 }
 
 void
-FileDataField::ScanDirectoryTop(const TCHAR *filter)
+FileDataField::ScanDirectoryTop(const TCHAR *filter) noexcept
 {
   if (!loaded) {
     if (!postponed_patterns.full() &&
@@ -125,7 +126,7 @@ FileDataField::ScanDirectoryTop(const TCHAR *filter)
 }
 
 void
-FileDataField::ScanMultiplePatterns(const TCHAR *patterns)
+FileDataField::ScanMultiplePatterns(const TCHAR *patterns) noexcept
 {
   size_t length;
   while ((length = _tcslen(patterns)) > 0) {
@@ -135,7 +136,7 @@ FileDataField::ScanMultiplePatterns(const TCHAR *patterns)
 }
 
 int
-FileDataField::Find(Path path) const
+FileDataField::Find(Path path) const noexcept
 {
   for (unsigned i = 0, n = files.size(); i < n; i++)
     if (files[i].path == path)
@@ -145,7 +146,7 @@ FileDataField::Find(Path path) const
 }
 
 void
-FileDataField::Lookup(Path text)
+FileDataField::SetValue(Path text) noexcept
 {
   if (!loaded) {
     postponed_value = text;
@@ -158,7 +159,26 @@ FileDataField::Lookup(Path text)
 }
 
 void
-FileDataField::ForceModify(Path path)
+FileDataField::ModifyValue(Path new_value) noexcept
+{
+  if (new_value == GetValue())
+    return;
+
+  if (!loaded) {
+    postponed_value = new_value;
+    Modified();
+    return;
+  }
+
+  auto i = Find(new_value);
+  if (i >= 0) {
+    current_index = i;
+    Modified();
+  }
+}
+
+void
+FileDataField::ForceModify(Path path) noexcept
 {
   EnsureLoaded();
 
@@ -177,7 +197,7 @@ FileDataField::ForceModify(Path path)
 }
 
 unsigned
-FileDataField::GetNumFiles() const
+FileDataField::GetNumFiles() const noexcept
 {
   EnsureLoadedDeconst();
 
@@ -185,7 +205,7 @@ FileDataField::GetNumFiles() const
 }
 
 Path
-FileDataField::GetPathFile() const
+FileDataField::GetValue() const noexcept
 {
   if (!loaded && postponed_value != nullptr)
     return postponed_value;
@@ -200,7 +220,7 @@ FileDataField::GetPathFile() const
 }
 
 void
-FileDataField::AddFile(Path path)
+FileDataField::AddFile(Path path) noexcept
 {
   assert(loaded);
 
@@ -215,7 +235,7 @@ FileDataField::AddFile(Path path)
 }
 
 void
-FileDataField::AddNull()
+FileDataField::AddNull() noexcept
 {
   assert(!files.full());
 
@@ -225,7 +245,7 @@ FileDataField::AddNull()
 }
 
 const TCHAR *
-FileDataField::GetAsString() const
+FileDataField::GetAsString() const noexcept
 {
   if (!loaded && postponed_value != nullptr)
     return postponed_value.c_str();
@@ -237,7 +257,7 @@ FileDataField::GetAsString() const
 }
 
 const TCHAR *
-FileDataField::GetAsDisplayString() const
+FileDataField::GetAsDisplayString() const noexcept
 {
   if (!loaded && postponed_value != nullptr) {
     /* get basename from postponed_value */
@@ -255,12 +275,27 @@ FileDataField::GetAsDisplayString() const
 }
 
 void
-FileDataField::Set(unsigned new_value)
+FileDataField::SetIndex(unsigned new_value) noexcept
 {
   if (new_value > 0)
     EnsureLoaded();
   else
     postponed_value = nullptr;
+
+  if (new_value < files.size())
+    current_index = new_value;
+}
+
+void
+FileDataField::ModifyIndex(unsigned new_value) noexcept
+{
+  if (new_value > 0)
+    EnsureLoaded();
+  else
+    postponed_value = nullptr;
+
+  if (new_value == current_index)
+    return;
 
   if (new_value < files.size()) {
     current_index = new_value;
@@ -269,7 +304,7 @@ FileDataField::Set(unsigned new_value)
 }
 
 void
-FileDataField::Inc()
+FileDataField::Inc() noexcept
 {
   EnsureLoaded();
 
@@ -280,7 +315,7 @@ FileDataField::Inc()
 }
 
 void
-FileDataField::Dec()
+FileDataField::Dec() noexcept
 {
   if (current_index > 0) {
     current_index--;
@@ -289,7 +324,7 @@ FileDataField::Dec()
 }
 
 void
-FileDataField::Sort()
+FileDataField::Sort() noexcept
 {
   if (!loaded) {
     postponed_sort = true;
@@ -305,7 +340,7 @@ FileDataField::Sort()
 }
 
 ComboList
-FileDataField::CreateComboList(const TCHAR *reference) const
+FileDataField::CreateComboList(const TCHAR *reference) const noexcept
 {
   /* sorry for the const_cast .. this method keeps the promise of not
      modifying the object, given that one does not count filling the
@@ -351,7 +386,7 @@ FileDataField::CreateComboList(const TCHAR *reference) const
 }
 
 unsigned
-FileDataField::size() const
+FileDataField::size() const noexcept
 {
   EnsureLoadedDeconst();
 
@@ -359,7 +394,7 @@ FileDataField::size() const
 }
 
 Path
-FileDataField::GetItem(unsigned index) const
+FileDataField::GetItem(unsigned index) const noexcept
 {
   EnsureLoadedDeconst();
 
@@ -367,7 +402,7 @@ FileDataField::GetItem(unsigned index) const
 }
 
 void
-FileDataField::EnsureLoaded()
+FileDataField::EnsureLoaded() noexcept
 {
   if (loaded)
     return;
@@ -381,6 +416,6 @@ FileDataField::EnsureLoaded()
   if (postponed_sort)
     Sort();
 
-  if (!postponed_value.IsNull())
-    Lookup(postponed_value);
+  if (postponed_value != nullptr)
+    SetValue(postponed_value);
 }

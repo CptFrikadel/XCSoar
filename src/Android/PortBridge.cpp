@@ -28,7 +28,6 @@ Copyright_License {
 
 #include <string.h>
 
-jmethodID PortBridge::close_method;
 jmethodID PortBridge::setListener_method;
 jmethodID PortBridge::setInputListener_method;
 jmethodID PortBridge::getState_method;
@@ -42,7 +41,6 @@ PortBridge::Initialise(JNIEnv *env)
 {
   Java::Class cls(env, "org/xcsoar/AndroidPort");
 
-  close_method = env->GetMethodID(cls, "close", "()V");
   setListener_method = env->GetMethodID(cls, "setListener",
                                         "(Lorg/xcsoar/PortListener;)V");
   setInputListener_method = env->GetMethodID(cls, "setInputListener",
@@ -55,34 +53,29 @@ PortBridge::Initialise(JNIEnv *env)
 }
 
 PortBridge::PortBridge(JNIEnv *env, jobject obj)
-  :Java::GlobalObject(env, obj) {
-  write_buffer.Set(env, env->NewByteArray(write_buffer_size));
+  :Java::GlobalCloseable(env, obj),
+   write_buffer(env, env->NewByteArray(write_buffer_size))
+{
 }
 
 void
 PortBridge::setListener(JNIEnv *env, PortListener *_listener)
 {
-  jobject listener = _listener != nullptr
-    ? NativePortListener::Create(env, *_listener)
-    : nullptr;
+  auto listener = _listener != nullptr
+    ? Java::LocalObject{env, NativePortListener::Create(env, *_listener)}
+    : Java::LocalObject{};
 
-  env->CallVoidMethod(Get(), setListener_method, listener);
-
-  if (listener != nullptr)
-    env->DeleteLocalRef(listener);
+  env->CallVoidMethod(Get(), setListener_method, listener.Get());
 }
 
 void
 PortBridge::setInputListener(JNIEnv *env, DataHandler *handler)
 {
-  jobject listener = handler != nullptr
-    ? NativeInputListener::Create(env, *handler)
-    : nullptr;
+  auto listener = handler != nullptr
+    ? Java::LocalObject{env, NativeInputListener::Create(env, *handler)}
+    : Java::LocalObject{};
 
-  env->CallVoidMethod(Get(), setInputListener_method, listener);
-
-  if (listener != nullptr)
-    env->DeleteLocalRef(listener);
+  env->CallVoidMethod(Get(), setInputListener_method, listener.Get());
 }
 
 int

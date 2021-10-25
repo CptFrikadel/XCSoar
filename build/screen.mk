@@ -4,11 +4,13 @@ USE_MEMORY_CANVAS ?= n
 
 SCREEN_SRC_DIR = $(SRC)/Screen
 CANVAS_SRC_DIR = $(SRC)/ui/canvas
+CONTROL_SRC_DIR = $(SRC)/ui/control
 WINDOW_SRC_DIR = $(SRC)/ui/window
 
 SCREEN_SOURCES = \
 	$(SCREEN_SRC_DIR)/Debug.cpp \
-	$(SCREEN_SRC_DIR)/ProgressBar.cpp \
+	$(SRC)/Renderer/ProgressBarRenderer.cpp \
+	$(CONTROL_SRC_DIR)/ProgressBar.cpp \
 	$(CANVAS_SRC_DIR)/Ramp.cpp \
 	$(CANVAS_SRC_DIR)/Util.cpp \
 	$(CANVAS_SRC_DIR)/Font.cpp \
@@ -26,7 +28,7 @@ SCREEN_CUSTOM_SOURCES = \
 	$(WINDOW_SRC_DIR)/custom/DoubleClick.cpp \
 	$(CANVAS_SRC_DIR)/custom/GeoBitmap.cpp \
 	$(CANVAS_SRC_DIR)/custom/Pen.cpp \
-	$(SCREEN_SRC_DIR)/Custom/LargeTextWindow.cpp \
+	$(CONTROL_SRC_DIR)/custom/LargeTextWindow.cpp \
 	$(WINDOW_SRC_DIR)/custom/Window.cpp \
 	$(WINDOW_SRC_DIR)/custom/WList.cpp \
 	$(WINDOW_SRC_DIR)/custom/ContainerWindow.cpp \
@@ -99,7 +101,6 @@ SCREEN_SOURCES += \
 	$(CANVAS_SRC_DIR)/opengl/Geo.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Globals.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Extension.cpp \
-	$(CANVAS_SRC_DIR)/opengl/FBO.cpp \
 	$(CANVAS_SRC_DIR)/opengl/VertexArray.cpp \
 	$(CANVAS_SRC_DIR)/opengl/ConstantAlpha.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Bitmap.cpp \
@@ -112,8 +113,8 @@ SCREEN_SOURCES += \
 	$(CANVAS_SRC_DIR)/opengl/UncompressedImage.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Buffer.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Shapes.cpp \
-	$(CANVAS_SRC_DIR)/opengl/Surface.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Shaders.cpp \
+	$(CANVAS_SRC_DIR)/opengl/CanvasRotateShift.cpp \
 	$(CANVAS_SRC_DIR)/opengl/Triangulate.cpp
 endif
 
@@ -194,7 +195,7 @@ SCREEN_SOURCES += \
 	$(WINDOW_SRC_DIR)/gdi/Window.cpp \
 	$(WINDOW_SRC_DIR)/gdi/PaintWindow.cpp \
 	$(WINDOW_SRC_DIR)/gdi/ContainerWindow.cpp \
-	$(SCREEN_SRC_DIR)/GDI/LargeTextWindow.cpp \
+	$(CONTROL_SRC_DIR)/gdi/LargeTextWindow.cpp \
 	$(WINDOW_SRC_DIR)/gdi/SingleWindow.cpp \
 	$(WINDOW_SRC_DIR)/gdi/TopWindow.cpp \
 	$(CANVAS_SRC_DIR)/gdi/Pen.cpp \
@@ -207,7 +208,7 @@ SCREEN_SOURCES += \
 	$(CANVAS_SRC_DIR)/gdi/BufferCanvas.cpp \
 	$(CANVAS_SRC_DIR)/gdi/PaintCanvas.cpp
 GDI_CPPFLAGS = -DUSE_GDI
-GDI_CPPFLAGS += -DUSE_WINUSER
+WINUSER_CPPFLAGS = -DUSE_WINUSER
 GDI_LDLIBS = -luser32 -lgdi32 -lmsimg32 -lgdiplus
 
 ifeq ($(TARGET),PC)
@@ -237,7 +238,7 @@ SCREEN_CPPFLAGS = \
 	$(LINUX_INPUT_CPPFLAGS) \
 	$(LIBINPUT_CPPFLAGS) \
 	$(SDL_CPPFLAGS) \
-	$(GDI_CPPFLAGS) \
+	$(GDI_CPPFLAGS) $(WINUSER_CPPFLAGS) \
 	$(FREETYPE_FEATURE_CPPFLAGS) \
 	$(APPKIT_CPPFLAGS) \
 	$(UIKIT_CPPFLAGS) \

@@ -404,8 +404,8 @@ ChartControl::OnPaint(Canvas &canvas)
     }
     break;
 
-  case AnalysisPage::OLC:
-    fs_renderer.RenderOLC(canvas, rcgfx, basic,
+  case AnalysisPage::CONTEST:
+    fs_renderer.RenderContest(canvas, rcgfx, basic,
                           settings_computer, settings_map,
                           calculated.contest_stats,
                           glide_computer.GetTraceComputer(),
@@ -544,15 +544,15 @@ AnalysisWidget::Update()
     dialog.SetCaption(sTmp);
     FlightStatisticsRenderer::CaptionTask(sTmp, calculated);
     info.SetText(sTmp);
-    SetCalcCaption(_("Task calc"));
+    SetCalcCaption(_("Task Calc"));
     break;
 
-  case AnalysisPage::OLC:
+  case AnalysisPage::CONTEST:
     StringFormatUnsafe(sTmp, _T("%s: %s"), _("Analysis"),
                        ContestToString(settings_computer.contest.contest));
     dialog.SetCaption(sTmp);
     SetCalcCaption(_T(""));
-    FlightStatisticsRenderer::CaptionOLC(sTmp, settings_computer.contest,
+    FlightStatisticsRenderer::CaptionContest(sTmp, settings_computer.contest,
                                          calculated);
     info.SetText(sTmp);
     break;
@@ -689,7 +689,7 @@ AnalysisWidget::OnCalcClicked()
 
   case AnalysisPage::THERMAL_BAND:
   case AnalysisPage::VARIO_HISTOGRAM:
-  case AnalysisPage::OLC:
+  case AnalysisPage::CONTEST:
   case AnalysisPage::COUNT:
     break;
   }

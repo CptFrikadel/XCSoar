@@ -27,7 +27,8 @@ Copyright_License {
 #include <tchar.h>
 
 #ifdef _WIN32
-#include <windows.h>
+#include <windef.h> // for HWND (needed by winuser.h)
+#include <winuser.h>
 #else
 
 enum {
@@ -64,6 +65,7 @@ enum {
  * @return
  */
 int
-ShowMessageBox(const TCHAR *text, const TCHAR *caption, unsigned flags);
+ShowMessageBox(const TCHAR *text, const TCHAR *caption,
+               unsigned flags) noexcept;
 
 #endif

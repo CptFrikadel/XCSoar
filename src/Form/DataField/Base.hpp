@@ -24,8 +24,6 @@ Copyright_License {
 #ifndef XCSOAR_DATA_FIELD_BASE_HPP
 #define XCSOAR_DATA_FIELD_BASE_HPP
 
-#include "util/Compiler.h"
-
 #include <cassert>
 #include <tchar.h>
 #include <cstdint>
@@ -35,6 +33,12 @@ Copyright_License {
 class DataFieldListener;
 class ComboList;
 
+/**
+ * Most implementations have a method GetValue() for obtaining the raw
+ * value with its native type; ModifyValue() sets a new value and
+ * invokes DataFieldListener::OnModified(); SetValue() does the same,
+ * but does not invoke the callback.
+ */
 class DataField
 {
 public:
@@ -51,6 +55,7 @@ public:
     TIME,
     PREFIX,
     GEOPOINT,
+    DATE,
   };
 
 private:
@@ -66,43 +71,42 @@ protected:
 
 protected:
   DataField(Type type, bool supports_combolist,
-            DataFieldListener *listener);
+            DataFieldListener *listener) noexcept;
 
 public:
-  virtual ~DataField() {}
+  virtual ~DataField() noexcept = default;
 
-  void SetListener(DataFieldListener *_listener) {
+  void SetListener(DataFieldListener *_listener) noexcept {
     assert(listener == nullptr);
     assert(_listener != nullptr);
 
     listener = _listener;
   }
 
-  Type GetType() const {
+  Type GetType() const noexcept {
     return type;
   }
 
-  bool SupportsCombolist() const {
+  bool SupportsCombolist() const noexcept {
     return supports_combolist;
   }
 
-  virtual void Inc();
-  virtual void Dec();
+  virtual void Inc() noexcept;
+  virtual void Dec() noexcept;
 
-  gcc_pure
-  virtual int GetAsInteger() const;
+  [[gnu::pure]]
+  virtual int GetAsInteger() const noexcept;
 
-  gcc_pure
-  virtual const TCHAR *GetAsString() const;
+  [[gnu::pure]]
+  virtual const TCHAR *GetAsString() const noexcept;
 
-  gcc_pure
-  virtual const TCHAR *GetAsDisplayString() const;
+  [[gnu::pure]]
+  virtual const TCHAR *GetAsDisplayString() const noexcept;
 
-  virtual void SetAsInteger(int value);
-  virtual void SetAsString(const TCHAR *value);
+  virtual void SetAsInteger(int value) noexcept;
+  virtual void SetAsString(const TCHAR *value) noexcept;
 
-  virtual void EnableItemHelp(gcc_unused bool value) {};
-
+  virtual void EnableItemHelp([[maybe_unused]] bool value) noexcept {};
 
   /**
    * Create a #ComboList that allows the user to choose a value.
@@ -111,16 +115,16 @@ public:
    * determine the range of displayed values; pass nullptr for the
    * "default" reference
    */
-  gcc_pure
-  virtual ComboList CreateComboList(const TCHAR *reference) const;
+  [[gnu::pure]]
+  virtual ComboList CreateComboList(const TCHAR *reference) const noexcept;
 
   virtual void SetFromCombo(int iDataFieldIndex,
-                            gcc_unused const TCHAR *sValue)
+                            [[maybe_unused]] const TCHAR *sValue) noexcept
   {
     SetAsInteger(iDataFieldIndex);
   }
 
-  bool GetItemHelpEnabled() {
+  bool GetItemHelpEnabled() noexcept {
     return item_help_enabled;
   }
 
@@ -129,7 +133,7 @@ protected:
    * Notify interested parties that the value of this object has
    * been modified.
    */
-  void Modified();
+  void Modified() noexcept;
 };
 
 #endif

@@ -56,7 +56,6 @@ BufferCanvas::Create(PixelSize new_size)
   }
 
   Canvas::Create(new_size);
-  AddSurfaceListener(*this);
 }
 
 void
@@ -65,8 +64,6 @@ BufferCanvas::Destroy()
   assert(!active);
 
   if (IsDefined()) {
-    RemoveSurfaceListener(*this);
-
     delete stencil_buffer;
     stencil_buffer = nullptr;
 
@@ -149,8 +146,7 @@ BufferCanvas::Begin(Canvas &other)
     OpenGL::SetupViewport({GetWidth(), GetHeight()});
     OpenGL::translate = {0, 0};
 
-    glVertexAttrib4f(OpenGL::Attribute::TRANSLATE,
-                     OpenGL::translate.x, OpenGL::translate.y, 0, 0);
+    OpenGL::UpdateShaderTranslate();
   } else {
     offset = other.offset;
   }
@@ -192,8 +188,7 @@ BufferCanvas::Commit(Canvas &other)
     OpenGL::translate = old_translate;
     OpenGL::viewport_size = old_size;
 
-    glVertexAttrib4f(OpenGL::Attribute::TRANSLATE,
-                     OpenGL::translate.x, OpenGL::translate.y, 0, 0);
+    OpenGL::UpdateShaderTranslate();
 
 #ifdef SOFTWARE_ROTATE_DISPLAY
     OpenGL::display_orientation = old_orientation;
@@ -223,18 +218,4 @@ BufferCanvas::CopyTo(Canvas &other)
 
   texture->Bind();
   texture->Draw(other.GetRect(), GetRect());
-}
-
-void
-BufferCanvas::SurfaceCreated()
-{
-}
-
-void
-BufferCanvas::SurfaceDestroyed()
-{
-  /* discard the buffer when the Android app is suspended; it needs a
-     full redraw to restore it after resuming */
-
-  Destroy();
 }

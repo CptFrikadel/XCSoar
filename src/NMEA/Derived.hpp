@@ -45,7 +45,8 @@ Copyright_License {
 #include "Atmosphere/Pressure.hpp"
 #include "Engine/Route/Route.hpp"
 #include "Computer/WaveResult.hpp"
-#include "util/TypeTraits.hpp"
+
+#include <type_traits>
 
 /** Derived terrain altitude information, including glide range */
 struct TerrainInfo
@@ -261,20 +262,20 @@ struct DerivedInfo:
    */
   void Reset();
 
-  void Expire(double Time);
+  void Expire(TimeStamp time) noexcept;
 
   /**
    * Return the current wind vector, or the null vector if no wind is
    * available.
    */
-  gcc_pure
+  [[gnu::pure]]
   SpeedVector GetWindOrZero() const {
     return wind_available
       ? wind
       : SpeedVector::Zero();
   }
 
-  void ProvideAutoMacCready(double clock, double mc) {
+  void ProvideAutoMacCready(TimeStamp clock, double mc) {
     if (auto_mac_cready_available &&
         fabs(auto_mac_cready - mc) < 0.05)
       /* change is too small, ignore the new value to limit the rate */
@@ -288,7 +289,7 @@ struct DerivedInfo:
   double CalculateWorkingFraction(const double h, const double safety_height) const;
 };
 
-static_assert(is_trivial_ndebug<DerivedInfo>::value, "type is not trivial");
+static_assert(std::is_trivial_v<DerivedInfo>, "type is not trivial");
 
 #endif
 

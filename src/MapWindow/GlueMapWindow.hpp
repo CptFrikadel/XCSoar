@@ -33,7 +33,7 @@ Copyright_License {
 #include "Renderer/VarioBarRenderer.hpp"
 #include "ui/event/Timer.hpp"
 #include "ui/event/Notify.hpp"
-#include "Screen/Features.hpp"
+#include "ui/window/Features.hpp"
 
 #ifdef ENABLE_OPENGL
 #include "ui/event/PeriodicTimer.hpp"
@@ -91,7 +91,8 @@ class GlueMapWindow : public MapWindow {
   bool ignore_single_click = false;
 
 #ifdef ENABLE_OPENGL
-  KineticManager kinetic_x = 700, kinetic_y = 700;
+  KineticManager kinetic_x{std::chrono::milliseconds{700}};
+  KineticManager kinetic_y{std::chrono::milliseconds{700}};
   UI::PeriodicTimer kinetic_timer{[this]{ OnKineticTimer(); }};
 #endif
 
@@ -220,7 +221,7 @@ protected:
   virtual bool OnKeyDown(unsigned key_code) override;
   virtual void OnCancelMode() override;
   virtual void OnPaint(Canvas &canvas) override;
-  virtual void OnPaintBuffer(Canvas& canvas) override;
+  virtual void OnPaintBuffer(Canvas& canvas) noexcept override;
 
   /**
    * This event handler gets called when a gesture has

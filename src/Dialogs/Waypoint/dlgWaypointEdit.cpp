@@ -36,6 +36,7 @@ Copyright_License {
 class WaypointEditWidget final : public RowFormWidget, DataFieldListener {
   enum Rows {
     NAME,
+    SHORTNAME,
     COMMENT,
     LOCATION,
     ELEVATION,
@@ -47,7 +48,7 @@ class WaypointEditWidget final : public RowFormWidget, DataFieldListener {
   bool modified;
 
 public:
-  WaypointEditWidget(const DialogLook &look, Waypoint _value)
+  WaypointEditWidget(const DialogLook &look, const Waypoint &_value) noexcept
     :RowFormWidget(look), value(_value), modified(false) {}
 
   const Waypoint &GetValue() const {
@@ -60,7 +61,7 @@ private:
   bool Save(bool &changed) noexcept override;
 
   /* virtual methods from DataFieldListener */
-  void OnModified(gcc_unused DataField &df) override {
+  void OnModified(gcc_unused DataField &df) noexcept override {
     modified = true;
   }
 };
@@ -69,6 +70,13 @@ static constexpr StaticEnumChoice waypoint_types[] = {
   { 0, N_("Turnpoint"), nullptr },
   { 1, N_("Airport"), nullptr },
   { 2, N_("Landable"), nullptr },
+  { 3, N_("Mountain Pass"), nullptr },
+  { 4, N_("Mountain Top"), nullptr },
+  { 5, N_("Transmitter Mast"), nullptr },
+  { 6, N_("Tower"), nullptr },
+  { 7, N_("Tunnel"), nullptr },
+  { 8, N_("Bridge"), nullptr },
+  { 9, N_("Power Plant"), nullptr },
   { 0 }
 };
 
@@ -77,6 +85,7 @@ WaypointEditWidget::Prepare(gcc_unused ContainerWindow &parent,
                             gcc_unused const PixelRect &rc) noexcept
 {
   AddText(_("Name"), nullptr, value.name.c_str(), this);
+  AddText(_("Short Name"), nullptr, value.shortname.c_str(), this);
   AddText(_("Comment"), nullptr, value.comment.c_str(), this);
   Add(_("Location"), nullptr,
       new GeoPointDataField(value.location,
@@ -96,6 +105,7 @@ WaypointEditWidget::Save(bool &_changed) noexcept
 {
   bool changed = modified;
   value.name = GetValueString(NAME);
+  value.shortname = GetValueString(SHORTNAME);
   value.comment = GetValueString(COMMENT);
   value.location = ((GeoPointDataField &)GetDataField(LOCATION)).GetValue();
   changed |= SaveValue(ELEVATION, UnitGroup::ALTITUDE, value.elevation);
@@ -109,6 +119,34 @@ WaypointEditWidget::Save(bool &_changed) noexcept
 
   case 2:
     value.type = Waypoint::Type::OUTLANDING;
+    break;
+
+  case 3:
+    value.type = Waypoint::Type::MOUNTAIN_PASS;
+    break;
+
+  case 4:
+    value.type = Waypoint::Type::MOUNTAIN_TOP;
+    break;
+
+  case 5:
+    value.type = Waypoint::Type::OBSTACLE;
+    break;
+
+  case 6:
+    value.type = Waypoint::Type::TOWER;
+    break;
+
+  case 7:
+    value.type = Waypoint::Type::TUNNEL;
+    break;
+
+  case 8:
+    value.type = Waypoint::Type::BRIDGE;
+    break;
+
+  case 9:
+    value.type = Waypoint::Type::POWERPLANT;
     break;
 
   default:

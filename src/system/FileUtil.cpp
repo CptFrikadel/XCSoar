@@ -26,6 +26,10 @@ Copyright_License {
 #include "util/StringCompare.hxx"
 #include "Compatibility/path.h"
 
+#ifdef _WIN32
+#include "time/FileTime.hxx"
+#endif
+
 #include <windef.h> /* for MAX_PATH */
 
 #include <cassert>
@@ -39,12 +43,10 @@ Copyright_License {
 #include <fnmatch.h>
 #include <utime.h>
 #include <time.h>
-#else
-#include <windows.h>
 #endif
 
 void
-Directory::Create(Path path)
+Directory::Create(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   mkdir(path.c_str(), 0777);
@@ -54,7 +56,7 @@ Directory::Create(Path path)
 }
 
 bool
-Directory::Exists(Path path)
+Directory::Exists(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   struct stat st;
@@ -76,15 +78,17 @@ Directory::Exists(Path path)
  */
 #ifndef HAVE_POSIX
 static bool
-IsDots(const TCHAR* str)
+IsDots(const TCHAR *str) noexcept
 {
   return StringIsEqual(str, _T(".")) || StringIsEqual(str, _T(".."));
 }
 #endif
 
 #ifndef HAVE_POSIX /* we use fnmatch() on POSIX */
+
+[[gnu::pure]]
 static bool
-checkFilter(const TCHAR *filename, const TCHAR *filter)
+checkFilter(const TCHAR *filename, const TCHAR *filter) noexcept
 {
   // filter = e.g. "*.igc" or "config/*.prf"
   // todo: make filters like "config/*.prf" work
@@ -279,7 +283,7 @@ Directory::VisitSpecificFiles(Path path, const TCHAR* filter,
 }
 
 bool
-File::ExistsAny(Path path)
+File::ExistsAny(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   struct stat st;
@@ -290,7 +294,7 @@ File::ExistsAny(Path path)
 }
 
 bool
-File::Exists(Path path)
+File::Exists(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   struct stat st;
@@ -308,7 +312,7 @@ File::Exists(Path path)
 #if defined(_WIN32) && defined(UNICODE)
 
 bool
-File::Exists(const char *path)
+File::Exists(const char *path) noexcept
 {
   DWORD attributes = GetFileAttributesA(path);
   return attributes != INVALID_FILE_ATTRIBUTES &&
@@ -318,7 +322,7 @@ File::Exists(const char *path)
 #endif
 
 uint64_t
-File::GetSize(Path path)
+File::GetSize(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   struct stat st;
@@ -337,55 +341,27 @@ File::GetSize(Path path)
 
 }
 
-uint64_t
-File::GetLastModification(Path path)
+std::chrono::system_clock::time_point
+File::GetLastModification(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   struct stat st;
   if (stat(path.c_str(), &st) < 0 || !S_ISREG(st.st_mode))
-    return 0;
+    return {};
 
-  return st.st_mtime;
+  return std::chrono::system_clock::from_time_t(st.st_mtime);
 #else
   WIN32_FILE_ATTRIBUTE_DATA data;
   if (!GetFileAttributesEx(path.c_str(), GetFileExInfoStandard, &data) ||
       (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-    return 0;
+    return {};
 
-  return data.ftLastWriteTime.dwLowDateTime |
-         ((uint64_t)data.ftLastWriteTime.dwHighDateTime << 32);
-#endif
-}
-
-#ifndef HAVE_POSIX
-
-constexpr
-static uint64_t
-FileTimeToInteger(FILETIME ft)
-{
-  return ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32);
-}
-
-#endif
-
-uint64_t
-File::Now()
-{
-#ifdef HAVE_POSIX
-  return time(nullptr);
-#else
-  SYSTEMTIME system_time;
-  GetSystemTime(&system_time);
-
-  FILETIME system_time2;
-  SystemTimeToFileTime(&system_time, &system_time2);
-
-  return FileTimeToInteger(system_time2);
+  return FileTimeToChrono(data.ftLastWriteTime);
 #endif
 }
 
 bool
-File::Touch(Path path)
+File::Touch(Path path) noexcept
 {
 #ifdef HAVE_POSIX
   return utime(path.c_str(), nullptr) == 0;
@@ -418,7 +394,7 @@ File::Touch(Path path)
 }
 
 bool
-File::ReadString(Path path, char *buffer, size_t size)
+File::ReadString(Path path, char *buffer, size_t size) noexcept
 {
   assert(path != nullptr);
   assert(buffer != nullptr);
@@ -446,7 +422,7 @@ File::ReadString(Path path, char *buffer, size_t size)
 }
 
 bool
-File::WriteExisting(Path path, const char *value)
+File::WriteExisting(Path path, const char *value) noexcept
 {
   assert(path != nullptr);
   assert(value != nullptr);
@@ -469,7 +445,7 @@ File::WriteExisting(Path path, const char *value)
 }
 
 bool
-File::CreateExclusive(Path path)
+File::CreateExclusive(Path path) noexcept
 {
   assert(path != nullptr);
 

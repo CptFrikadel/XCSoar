@@ -184,7 +184,7 @@ public:
   void OnActivateItem(unsigned index) noexcept override;
 
   /* virtual methods from DataFieldListener */
-  void OnModified(DataField &df) override;
+  void OnModified(DataField &df) noexcept override;
 
 private:
   /* virtual methods from BlackboardListener */
@@ -355,7 +355,7 @@ CreateDistanceDataField(DataFieldListener *listener)
     df->addEnumText(buffer);
   }
 
-  df->Set(dialog_state.distance_index);
+  df->SetValue(dialog_state.distance_index);
   return df;
 }
 
@@ -368,7 +368,7 @@ CreateDirectionDataField(DataFieldListener *listener, Angle last_heading)
     df->addEnumText(GetDirectionData(buffer, ARRAY_SIZE(buffer), i,
                                      last_heading));
 
-  df->Set(dialog_state.direction_index);
+  df->SetValue(dialog_state.direction_index);
   return df;
 }
 
@@ -394,7 +394,7 @@ CreateTypeDataField(DataFieldListener *listener)
   ReplaceProfilePathBase(*df, (unsigned)TypeFilter::MAP,
                          ProfileKeys::MapFile);
 
-  df->Set((int)dialog_state.type_index);
+  df->SetValue(dialog_state.type_index);
   return df;
 }
 
@@ -409,7 +409,7 @@ WaypointFilterWidget::Prepare(ContainerWindow &parent,
 }
 
 void
-WaypointListWidget::OnModified(DataField &df)
+WaypointListWidget::OnModified(DataField &df) noexcept
 {
   if (filter_widget.IsDataField(NAME, df)) {
     dialog_state.name = df.GetAsString();
@@ -484,7 +484,7 @@ WaypointListWidget::OnGPSUpdate(const MoreData &basic)
       !CommonInterface::Calculated().circling) {
     const Angle heading = basic.attitude.heading;
     Angle a = last_heading - heading;
-    if (a.AsDelta().AbsoluteDegrees() >= 60) {
+    if (a.AsDelta().Absolute() >= Angle::Degrees(60)) {
       last_heading = heading;
       filter_widget.Update(last_heading);
       UpdateList();

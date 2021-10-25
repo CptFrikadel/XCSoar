@@ -37,10 +37,21 @@ Copyright_License {
 #include "ui/event/Notify.hpp"
 #include "thread/Mutex.hxx"
 #include "thread/Debug.hpp"
+#include "time/FloatDuration.hxx"
 #include "util/tstring.hpp"
 #include "util/StaticFifoBuffer.hxx"
-#include "Android/GliderLink.hpp"
 
+#ifdef HAVE_INTERNAL_GPS
+#include "SensorListener.hpp"
+#endif
+
+#ifdef ANDROID
+#include "Math/SelfTimingKalmanFilter1d.hpp"
+#include "Math/WindowFilter.hpp"
+#endif
+
+#include <array>
+#include <atomic>
 #include <chrono>
 #include <memory>
 
@@ -49,6 +60,7 @@ Copyright_License {
 #include <stdio.h>
 
 namespace Cares { class Channel; }
+namespace Java { class GlobalCloseable; }
 class EventLoop;
 struct NMEAInfo;
 struct MoreData;
@@ -62,16 +74,18 @@ class Device;
 class AtmosphericPressure;
 struct DeviceRegister;
 class InternalSensors;
-class BMP085Device;
-class I2CbaroDevice;
-class NunchuckDevice;
-class VoltageDevice;
 class RecordedFlightList;
 struct RecordedFlightInfo;
 class OperationEnvironment;
 class OpenDeviceJob;
+class DeviceDataEditor;
 
-class DeviceDescriptor final : PortListener, PortLineSplitter {
+class DeviceDescriptor final
+  : PortListener,
+#ifdef HAVE_INTERNAL_GPS
+    SensorListener,
+#endif
+    PortLineSplitter {
   /**
    * The #EventLoop instance used by #Port instances.
    */
@@ -113,7 +127,7 @@ class DeviceDescriptor final : PortListener, PortLineSplitter {
    * The #Job that currently opens the device.  nullptr if the device is
    * not currently being opened.
    */
-  OpenDeviceJob *open_job;
+  OpenDeviceJob *open_job = nullptr;
 
   /**
    * The #Port used by this device.  This is not applicable to some
@@ -125,18 +139,18 @@ class DeviceDescriptor final : PortListener, PortLineSplitter {
    * A handler that will receive all data, to display it on the
    * screen.  Can be set with SetMonitor().
    */
-  DataHandler  *monitor;
+  DataHandler *monitor = nullptr;
 
   /**
    * A handler that will receive all NMEA lines, to dispatch it to
    * other devices.
    */
-  PortLineHandler *dispatcher;
+  PortLineHandler *dispatcher = nullptr;
 
   /**
    * The device driver used to handle data to/from the device.
    */
-  const DeviceRegister *driver;
+  const DeviceRegister *driver = nullptr;
 
   /**
    * An instance of the driver.
@@ -147,33 +161,61 @@ class DeviceDescriptor final : PortListener, PortLineSplitter {
    * device was borrowed with the method Borrow().  The latter,
    * however, is only possible from the main thread.
    */
-  Device *device;
+  Device *device = nullptr;
 
   /**
    * The second device driver for a passed through device.
    */
-  const DeviceRegister *second_driver;
+  const DeviceRegister *second_driver = nullptr;
 
   /**
    * An instance of the passed through driver, if available.
    */
-  Device *second_device;
-
+  Device *second_device = nullptr;
 
 #ifdef HAVE_INTERNAL_GPS
   /**
    * A pointer to the Java object managing all Android sensors (GPS,
    * baro sensor and others).
    */
-  InternalSensors *internal_sensors;
+  InternalSensors *internal_sensors = nullptr;
 #endif
 
 #ifdef ANDROID
-  BMP085Device *droidsoar_v2;
-  I2CbaroDevice *i2cbaro[3]; // static, pitot, tek; in any order
-  NunchuckDevice *nunchuck;
-  VoltageDevice *voltage;
-  GliderLink *glider_link;
+  Java::GlobalCloseable *java_sensor = nullptr;
+  Java::GlobalCloseable *second_java_sensor = nullptr;
+
+  /* We use a Kalman filter to smooth Android device pressure sensor
+     noise.  The filter requires two parameters: the first is the
+     variance of the distribution of second derivatives of pressure
+     values that we expect to see in flight, and the second is the
+     maximum time between pressure sensor updates in seconds before
+     the filter gives up on smoothing and uses the raw value.
+     The pressure acceleration variance used here is actually wider
+     than the maximum likelihood variance observed in the data: it
+     turns out that the distribution is more heavy-tailed than a
+     normal distribution, probably because glider pilots usually
+     experience fairly constant pressure change most of the time. */
+  static constexpr double KF_VAR_ACCEL = 0.0075;
+  static constexpr SelfTimingKalmanFilter1d::Duration KF_MAX_DT =
+    std::chrono::minutes{1};
+
+  static constexpr SelfTimingKalmanFilter1d::Duration KF_I2C_MAX_DT =
+    std::chrono::seconds{5};
+  static constexpr double KF_I2C_VAR_ACCEL = 0.3;
+  static constexpr double KF_I2C_VAR_ACCEL_85 = KF_VAR_ACCEL;
+
+  SelfTimingKalmanFilter1d kalman_filter{KF_MAX_DT, KF_VAR_ACCEL};
+
+  double voltage_offset;
+  double voltage_factor;
+  std::array<WindowFilter<16>, 1> voltage_filter;
+  WindowFilter<64> temperature_filter;
+
+  /**
+   * State for Nunchuk.
+   */
+  int joy_state_x, joy_state_y;
 #endif
 
   /**
@@ -218,7 +260,13 @@ class DeviceDescriptor final : PortListener, PortLineSplitter {
    *
    * @param see ResetFailureCounter()
    */
-  unsigned n_failures;
+  unsigned n_failures = 0;
+
+  /**
+   * True when a sensor has failed and the device should be closed in
+   * the next OnSysTicker() call.
+   */
+  std::atomic_bool has_failed{false};
 
   /**
    * Internal flag for OnSysTicker() for detecting link timeout.
@@ -229,7 +277,7 @@ class DeviceDescriptor final : PortListener, PortLineSplitter {
    * Internal flag for OnSysTicker() for calling Device::OnSysTicker()
    * only every other time.
    */
-  bool ticker;
+  bool ticker = false;
 
   /**
    * True when somebody has "borrowed" the device.  Link timeouts are
@@ -239,7 +287,7 @@ class DeviceDescriptor final : PortListener, PortLineSplitter {
    *
    * @see CanBorrow(), Borrow()
    */
-  bool borrowed;
+  bool borrowed = false;
 
 public:
   DeviceDescriptor(EventLoop &_event_loop, Cares::Channel &_cares,
@@ -348,6 +396,9 @@ private:
   bool OpenVoltage();
 
   bool OpenGliderLink();
+
+  bool OpenBluetoothSensor();
+
 public:
   /**
    * To be used by OpenDeviceJob, don't call directly.
@@ -468,6 +519,17 @@ public:
   gcc_pure
   bool IsAlive() const;
 
+  [[gnu::pure]]
+  TimeStamp GetClock() const noexcept;
+
+  /**
+   * Return a copy of the device's current data.
+   */
+  [[gnu::pure]]
+  NMEAInfo GetData() const noexcept;
+
+  DeviceDataEditor BeginEdit() noexcept;
+
 private:
   bool ParseNMEA(const char *line, struct NMEAInfo &info);
 
@@ -495,6 +557,7 @@ public:
   bool PutBallast(double fraction, double overload,
                   OperationEnvironment &env);
   bool PutVolume(unsigned volume, OperationEnvironment &env);
+  bool PutPilotEvent(OperationEnvironment &env);
   bool PutActiveFrequency(RadioFrequency frequency,
                           const TCHAR *name,
                           OperationEnvironment &env);
@@ -535,8 +598,6 @@ public:
                           const DerivedInfo &calculated);
 
 private:
-  bool ParseLine(const char *line);
-
   void OnJobFinished() noexcept;
 
   /* virtual methods from class PortListener */
@@ -548,6 +609,48 @@ private:
 
   /* virtual methods from PortLineHandler */
   bool LineReceived(const char *line) noexcept override;
+
+#ifdef HAVE_INTERNAL_GPS
+  /* methods from SensorListener */
+  void OnConnected(int connected) noexcept override;
+  void OnLocationSensor(std::chrono::system_clock::time_point time,
+                        int n_satellites,
+                        GeoPoint location,
+                        bool hasAltitude, bool geoid_altitude,
+                        double altitude,
+                        bool hasBearing, double bearing,
+                        bool hasSpeed, double speed,
+                        bool hasAccuracy, double accuracy) noexcept override;
+
+#ifdef ANDROID
+  void OnAccelerationSensor(double acceleration) noexcept override;
+  void OnAccelerationSensor(float ddx, float ddy,
+                            float ddz) noexcept override;
+  void OnRotationSensor(float dtheta_x, float dtheta_y,
+                        float dtheta_z) noexcept override;
+  void OnMagneticFieldSensor(float h_x, float h_y, float h_z) noexcept override;
+  void OnBarometricPressureSensor(float pressure,
+                                  float sensor_noise_variance) noexcept override;
+  void OnPressureAltitudeSensor(float altitude) noexcept override;
+  void OnI2CbaroSensor(int index, int sensorType,
+                       AtmosphericPressure pressure) noexcept override;
+  void OnVarioSensor(float vario) noexcept override;
+  void OnHeartRateSensor(unsigned bpm) noexcept override;
+  void OnVoltageValues(int temp_adc, unsigned voltage_index,
+                       int volt_adc) noexcept override;
+  void OnNunchukValues(int joy_x, int joy_y,
+                       int acc_x, int acc_y, int acc_z,
+                       int switches) noexcept final;
+  void OnGliderLinkTraffic(GliderLinkId id, const char *callsign,
+                           GeoPoint location, double altitude,
+                           double gspeed, double vspeed,
+                           unsigned bearing) noexcept override;
+  void OnTemperature(Temperature temperature) noexcept override;
+  void OnBatteryPercent(double battery_percent) noexcept override;
+  void OnSensorStateChanged() noexcept override;
+  void OnSensorError(const char *msg) noexcept override;
+#endif // ANDROID
+#endif // HAVE_INTERNAL_GPS
 };
 
 #endif

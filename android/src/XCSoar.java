@@ -46,7 +46,6 @@ import android.content.ComponentName;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.provider.Settings;
-import android.view.View;
 
 public class XCSoar extends Activity {
   private static final String TAG = "XCSoar";
@@ -55,13 +54,21 @@ public class XCSoar extends Activity {
    * Hack: this is set by onCreate(), to support the "testing"
    * package.
    */
-  protected static Class serviceClass;
+  public static Class<?> serviceClass;
 
   private static NativeView nativeView;
 
   PowerManager.WakeLock wakeLock;
 
   BatteryReceiver batteryReceiver;
+
+  /**
+   * These are the flags initially set on our #Window.  Those flag
+   * will be preserved by WindowUtil.leaveFullScreenMode().
+   */
+  int initialWindowFlags;
+
+  boolean fullScreen = false;
 
   @Override protected void onCreate(Bundle savedInstanceState) {
     if (serviceClass == null)
@@ -90,34 +97,20 @@ public class XCSoar extends Activity {
     }
 
     NetUtil.initialise(this);
-    InternalGPS.Initialize();
-    NonGPSSensors.Initialize();
-    GliderLinkReceiver.Initialize();
 
     IOIOHelper.onCreateContext(this);
 
-    BluetoothHelper.Initialize(this);
-
-    DownloadUtil.Initialise(this);
-
-    // fullscreen mode
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN|
-                         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-    /* Workaround for layout problems in Android KitKat with immersive full
-       screen mode: Sometimes the content view was not initialized with the
-       correct size, which caused graphics artifacts. */
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|
-                         WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS|
-                         WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR|
-                         WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-
-    enableImmersiveModeIfSupported();
+    final Window window = getWindow();
+    window.requestFeature(Window.FEATURE_NO_TITLE);
 
     TextView tv = new TextView(this);
     tv.setText("Loading XCSoar...");
     setContentView(tv);
+
+    /* after setContentView(), Android has initialised a few default
+       window flags, which we now remember for
+       WindowUtil.leaveFullScreenMode() to avoid clearing those */
+    initialWindowFlags = window.getAttributes().flags;
 
     batteryReceiver = new BatteryReceiver();
     registerReceiver(batteryReceiver,
@@ -131,18 +124,12 @@ public class XCSoar extends Activity {
   }
 
   private void quit() {
-    Log.d(TAG, "in quit()");
-
     nativeView = null;
-
-    Log.d(TAG, "stopping service");
-    stopService(new Intent(this, serviceClass));
 
     TextView tv = new TextView(XCSoar.this);
     tv.setText("Shutting down XCSoar...");
     setContentView(tv);
 
-    Log.d(TAG, "finish()");
     finish();
   }
 
@@ -158,35 +145,18 @@ public class XCSoar extends Activity {
       TextView tv = new TextView(XCSoar.this);
       tv.setText(msg.obj.toString());
       setContentView(tv);
-
     }
   };
 
-  public void initSDL() {
-    if (!Loader.loaded)
-      return;
+  private void acquireWakeLock() {
+    final Window window = getWindow();
+    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-    /* check if external storage is available; XCSoar doesn't work as
-       long as external storage is being forwarded to a PC */
-    String state = Environment.getExternalStorageState();
-    Log.d(TAG, "getExternalStorageState() = " + state);
-    if (!Environment.MEDIA_MOUNTED.equals(state)) {
-      TextView tv = new TextView(this);
-      tv.setText("External storage is not available (state='" + state
-                 + "').  Please turn off USB storage.");
-      setContentView(tv);
+    if (wakeLock != null)
       return;
-    }
-
-    nativeView = new NativeView(this, quitHandler, errorHandler);
-    setContentView(nativeView);
-    // Receive keyboard events
-    nativeView.setFocusableInTouchMode(true);
-    nativeView.setFocusable(true);
-    nativeView.requestFocus();
 
     // Obtain an instance of the Android PowerManager class
-    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+    PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
 
     // Create a WakeLock instance to keep the screen from timing out
     // Note: FULL_WAKE_LOCK is deprecated in favor of FLAG_KEEP_SCREEN_ON
@@ -195,6 +165,63 @@ public class XCSoar extends Activity {
 
     // Activate the WakeLock
     wakeLock.acquire();
+  }
+
+  final Handler wakeLockHandler = new Handler() {
+      public void handleMessage(Message msg) {
+        acquireWakeLock();
+      }
+    };
+
+  final Handler fullScreenHandler = new Handler() {
+      public void handleMessage(Message msg) {
+        fullScreen = msg.what != 0;
+        applyFullScreen();
+      }
+    };
+
+  private boolean isInMultiWindowModeCompat() {
+    /* isInMultiWindowMode() was added in API 24 (Android 7.0) */
+    return Build.VERSION.SDK_INT >= 24
+      ? isInMultiWindowMode()
+      : false;
+  }
+
+  boolean wantFullScreen() {
+    return Loader.loaded && fullScreen && !isInMultiWindowModeCompat();
+  }
+
+  void applyFullScreen() {
+    final Window window = getWindow();
+    if (wantFullScreen())
+      WindowUtil.enterFullScreenMode(window);
+    else
+      WindowUtil.leaveFullScreenMode(window, initialWindowFlags);
+  }
+
+  public void initNative() {
+    if (!Loader.loaded)
+      return;
+
+    /* check if external storage is available; XCSoar doesn't work as
+       long as external storage is being forwarded to a PC */
+    String state = Environment.getExternalStorageState();
+    if (!Environment.MEDIA_MOUNTED.equals(state)) {
+      TextView tv = new TextView(this);
+      tv.setText("External storage is not available (state='" + state
+                 + "').  Please turn off USB storage.");
+      setContentView(tv);
+      return;
+    }
+
+    nativeView = new NativeView(this, quitHandler,
+                                wakeLockHandler, fullScreenHandler,
+                                errorHandler);
+    setContentView(nativeView);
+    // Receive keyboard events
+    nativeView.setFocusableInTouchMode(true);
+    nativeView.setFocusable(true);
+    nativeView.requestFocus();
   }
 
   @Override protected void onPause() {
@@ -215,11 +242,6 @@ public class XCSoar extends Activity {
 
     if (nativeView != null)
       nativeView.setHapticFeedback(hapticFeedbackEnabled);
-  }
-
-  private void enableImmersiveModeIfSupported() {
-    // Set / Reset the System UI visibility flags for Immersive Full Screen Mode, if supported
-    ImmersiveFullScreenMode.enable(getWindow().getDecorView());
   }
 
   private static final String[] NEEDED_PERMISSIONS = new String[] {
@@ -262,20 +284,10 @@ public class XCSoar extends Activity {
     if (!Loader.loaded)
       return;
 
-    try {
-      startService(new Intent(this, serviceClass));
-    } catch (IllegalStateException e) {
-      /* we get crash reports on this all the time, but I don't know
-         why - Android docs say "the application is in a state where
-         the service can not be started (such as not in the foreground
-         in a state when services are allowed)", but we're about to be
-         resumed, which means we're in foreground... */
-    }
-
     if (nativeView != null)
       nativeView.onResume();
     else
-      initSDL();
+      initNative();
     getHapticFeedbackSettings();
   }
 
@@ -286,19 +298,12 @@ public class XCSoar extends Activity {
       return;
     }
 
-    Log.d(TAG, "in onDestroy()");
-
     if (batteryReceiver != null) {
       unregisterReceiver(batteryReceiver);
       batteryReceiver = null;
     }
 
-    DownloadUtil.Deinitialise(this);
-
-    if (nativeView != null) {
-      nativeView.exitApp();
-      nativeView = null;
-    }
+    nativeView = null;
 
     // Release the WakeLock instance to re-enable screen timeouts
     if (wakeLock != null) {
@@ -309,7 +314,6 @@ public class XCSoar extends Activity {
     IOIOHelper.onDestroyContext();
 
     super.onDestroy();
-    Log.d(TAG, "System.exit()");
     System.exit(0);
   }
 
@@ -331,9 +335,18 @@ public class XCSoar extends Activity {
   }
 
   @Override public void onWindowFocusChanged(boolean hasFocus) {
-    if (Loader.loaded)
-      enableImmersiveModeIfSupported();
+    if (hasFocus && wantFullScreen())
+      /* some Android don't restore immersive mode after returning to
+         this app, so unfortunately we need to reapply those settings
+         manually */
+      WindowUtil.enableImmersiveMode(getWindow());
+
     super.onWindowFocusChanged(hasFocus);
+  }
+
+  @Override
+  public void onMultiWindowModeChanged(boolean isInMultiWindowMode) {
+    applyFullScreen();
   }
 
   @Override public boolean dispatchTouchEvent(final MotionEvent ev) {

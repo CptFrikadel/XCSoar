@@ -71,6 +71,8 @@ public:
 class TerrainDisplayConfigPanel final
   : public RowFormWidget, DataFieldListener {
 
+  bool have_terrain_preview;
+
 protected:
   TerrainRendererSettings terrain_settings;
 
@@ -89,7 +91,7 @@ protected:
   void UpdateTerrainPreview();
 
   /* methods from DataFieldListener */
-  virtual void OnModified(DataField &df) override;
+  void OnModified(DataField &df) noexcept override;
 };
 
 /** XXX this hack is needed because the form callbacks don't get a
@@ -105,7 +107,7 @@ TerrainDisplayConfigPanel::ShowTerrainControls()
   SetRowVisible(TerrainContrast, show);
   SetRowVisible(TerrainBrightness, show);
   SetRowVisible(TerrainContours, show);
-  if (terrain != nullptr)
+  if (have_terrain_preview)
     SetRowVisible(TerrainPreview, show);
 }
 
@@ -134,16 +136,16 @@ TerrainDisplayConfigPanel::UpdateTerrainPreview()
     GetValueInteger(TerrainContours);
 
   // Invalidate terrain preview
-  if (terrain != nullptr)
+  if (have_terrain_preview)
     ((TerrainPreviewWindow &)GetRow(TerrainPreview)).SetSettings(terrain_settings);
 }
 
 void
-TerrainDisplayConfigPanel::OnModified(DataField &df)
+TerrainDisplayConfigPanel::OnModified(DataField &df) noexcept
 {
   if (IsDataField(EnableTerrain, df)) {
     const DataFieldBoolean &dfb = (const DataFieldBoolean &)df;
-    terrain_settings.enable = dfb.GetAsBoolean();
+    terrain_settings.enable = dfb.GetValue();
     ShowTerrainControls();
   } else {
     UpdateTerrainPreview();
@@ -270,7 +272,8 @@ TerrainDisplayConfigPanel::Prepare(ContainerWindow &parent,
   GetDataField(TerrainContours).SetListener(this);
   SetExpertRow(TerrainContours);
 
-  if (::terrain != nullptr) {
+  have_terrain_preview = ::terrain != nullptr;
+  if (have_terrain_preview) {
     WindowStyle style;
     style.Border();
 

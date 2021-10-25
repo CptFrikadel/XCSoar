@@ -36,21 +36,18 @@ TCPClientPort::TCPClientPort(EventLoop &event_loop, Cares::Channel &cares,
 {
   BlockingCall(GetEventLoop(), [this, &cares, host, port](){
     Cares::SimpleHandler &resolver_handler = *this;
-    resolver.emplace(cares, resolver_handler, host, port);
+    resolver.emplace(resolver_handler, port);
+    resolver->Start(cares, host);
   });
 }
 
 TCPClientPort::~TCPClientPort()
 {
-  BufferedPort::BeginClose();
-
   BlockingCall(GetEventLoop(), [this](){
     socket.Close();
     connect.reset();
     resolver.reset();
   });
-
-  BufferedPort::EndClose();
 }
 
 size_t
@@ -75,15 +72,13 @@ try {
   if (nbytes < 0)
     throw MakeSocketError("Failed to receive");
 
-  if (nbytes == 0) {
-    socket.Close();
-    StateChanged();
-    return;
-  }
+  if (nbytes == 0)
+    throw std::runtime_error("Connection closed by peer");
 
   DataReceived(input, nbytes);
 } catch (...) {
   socket.Close();
+  state = PortState::FAILED;
   StateChanged();
   Error(std::current_exception());
 }

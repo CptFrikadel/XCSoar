@@ -28,6 +28,8 @@ Copyright_License {
 #include "Form/DataField/Listener.hpp"
 #include "Plane/Plane.hpp"
 #include "Language/Language.hpp"
+#include "Interface.hpp"
+#include "Computer/Settings.hpp"
 #include "UIGlobals.hpp"
 
 class PlaneEditWidget final
@@ -42,6 +44,7 @@ class PlaneEditWidget final
     MAX_BALLAST,
     DUMP_TIME,
     MAX_SPEED,
+    WEGLIDE_ID,
   };
 
   WndForm *dialog;
@@ -57,9 +60,9 @@ public:
     return plane;
   }
 
-  void UpdateCaption();
-  void UpdatePolarButton();
-  void PolarButtonClicked();
+  void UpdateCaption() noexcept;
+  void UpdatePolarButton() noexcept;
+  void PolarButtonClicked() noexcept;
 
   /* virtual methods from Widget */
   void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
@@ -67,11 +70,11 @@ public:
 
 private:
   /* methods from DataFieldListener */
-  virtual void OnModified(DataField &df) override;
+  void OnModified(DataField &df) noexcept override;
 };
 
 void
-PlaneEditWidget::UpdateCaption()
+PlaneEditWidget::UpdateCaption() noexcept
 {
   if (dialog == nullptr)
     return;
@@ -82,7 +85,7 @@ PlaneEditWidget::UpdateCaption()
 }
 
 void
-PlaneEditWidget::UpdatePolarButton()
+PlaneEditWidget::UpdatePolarButton() noexcept
 {
   const TCHAR *caption = _("Polar");
   StaticString<64> buffer;
@@ -96,7 +99,7 @@ PlaneEditWidget::UpdatePolarButton()
 }
 
 void
-PlaneEditWidget::OnModified(DataField &df)
+PlaneEditWidget::OnModified(DataField &df) noexcept
 {
   if (IsDataField(REGISTRATION, df))
     UpdateCaption();
@@ -129,6 +132,14 @@ PlaneEditWidget::Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept
            _T("%.0f %s"), _T("%.0f"), 0, 300, 5,
            false, UnitGroup::HORIZONTAL_SPEED, plane.max_speed);
 
+  /* TODO: this should be a select list from
+     https://api.weglide.org/v1/aircraft */
+  if (CommonInterface::GetComputerSettings().weglide.enabled)
+    AddInteger(_("WeGlide Type"), nullptr, _T("%d"), _T("%d"), 1, 999,
+               1, plane.weglide_glider_type);
+  else
+    AddDummy();
+
   UpdateCaption();
   UpdatePolarButton();
 }
@@ -148,12 +159,15 @@ PlaneEditWidget::Save(bool &_changed) noexcept
   changed |= SaveValue(MAX_SPEED, UnitGroup::HORIZONTAL_SPEED,
                        plane.max_speed);
 
+  if (CommonInterface::GetComputerSettings().weglide.enabled)
+    changed |= SaveValue(WEGLIDE_ID, plane.weglide_glider_type);
+
   _changed |= changed;
   return true;
 }
 
 inline void
-PlaneEditWidget::PolarButtonClicked()
+PlaneEditWidget::PolarButtonClicked() noexcept
 {
   bool changed = false;
   if (!Save(changed))

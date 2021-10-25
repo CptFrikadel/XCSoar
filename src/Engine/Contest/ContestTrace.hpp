@@ -24,8 +24,9 @@
 #define XCSOAR_CONTEST_TRACE_HPP
 
 #include "util/TrivialArray.hxx"
-#include "util/TypeTraits.hpp"
 #include "Geo/GeoPoint.hpp"
+
+#include <type_traits>
 
 class TracePoint;
 
@@ -34,7 +35,8 @@ class TracePoint;
  * necessary for the contest trace.
  */
 struct ContestTracePoint {
-  unsigned time;
+  using Duration = std::chrono::duration<unsigned>;
+  Duration time;
 
   GeoPoint location;
 
@@ -42,14 +44,14 @@ struct ContestTracePoint {
   ContestTracePoint(const TracePoint &src) noexcept;
 
   void Clear() noexcept {
-    time = (unsigned)(0 - 1);
+    time = Duration::max();
   }
 
   constexpr bool IsDefined() const noexcept {
-    return time != (unsigned)(0 - 1);
+    return time != Duration::max();
   }
 
-  constexpr unsigned GetTime() const noexcept {
+  constexpr Duration GetTime() const noexcept {
     return time;
   }
 
@@ -61,7 +63,7 @@ struct ContestTracePoint {
     return time > other.time;
   }
 
-  unsigned DeltaTime(const ContestTracePoint &previous) const noexcept {
+  constexpr Duration DeltaTime(const ContestTracePoint &previous) const noexcept {
     assert(!IsOlderThan(previous));
 
     return time - previous.time;
@@ -79,6 +81,6 @@ struct ContestTracePoint {
 
 class ContestTraceVector : public TrivialArray<ContestTracePoint, 10> {};
 
-static_assert(is_trivial_ndebug<ContestTraceVector>::value, "type is not trivial");
+static_assert(std::is_trivial_v<ContestTraceVector>, "type is not trivial");
 
 #endif
