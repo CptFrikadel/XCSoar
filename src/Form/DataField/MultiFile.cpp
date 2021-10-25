@@ -39,7 +39,7 @@ MultiFileDataField::MultiFileDataField(DataFieldListener *listener) :
 
 
 
-void MultiFileDataField::SetAsInteger(int new_value) {
+void MultiFileDataField::SetAsInteger(int new_value) noexcept {
 
 	Set(new_value);
 
@@ -133,14 +133,14 @@ Path MultiFileDataField::GetItem(unsigned index) const {
 }
 
 
-ComboList MultiFileDataField::CreateComboList(const TCHAR *reference) const {
+ComboList MultiFileDataField::CreateComboList(const TCHAR *reference) const noexcept {
 
 	return file_datafield.CreateComboList(reference);
 
 }
 
 
-void MultiFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value){
+void MultiFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value) noexcept{
 
 	current_selection.insert(datafield_index);
 
@@ -155,7 +155,7 @@ void MultiFileDataField::ForceModify(Path path){
 }
 
 
-const TCHAR * MultiFileDataField::GetAsString() const { return _("");}
+const TCHAR * MultiFileDataField::GetAsString() const noexcept { return _("");}
 
 void MultiFileDataField::UpdateDisplayString() {
 
@@ -169,7 +169,7 @@ void MultiFileDataField::UpdateDisplayString() {
 	}
 }
 
-const TCHAR * MultiFileDataField::GetAsDisplayString() const {
+const TCHAR * MultiFileDataField::GetAsDisplayString() const noexcept {
 
 	return display_string.c_str();
 }

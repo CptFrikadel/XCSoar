@@ -167,7 +167,7 @@ RowFormWidget::SaveValue(unsigned i,
 }
 
 bool
-RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key) noexcept
+RowFormWidget::SaveValueMultiFileReader(unsigned i, std::string_view registry_key) noexcept
 {
   const auto *dfe = (const MultiFileDataField *)GetControl(i).GetDataField();
 
@@ -189,7 +189,6 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key) no
     new_output += "|";
 
   }
-
 
   std::string old_value = Profile::Get(registry_key, "");
   if (old_value == new_output)
