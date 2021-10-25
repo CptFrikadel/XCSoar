@@ -70,7 +70,6 @@ public:
 	FileDataField * GetFileDataField(){ return &file_datafield;}
 
 
-	gcc_pure
 	int Find(Path path) const;
 
 	/**
@@ -80,7 +79,6 @@ public:
 	void Lookup(Path text);
 
 	// Return the currently selected items
-	gcc_pure
 	std::vector<Path> GetPathFiles() const;
 
 	//Set selection to the given index(es)
@@ -99,27 +97,26 @@ public:
 	 */
 	void ScanMultiplePatterns(const TCHAR *patterns);
 
-	gcc_pure
 	Path GetItem(unsigned index) const;
 
 	/**
 	 * Virtual methods from the DataField class
 	 */
-	const TCHAR *GetAsString() const override;
-	const TCHAR *GetAsDisplayString() const override;
-	void SetAsInteger(int value) override;
+	const TCHAR *GetAsString() const noexcept override;
+	const TCHAR *GetAsDisplayString() const noexcept override;
+	void SetAsInteger(int value) noexcept override;
 
-	ComboList CreateComboList(const TCHAR *reference) const override;
-	void SetFromCombo(int datafield_index, const TCHAR *string_value) override;
+	ComboList CreateComboList(const TCHAR *reference) const noexcept override;
+	void SetFromCombo(int datafield_index, const TCHAR *string_value) noexcept override;
 
 	/*
 	 * Stub implementations for virtual methods from DataField class, because
 	 * they don't make sense in the MultiFile scenario
 	 */
 
-	void Inc() override {}
-	void Dec() override {}
-	int GetAsInteger() const override {return 0;}
+	void Inc() noexcept override {}
+	void Dec() noexcept override {}
+	int GetAsInteger() const noexcept override {return 0;}
 
 };
 

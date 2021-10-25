@@ -207,6 +207,8 @@ RowFormWidget::SaveValueMultiFileReader(unsigned i, const char *registry_key) no
     return false;
 
   Profile::Set(registry_key, new_output.c_str());
+  return true;
+}
 
 bool
 RowFormWidget::SaveValue(unsigned i,
