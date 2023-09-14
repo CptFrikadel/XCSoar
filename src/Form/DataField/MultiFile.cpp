@@ -39,13 +39,6 @@ MultiFileDataField::MultiFileDataField(DataFieldListener *listener) :
 
 
 
-void MultiFileDataField::SetAsInteger(int new_value) noexcept {
-
-	Set(new_value);
-
-}
-
-
 // Find the index of path in files
 int MultiFileDataField::Find(Path path) const {
 
@@ -140,7 +133,7 @@ ComboList MultiFileDataField::CreateComboList(const TCHAR *reference) const noex
 }
 
 
-void MultiFileDataField::SetFromCombo(int datafield_index, const TCHAR *string_value) noexcept{
+void MultiFileDataField::SetFromCombo(int datafield_index, [[maybe_unused]] const TCHAR *string_value) noexcept{
 
 	current_selection.insert(datafield_index);
 

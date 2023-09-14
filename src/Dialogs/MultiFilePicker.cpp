@@ -62,12 +62,7 @@ public:
 static bool MultiFilePickerAdd(const TCHAR * caption, MultiFileDataField &df,
 			 	 const TCHAR * help_text){
 
-	if(FilePicker(caption, *df.GetFileDataField(), help_text)){
-			df.SetAsInteger(df.GetFileDataField()->GetAsInteger());
-		   	return true;
-	}
-
-	return false;
+	return FilePicker(caption, *df.GetFileDataField(), help_text);
 }
 
 

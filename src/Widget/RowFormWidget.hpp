@@ -441,9 +441,8 @@ public:
   }
 
   WndProperty *AddMultipleFiles(const TCHAR *label, const TCHAR *help,
-		  				const char *profile_key, const TCHAR *filters,
-						FileType file_type,
-						bool nullable = true);
+		  				std::string_view profile_key, const TCHAR *filters,
+						FileType file_type);
 
   /**
    * Add a read-only multi-line control.  You can use

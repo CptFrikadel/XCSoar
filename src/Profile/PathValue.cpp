@@ -9,7 +9,6 @@
 #include "util/StringCompare.hxx"
 #include "util/StringPointer.hxx"
 #include "util/Macros.hpp"
-#include "util/StringView.hxx"
 #include "util/IterableSplitString.hxx"
 #include "Language/Language.hpp"
 #include <string_view>
@@ -44,7 +43,7 @@ ProfileMap::GetMultiplePaths(std::string_view key) const noexcept
     return paths;
 
 
-  for (auto i : TIterableSplitString(paths_string, _('|'))){
+  for (auto i : TIterableSplitString(paths_string, '|')){
 
     if (i.empty())
       continue;
@@ -56,9 +55,6 @@ ProfileMap::GetMultiplePaths(std::string_view key) const noexcept
 #endif
 
     AllocatedPath path(Path(file_string.c_str()));
-
-    if (!path.MatchesExtension(_("txt")) && !path.MatchesExtension(_("air")))
-      continue;
 
     paths.push_back(ExpandLocalPath(path));
 

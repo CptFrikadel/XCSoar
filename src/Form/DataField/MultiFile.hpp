@@ -104,10 +104,10 @@ public:
 	 */
 	const TCHAR *GetAsString() const noexcept override;
 	const TCHAR *GetAsDisplayString() const noexcept override;
-	void SetAsInteger(int value) noexcept override;
 
 	ComboList CreateComboList(const TCHAR *reference) const noexcept override;
-	void SetFromCombo(int datafield_index, const TCHAR *string_value) noexcept override;
+	void SetFromCombo([[maybe_unused]] int datafield_index,
+					  [[maybe_unused]] const TCHAR *string_value) noexcept override;
 
 	/*
 	 * Stub implementations for virtual methods from DataField class, because
@@ -116,7 +116,6 @@ public:
 
 	void Inc() noexcept override {}
 	void Dec() noexcept override {}
-	int GetAsInteger() const noexcept override {return 0;}
 
 };
 
