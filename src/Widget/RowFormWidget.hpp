@@ -432,6 +432,11 @@ public:
                        FileType file_type,
                        bool nullable = true) noexcept;
 
+  WndProperty *AddFileList(const TCHAR *label, const TCHAR *help,
+                       std::string_view profile_key, const TCHAR *filters,
+                       FileType file_type,
+                       bool nullable = true) noexcept;
+
   WndProperty *AddFile(const TCHAR *label, const TCHAR *help,
                        std::string_view profile_key, const TCHAR *filters,
                        bool nullable = true) noexcept {
@@ -750,6 +755,8 @@ public:
   }
 
   bool SaveValueFileReader(unsigned i, std::string_view profile_key) noexcept;
+
+  bool SaveValueFileListReader(unsigned i, std::string_view profile_key) noexcept;
 
 private:
   static void SetProfile(std::string_view profile_key, unsigned value) noexcept;

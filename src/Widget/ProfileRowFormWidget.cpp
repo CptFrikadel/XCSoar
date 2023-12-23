@@ -37,6 +37,33 @@ RowFormWidget::AddFile(const TCHAR *label, const TCHAR *help,
   return edit;
 }
 
+WndProperty *
+RowFormWidget::AddFileList(const TCHAR *label, const TCHAR *help,
+                       std::string_view profile_key, const TCHAR *filters,
+                       FileType file_type,
+                       bool nullable) noexcept
+{
+  WndProperty *edit = Add(label, help);
+  auto *df = new FileDataField();
+  df->SetFileType(file_type);
+  edit->SetDataField(df);
+
+  if (nullable)
+    df->AddNull();
+
+  df->ScanMultiplePatterns(filters);
+
+  if (profile_key.data() != nullptr) {
+    const auto path = Profile::GetPath(profile_key);
+    if (path != nullptr)
+      df->SetValue(path);
+  }
+
+  edit->RefreshDisplay();
+
+  return edit;
+}
+
 void
 RowFormWidget::SetProfile(std::string_view profile_key, unsigned value) noexcept
 {
@@ -95,6 +122,17 @@ RowFormWidget::SaveValueFileReader(unsigned i,
 
   Profile::Set(profile_key, new_value2);
   return true;
+}
+
+bool
+RowFormWidget::SaveValueFileListReader(unsigned i,
+                                   std::string_view profile_key) noexcept
+{
+  //TODO
+  assert(i);
+  assert(profile_key != "");
+ 
+  return false;
 }
 
 bool
