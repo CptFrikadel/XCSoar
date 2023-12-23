@@ -77,14 +77,11 @@ ReadAirspace(Airspaces &airspaces,
 
   bool airspace_ok = false;
 
-  // Read the airspace filenames from the registry
-  if (const auto path = Profile::GetPath(ProfileKeys::AirspaceFile);
-      path != nullptr)
-    airspace_ok |= ParseAirspaceFile(airspaces, path, operation);
+  const auto paths = Profile::GetPaths(ProfileKeys::AirspaceFiles);
 
-  if (const auto path = Profile::GetPath(ProfileKeys::AdditionalAirspaceFile);
-      path != nullptr)
+  for (const auto& path : paths){
     airspace_ok |= ParseAirspaceFile(airspaces, path, operation);
+  }
 
   try {
     if (auto archive = OpenMapFile();

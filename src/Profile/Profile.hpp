@@ -66,6 +66,9 @@ SetFiles(Path override_path) noexcept;
 AllocatedPath
 GetPath(std::string_view key) noexcept;
 
+std::vector<AllocatedPath>
+GetPaths(std::string_view key) noexcept;
+
 void
 SetPath(std::string_view key, Path value) noexcept;
 

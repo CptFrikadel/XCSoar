@@ -107,6 +107,12 @@ Profile::GetPath(std::string_view key) noexcept
   return map.GetPath(key);
 }
 
+std::vector<AllocatedPath>
+Profile::GetPaths(std::string_view key) noexcept
+{
+  return map.GetPaths(key);
+}
+
 bool
 Profile::GetPathIsEqual(std::string_view key, Path value) noexcept
 {

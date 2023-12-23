@@ -8,6 +8,7 @@
 #include "util/StringAPI.hxx"
 #include "util/StringCompare.hxx"
 #include "util/StringPointer.hxx"
+#include "util/IterableSplitString.hxx"
 
 #ifdef _UNICODE
 #include "util/AllocatedString.hxx"
@@ -28,6 +29,23 @@ ProfileMap::GetPath(std::string_view key) const noexcept
   return ExpandLocalPath(Path(buffer));
 }
 
+std::vector<AllocatedPath>
+ProfileMap::GetPaths(std::string_view key) const noexcept
+{
+  std::vector<AllocatedPath> paths;
+  TCHAR buffer[MAX_PATH];
+  if (!Get(key, std::span{buffer}))
+      return paths;
+
+  if (StringIsEmpty(buffer))
+    return paths;
+
+  for (const auto path : IterableSplitString(buffer, '|')){
+    paths.emplace_back(ExpandLocalPath(Path(std::string(path).c_str())));
+  }
+
+  return paths;
+}
 bool
 ProfileMap::GetPathIsEqual(std::string_view key, Path value) const noexcept
 {

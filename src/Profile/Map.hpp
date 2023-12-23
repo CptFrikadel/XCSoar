@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <tchar.h>
+#include <vector>
 
 struct GeoPoint;
 class RGB8Color;
@@ -170,6 +171,9 @@ public:
   // path values
 
   AllocatedPath GetPath(std::string_view key) const noexcept;
+
+  // Gets a vector of paths from key where paths are '|' separated
+  std::vector<AllocatedPath> GetPaths(std::string_view key) const noexcept;
 
   [[gnu::pure]]
   bool GetPathIsEqual(std::string_view key, Path value) const noexcept;
